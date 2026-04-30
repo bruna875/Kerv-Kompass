@@ -3,8 +3,10 @@
 
 // ── Pages map ──
 var PAGES = {
-  roadmap:      renderRoadmap,
-  teamcapacity: renderTeamCapacity
+  roadmap:            renderRoadmap,
+  teamcapacity:       renderTeamCapacity,
+  'sdt-content-form': renderSdtContentForm,
+  'taxonomy-explorer': renderTaxonomyExplorer
 };
 
 // ── Nav ──
