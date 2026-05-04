@@ -213,7 +213,7 @@ function csOpenModal() {
             <div class="cs-ads-btn" id="cs-content-upload-btn" onclick="csContentTab('upload')">Upload</div>
           </div>
           <div id="cs-content-link">
-            <input class="cs-input" id="cs-link-input" type="url" placeholder="https://…">
+            <input class="cs-input" id="cs-link-input" type="url" placeholder="https://…" style="width:100%;box-sizing:border-box">
           </div>
           <div id="cs-content-upload" style="display:none">
             <label class="cs-upload-area" id="cs-upload-label">
