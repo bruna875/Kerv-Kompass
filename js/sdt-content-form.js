@@ -41,7 +41,7 @@ function renderSdtContentForm() {
   </div>
 
   <!-- ── Right: content ── -->
-  <div id="sdt-content-area">
+  <div id="sdt-content-area" style="min-width:0">
     <div id="sdt-panel-manual" class="tx-panel">
 
       <!-- View toggle (sticky) -->
@@ -708,7 +708,6 @@ function sdtInjectStyles() {
     .wf-row-h {
       display: flex;
       align-items: stretch;
-      min-width: max-content;
     }
     .wf-node {
       width: 210px;
