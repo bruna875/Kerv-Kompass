@@ -645,6 +645,12 @@ function sdtNav(id) {
 }
 
 function sdtInit() {
+  // Reset state to match the freshly-rendered HTML
+  sdtActive      = 'manual';
+  csActiveFilter  = 'all';
+  csSelectedId    = 3;
+  csActiveFilter2 = 'all';
+  csSelectedId2   = 3;
   sdtInjectStyles();
   csRender();
   csRenderProcess();
