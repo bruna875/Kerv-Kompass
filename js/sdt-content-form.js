@@ -203,12 +203,33 @@ function csOpenModal() {
           <input class="cs-input" type="text" placeholder="e.g. Below Deck S5E3…">
         </div>
 
-        <!-- Link to Content (mandatory) -->
+        <!-- Content Upload (mandatory) -->
         <div class="cs-field">
           <div class="cs-field-row">
-            <label class="cs-label">Link to the Content <span class="cs-mandatory">*</span></label>
+            <label class="cs-label">Content Upload <span class="cs-mandatory">*</span></label>
           </div>
-          <input class="cs-input" id="cs-link-input" type="url" placeholder="https://…">
+          <div class="cs-ads-toggle" style="margin-bottom:8px">
+            <div class="cs-ads-btn cs-ads-btn--act" id="cs-content-link-btn" onclick="csContentTab('link')">Link</div>
+            <div class="cs-ads-btn" id="cs-content-upload-btn" onclick="csContentTab('upload')">Upload</div>
+          </div>
+          <div id="cs-content-link">
+            <input class="cs-input" id="cs-link-input" type="url" placeholder="https://…">
+          </div>
+          <div id="cs-content-upload" style="display:none">
+            <label class="cs-upload-area" id="cs-upload-label">
+              <input type="file" accept="video/*" id="cs-file-input" style="display:none" onchange="csFileChosen(this)">
+              <div id="cs-upload-idle">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="color:var(--muted)"><path d="M12 16V8m0 0-3 3m3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.5"/></svg>
+                <div class="cs-upload-text">Click to select a video file</div>
+                <div class="cs-upload-hint">MP4, MOV, AVI, MKV…</div>
+              </div>
+              <div id="cs-upload-chosen" style="display:none">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="color:#2EAD4B;flex-shrink:0"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span id="cs-upload-filename" class="cs-upload-text" style="color:var(--text)"></span>
+                <span class="cs-upload-hint" id="cs-upload-filesize"></span>
+              </div>
+            </label>
+          </div>
         </div>
 
         <!-- Ads Selection -->
@@ -219,7 +240,7 @@ function csOpenModal() {
             <div class="cs-ads-btn" id="cs-ads-desc-btn" onclick="csAdsTab('desc')">Description</div>
           </div>
           <div id="cs-ads-link">
-            <input class="cs-input" type="url" placeholder="https://ad-url.com…" style="margin-top:8px">
+            <input class="cs-input" type="url" placeholder="https://ad-url.com…" style="margin-top:8px;width:100%;box-sizing:border-box">
           </div>
           <div id="cs-ads-desc" style="display:none">
             <textarea class="cs-textarea" placeholder="Describe the ad — product, audience, key messages…" style="margin-top:8px;width:100%;min-height:100px"></textarea>
@@ -254,6 +275,30 @@ function csCloseModal() {
   setTimeout(function() { modal.remove(); }, 200);
 }
 
+function csContentTab(tab) {
+  document.getElementById('cs-content-link').style.display   = tab === 'link'   ? '' : 'none';
+  document.getElementById('cs-content-upload').style.display = tab === 'upload' ? '' : 'none';
+  document.getElementById('cs-content-link-btn').className   = 'cs-ads-btn' + (tab === 'link'   ? ' cs-ads-btn--act' : '');
+  document.getElementById('cs-content-upload-btn').className = 'cs-ads-btn' + (tab === 'upload' ? ' cs-ads-btn--act' : '');
+  // clear error state when switching
+  var li = document.getElementById('cs-link-input');
+  if (li) li.classList.remove('cs-input--error');
+  var ul = document.getElementById('cs-upload-label');
+  if (ul) ul.classList.remove('cs-upload-area--error');
+}
+
+function csFileChosen(input) {
+  var file = input.files[0];
+  if (!file) return;
+  document.getElementById('cs-upload-idle').style.display    = 'none';
+  document.getElementById('cs-upload-chosen').style.display  = 'flex';
+  document.getElementById('cs-upload-filename').textContent  = file.name;
+  var mb = (file.size / 1024 / 1024).toFixed(1);
+  document.getElementById('cs-upload-filesize').textContent  = mb + ' MB';
+  var ul = document.getElementById('cs-upload-label');
+  if (ul) ul.classList.remove('cs-upload-area--error');
+}
+
 function csAdsTab(tab) {
   document.getElementById('cs-ads-link').style.display    = tab === 'link' ? '' : 'none';
   document.getElementById('cs-ads-desc').style.display    = tab === 'desc' ? '' : 'none';
@@ -262,11 +307,22 @@ function csAdsTab(tab) {
 }
 
 function csSubmitModal() {
-  var link = document.getElementById('cs-link-input');
-  if (!link || !link.value.trim()) {
-    link.classList.add('cs-input--error');
-    link.focus();
-    return;
+  var uploadMode = document.getElementById('cs-content-upload') &&
+                   document.getElementById('cs-content-upload').style.display !== 'none';
+  if (uploadMode) {
+    var fi = document.getElementById('cs-file-input');
+    if (!fi || !fi.files.length) {
+      var ul = document.getElementById('cs-upload-label');
+      if (ul) ul.classList.add('cs-upload-area--error');
+      return;
+    }
+  } else {
+    var link = document.getElementById('cs-link-input');
+    if (!link || !link.value.trim()) {
+      link.classList.add('cs-input--error');
+      link.focus();
+      return;
+    }
   }
   csCloseModal();
   setTimeout(csOpenSuccessModal, 220);
@@ -811,6 +867,22 @@ function sdtInjectStyles() {
       color: #fff; cursor: pointer; transition: opacity .13s;
     }
     .cs-btn-primary:hover { opacity: .88; }
+
+    /* Content upload area */
+    .cs-upload-area {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 6px; padding: 20px 16px;
+      border: 1.5px dashed var(--border-md); border-radius: 10px;
+      cursor: pointer; transition: border-color .15s, background .15s;
+      background: var(--bg); text-align: center;
+    }
+    .cs-upload-area:hover { border-color: var(--accent); background: rgba(237,0,94,.03); }
+    .cs-upload-area--error { border-color: #E5243B; background: rgba(229,36,59,.04); }
+    #cs-upload-chosen {
+      display: flex; align-items: center; gap: 8px; justify-content: center;
+    }
+    .cs-upload-text { font-size: 12px; font-weight: 500; color: var(--muted); word-break: break-all; }
+    .cs-upload-hint { font-size: 11px; color: var(--faint); }
 
     /* Toggle sticky wrapper */
     .cs-toggle-sticky {
