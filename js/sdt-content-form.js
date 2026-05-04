@@ -20,7 +20,7 @@ function renderSdtContentForm() {
     <div class="sdt-nav-item" id="sdt-nav-selfserve" onclick="sdtNav('selfserve')">
       <div class="sdt-nav-num">2</div>
       <div>
-        <div class="sdt-nav-label">Partial Self-serve</div>
+        <div class="sdt-nav-label">Partially Automated</div>
         <div class="sdt-nav-sub">process</div>
       </div>
     </div>
@@ -86,8 +86,46 @@ function renderSdtContentForm() {
 
     </div>
     <div id="sdt-panel-selfserve" class="tx-panel" style="display:none">
-      <div class="sdt-panel-title">Partial Self-serve process</div>
-      <div class="sdt-panel-sub">Prototype coming soon.</div>
+
+      <!-- View toggle (sticky) -->
+      <div class="cs-toggle-sticky">
+        <div class="cs-view-toggle">
+          <div class="cs-view-btn cs-view-btn--act" id="cs-vbtn2-mockup" onclick="csView2('mockup')">Mockup</div>
+          <div class="cs-view-btn" id="cs-vbtn2-process" onclick="csView2('process')">Process</div>
+        </div>
+      </div>
+
+      <!-- Mockup view -->
+      <div id="cs-view2-mockup">
+      <div class="cs-card">
+        <div class="cs-title">Content Selection</div>
+
+        <div class="cs-toolbar">
+          <div class="cs-filter-wrap">
+            <div class="cs-filter-label">Category</div>
+            <select class="cs-filter-select" onchange="csFilter2(this.value)">
+              <option value="all">All</option>
+              <option value="comedy">Comedy</option>
+              <option value="drama">Drama</option>
+              <option value="reality">Reality</option>
+              <option value="documentary">Documentary</option>
+            </select>
+          </div>
+          <button class="cs-request-btn" onclick="csOpenModal()">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            Request New Content
+          </button>
+        </div>
+
+        <div class="cs-grid" id="cs-grid2"></div>
+      </div>
+      </div><!-- end mockup view 2 -->
+
+      <!-- Process view -->
+      <div id="cs-view2-process" style="display:none">
+        <div id="cs-process-container2"></div>
+      </div>
+
     </div>
     <div id="sdt-panel-realtime"  class="tx-panel" style="display:none">
       <div class="sdt-panel-title">Real-time Analysis process</div>
@@ -116,8 +154,10 @@ var CS_SHOWS = [
   { id:10, title:'Show Title',              category:'comedy',    grad:'linear-gradient(145deg,#1A6FC4,#0D4080)', initials:'ST' },
 ];
 
-var csActiveFilter = 'all';
-var csSelectedId   = 3;
+var csActiveFilter  = 'all';
+var csSelectedId    = 3;
+var csActiveFilter2 = 'all';
+var csSelectedId2   = 3;
 
 // ── Request New Content Modal ─────────────────────────────────────────────
 function csOpenModal() {
@@ -434,6 +474,107 @@ function csRender() {
   }).join('');
 }
 
+// ── Panel 2 (Partially Automated) helpers ────────────────────────────────
+
+function csView2(view) {
+  ['mockup','process'].forEach(function(v) {
+    var btn   = document.getElementById('cs-vbtn2-' + v);
+    var panel = document.getElementById('cs-view2-' + v);
+    if (btn)   btn.className   = 'cs-view-btn' + (v === view ? ' cs-view-btn--act' : '');
+    if (panel) panel.style.display = v === view ? '' : 'none';
+  });
+}
+
+function csFilter2(val) {
+  csActiveFilter2 = val;
+  csRender2();
+}
+
+function csSelect2(id) {
+  csSelectedId2 = id;
+  csRender2();
+}
+
+function csRender2() {
+  var grid = document.getElementById('cs-grid2');
+  if (!grid) return;
+  var shows = CS_SHOWS.filter(function(s) {
+    return csActiveFilter2 === 'all' || s.category === csActiveFilter2;
+  });
+  grid.innerHTML = shows.map(function(s) {
+    var sel   = s.id === csSelectedId2;
+    var badge = s.badge ? '<div class="cs-badge">' + s.badge + '</div>' : '';
+    return '<div class="cs-thumb' + (sel ? ' cs-thumb--sel' : '') + '" onclick="csSelect2(' + s.id + ')">'
+      + '<div class="cs-poster" style="background:' + s.grad + '">'
+      + '<span class="cs-poster-initials">' + s.initials + '</span>'
+      + badge
+      + '</div>'
+      + '<div class="cs-thumb-title">' + s.title + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function csRenderProcess2() {
+  var container = document.getElementById('cs-process-container2');
+  if (!container) return;
+
+  var legendHtml = '<div class="wf-legend-sticky">'
+    + '<div class="wf-legend">'
+    + Object.values(WF_ACTORS).map(function(a) {
+        var members = a.label === 'Sales' ? ' — Marika, Ryan…'
+          : a.label === 'Product / Tech' ? ' — Bruna, Grant, Ben'
+          : '';
+        return '<div class="wf-legend-item">'
+          + '<span class="wf-legend-dot" style="background:' + a.color + '"></span>'
+          + '<span class="wf-legend-name" style="color:' + a.color + ';font-weight:500">' + a.label + '</span>'
+          + (members ? '<span class="wf-legend-members">' + members + '</span>' : '')
+          + '</div>';
+      }).join('')
+    + '</div>'
+    + '</div>';
+
+  function nodeHtml(step, i) {
+    var actors = step.actors.map(function(k) { return WF_ACTORS[k]; });
+    var barBg;
+    if (actors.length === 1) {
+      barBg = actors[0].color;
+    } else {
+      var pct = 100 / actors.length;
+      var stops = actors.map(function(a, j) {
+        return a.color + ' ' + (j * pct) + '%, ' + a.color + ' ' + ((j + 1) * pct) + '%';
+      }).join(', ');
+      barBg = 'linear-gradient(90deg,' + stops + ')';
+    }
+    var pillsHtml = actors.map(function(a) {
+      return '<span class="wf-pill" style="color:' + a.color + ';background:' + a.bg + '">' + a.label + '</span>';
+    }).join('');
+    return '<div class="wf-node">'
+      + '<div class="wf-node-bar" style="background:' + barBg + '"></div>'
+      + '<div class="wf-node-body">'
+      + '<div class="wf-node-num">Step ' + (i + 1) + '</div>'
+      + '<div class="wf-node-title">' + step.title + '</div>'
+      + '<div class="wf-node-desc">' + step.desc + '</div>'
+      + '<div class="wf-node-pills">' + pillsHtml + '</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  var arrowRight = '<div class="wf-arrow-h">'
+    + '<svg width="20" height="12" viewBox="0 0 20 12" fill="none">'
+    + '<path d="M0 6h16M11 1l5 5-5 5" stroke="#D0CFC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '</svg></div>';
+
+  var rowHtml = '<div class="wf-scroll-outer">'
+    + '<div class="wf-row-h">'
+    + WF_STEPS.map(function(s, i) {
+        return nodeHtml(s, i) + (i < WF_STEPS.length - 1 ? arrowRight : '');
+      }).join('')
+    + '</div>'
+    + '</div>';
+
+  container.innerHTML = legendHtml + rowHtml;
+}
+
 // ── Navigation ────────────────────────────────────────────────────────────
 var sdtActive = 'manual';
 
@@ -451,6 +592,8 @@ function sdtInit() {
   sdtInjectStyles();
   csRender();
   csRenderProcess();
+  csRender2();
+  csRenderProcess2();
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────
