@@ -901,6 +901,7 @@ function csFilter(val) {
 }
 
 function csSelect(id) {
+  if (id <= 3) { var it = CS_SHOWS.filter(function(s){ return s.id===id; })[0]; if (it) { csShowDetailView('manual', it); return; } }
   csSelectedId = id;
   csRender();
 }
@@ -941,6 +942,7 @@ function csFilter2(val) {
 }
 
 function csSelect2(id) {
+  if (id <= 3) { var it = CS_SHOWS.filter(function(s){ return s.id===id; })[0]; if (it) { csShowDetailView('selfserve', it); return; } }
   csSelectedId2 = id;
   csRender2();
 }
@@ -1047,7 +1049,8 @@ function csFilter3(val) {
 
 function csSelect3(id) {
   var newItem = csNewItems3.filter(function(i) { return i.id === id; })[0];
-  if (newItem) { csShowDetailView3(newItem); return; }
+  if (newItem) { csShowDetailView('realtime', newItem); return; }
+  if (id <= 3) { var it = CS_SHOWS.filter(function(s){ return s.id===id; })[0]; if (it) { csShowDetailView('realtime', it); return; } }
   csSelectedId3 = id;
   csRender3();
 }
@@ -1078,9 +1081,61 @@ function csBackToGrid3() {
   csRenderProcess3();
 }
 
+function csBackToGrid() {
+  var panelKey = csDetailViewPanel;
+  if (panelKey === 'manual') {
+    var panel = document.getElementById('sdt-panel-manual');
+    if (!panel) return;
+    panel.innerHTML =
+      '<div class="cs-toggle-sticky"><div class="cs-view-toggle">'
+      + '<div class="cs-view-btn cs-view-btn--act" id="cs-vbtn-mockup" onclick="csView(\'mockup\')">Mockup</div>'
+      + '<div class="cs-view-btn" id="cs-vbtn-process" onclick="csView(\'process\')">Process</div>'
+      + '</div></div>'
+      + '<div id="cs-view-mockup">'
+      + '<div class="cs-card"><div class="cs-title">Content Selection</div>'
+      + '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
+      + '<select class="cs-filter-select" onchange="csFilter(this.value)">'
+      + '<option value="all">All</option><option value="comedy">Comedy</option>'
+      + '<option value="drama">Drama</option><option value="reality">Reality</option>'
+      + '<option value="documentary">Documentary</option></select></div>'
+      + '<button class="cs-request-btn" onclick="csOpenModal()">'
+      + '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+      + ' Request New Content</button></div>'
+      + '<div class="cs-grid" id="cs-grid"></div></div></div>'
+      + '<div id="cs-view-process" style="display:none"><div id="cs-process-container"></div></div>';
+    csRender();
+    csRenderProcess();
+  } else if (panelKey === 'selfserve') {
+    var panel = document.getElementById('sdt-panel-selfserve');
+    if (!panel) return;
+    panel.innerHTML =
+      '<div class="cs-toggle-sticky"><div class="cs-view-toggle">'
+      + '<div class="cs-view-btn cs-view-btn--act" id="cs-vbtn2-mockup" onclick="csView2(\'mockup\')">Mockup</div>'
+      + '<div class="cs-view-btn" id="cs-vbtn2-process" onclick="csView2(\'process\')">Process</div>'
+      + '</div></div>'
+      + '<div id="cs-view2-mockup">'
+      + '<div class="cs-card"><div class="cs-title">Content Selection</div>'
+      + '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
+      + '<select class="cs-filter-select" onchange="csFilter2(this.value)">'
+      + '<option value="all">All</option><option value="comedy">Comedy</option>'
+      + '<option value="drama">Drama</option><option value="reality">Reality</option>'
+      + '<option value="documentary">Documentary</option></select></div>'
+      + '<button class="cs-request-btn" onclick="csOpenModal()">'
+      + '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+      + ' Request New Content</button></div>'
+      + '<div class="cs-grid" id="cs-grid2"></div></div></div>'
+      + '<div id="cs-view2-process" style="display:none"><div id="cs-process-container2"></div></div>';
+    csRender2();
+    csRenderProcess2();
+  } else {
+    csBackToGrid3();
+  }
+}
+
 // ── Detail view (NEW item) ────────────────────────────────────────────────
 
 var csDetailPanels3 = { tax: true, prod: true, json: true };
+var csDetailViewPanel = 'realtime'; // tracks which panel is currently showing the detail view
 
 var CS_DETAIL_SCENES = [
   { scene: 2,  tax: 'IAB Taxonomy', badge: 'Real Estate Buying and Selling (0.80)', extra: 'Music Emotion:', extra2: 'Dreamy (0.95)' },
@@ -1129,9 +1184,13 @@ var CS_DETAIL_JSON = `{
   }
 }`;
 
-function csShowDetailView3(item) {
-  var panel = document.getElementById('sdt-panel-realtime');
+function csShowDetailView(panelKey, item) {
+  var panelId = panelKey === 'manual' ? 'sdt-panel-manual'
+              : panelKey === 'selfserve' ? 'sdt-panel-selfserve'
+              : 'sdt-panel-realtime';
+  var panel = document.getElementById(panelId);
   if (!panel) return;
+  csDetailViewPanel = panelKey;
   csDetailPanels3 = { tax: true, prod: true, json: true };
 
   panel.innerHTML =
@@ -1150,7 +1209,7 @@ function csShowDetailView3(item) {
 
     // Top bar
     + '<div class="cs-dv-topbar">'
-    +   '<button class="cs-dv-back" onclick="csBackToGrid3()">'
+    +   '<button class="cs-dv-back" onclick="csBackToGrid()">'
     +     '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     +     ' BACK TO CONTENT SELECTION'
     +   '</button>'
