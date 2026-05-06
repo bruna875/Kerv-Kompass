@@ -220,30 +220,47 @@ function renderSdtContentForm() {
 
     </div>
     <div id="sdt-panel-taxonomy2" style="display:none">
+      <div style="display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start">
 
-      <div class="cs-card">
-        <div class="cs-title">Content Selection</div>
-
-        <div class="cs-toolbar">
-          <div class="cs-filter-wrap">
-            <div class="cs-filter-label">Category</div>
-            <select class="cs-filter-select" onchange="csTx2Filter(this.value)">
-              <option value="all">All</option>
-              <option value="comedy">Comedy</option>
-              <option value="drama">Drama</option>
-              <option value="reality">Reality</option>
-              <option value="documentary">Documentary</option>
-            </select>
+        <!-- Sidebar -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px;position:sticky;top:0">
+          <div class="sdt-nav-item sdt-nav-item--act" id="tx2-nav-metadata" onclick="csTx2NavTab('metadata')">
+            <div>
+              <div class="sdt-nav-label">Metadata Analysis</div>
+            </div>
           </div>
-          <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            Request New Content
-          </button>
+          <div class="sdt-nav-item" id="tx2-nav-taxonomy" onclick="csTx2NavTab('taxonomy')">
+            <div>
+              <div class="sdt-nav-label">Taxonomy Explorer</div>
+            </div>
+          </div>
         </div>
 
-        <div class="cs-grid" id="cs-grid5"></div>
-      </div>
+        <!-- Content -->
+        <div id="tx2-content-area">
+          <div class="cs-card">
+            <div class="cs-title">Content Selection</div>
+            <div class="cs-toolbar">
+              <div class="cs-filter-wrap">
+                <div class="cs-filter-label">Category</div>
+                <select class="cs-filter-select" onchange="csTx2Filter(this.value)">
+                  <option value="all">All</option>
+                  <option value="comedy">Comedy</option>
+                  <option value="drama">Drama</option>
+                  <option value="reality">Reality</option>
+                  <option value="documentary">Documentary</option>
+                </select>
+              </div>
+              <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                Request New Content
+              </button>
+            </div>
+            <div class="cs-grid" id="cs-grid5"></div>
+          </div>
+        </div>
 
+      </div>
     </div>
   </div>
 
@@ -1368,16 +1385,28 @@ function csBackToGrid() {
     var panel = document.getElementById('sdt-panel-taxonomy2');
     if (!panel) return;
     panel.innerHTML =
-      '<div class="cs-card"><div class="cs-title">Content Selection</div>'
-      + '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
-      + '<select class="cs-filter-select" onchange="csTx2Filter(this.value)">'
-      + '<option value="all">All</option><option value="comedy">Comedy</option>'
-      + '<option value="drama">Drama</option><option value="reality">Reality</option>'
-      + '<option value="documentary">Documentary</option></select></div>'
-      + '<button class="cs-request-btn" onclick="csOpenModalTaxonomy()">'
-      + '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
-      + ' Request New Content</button></div>'
-      + '<div class="cs-grid" id="cs-grid5"></div></div>';
+      '<div style="display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start">'
+      + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px;position:sticky;top:0">'
+      +   '<div class="sdt-nav-item sdt-nav-item--act" id="tx2-nav-metadata" onclick="csTx2NavTab(\'metadata\')">'
+      +     '<div><div class="sdt-nav-label">Metadata Analysis</div></div>'
+      +   '</div>'
+      +   '<div class="sdt-nav-item" id="tx2-nav-taxonomy" onclick="csTx2NavTab(\'taxonomy\')">'
+      +     '<div><div class="sdt-nav-label">Taxonomy Explorer</div></div>'
+      +   '</div>'
+      + '</div>'
+      + '<div id="tx2-content-area">'
+      +   '<div class="cs-card"><div class="cs-title">Content Selection</div>'
+      +   '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
+      +   '<select class="cs-filter-select" onchange="csTx2Filter(this.value)">'
+      +   '<option value="all">All</option><option value="comedy">Comedy</option>'
+      +   '<option value="drama">Drama</option><option value="reality">Reality</option>'
+      +   '<option value="documentary">Documentary</option></select></div>'
+      +   '<button class="cs-request-btn" onclick="csOpenModalTaxonomy()">'
+      +   '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+      +   ' Request New Content</button></div>'
+      +   '<div class="cs-grid" id="cs-grid5"></div></div>'
+      + '</div>'
+      + '</div>';
     csTx2Render();
   } else {
     csBackToGrid3();
@@ -1941,6 +1970,13 @@ function csTx2View(view) {
     var panel = document.getElementById('cs-view5-' + v);
     if (btn)   btn.className       = 'cs-view-btn' + (v === view ? ' cs-view-btn--act' : '');
     if (panel) panel.style.display = v === view ? '' : 'none';
+  });
+}
+
+function csTx2NavTab(tab) {
+  ['metadata', 'taxonomy'].forEach(function(t) {
+    var el = document.getElementById('tx2-nav-' + t);
+    if (el) el.className = 'sdt-nav-item' + (t === tab ? ' sdt-nav-item--act' : '');
   });
 }
 
