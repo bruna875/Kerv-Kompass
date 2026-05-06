@@ -203,7 +203,7 @@ function renderSdtContentForm() {
               <option value="documentary">Documentary</option>
             </select>
           </div>
-          <button class="cs-request-btn" onclick="csOpenModalRealtime()">
+          <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             Request New Content
           </button>
@@ -538,6 +538,161 @@ function csCloseModal() {
   if (!modal) return;
   modal.classList.remove('cs-modal-overlay--in');
   setTimeout(function() { modal.remove(); }, 200);
+}
+
+// ── Request New Content Modal — 3-step (Taxonomy Explorer v1) ────────────
+
+function csOpenModalTaxonomy() {
+  if (document.getElementById('cs-modal')) return;
+  csCurrentStep = 1;
+  var modal = document.createElement('div');
+  modal.id = 'cs-modal';
+  modal.className = 'cs-modal-overlay';
+  modal.innerHTML =
+    '<div class="cs-modal" onclick="event.stopPropagation()">'
+
+    // Header
+    + '<div class="cs-modal-header">'
+    +   '<div><div class="cs-modal-title">Request New Content</div>'
+    +   '<div class="cs-modal-sub">Fill in the details below to submit your request</div></div>'
+    +   '<button class="cs-modal-close" onclick="csCloseModal()">'
+    +     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+    +   '</button>'
+    + '</div>'
+
+    // Stepper
+    + '<div class="cs-stepper">'
+    +   '<div class="cs-step cs-step--act" id="cs-step-ind-1"><div class="cs-step-circle"><span>1</span></div><div class="cs-step-label">Content</div></div>'
+    +   '<div class="cs-step-line"></div>'
+    +   '<div class="cs-step" id="cs-step-ind-2"><div class="cs-step-circle"><span>2</span></div><div class="cs-step-label">Processing</div></div>'
+    +   '<div class="cs-step-line"></div>'
+    +   '<div class="cs-step" id="cs-step-ind-3"><div class="cs-step-circle"><span>3</span></div><div class="cs-step-label">Add Ads</div></div>'
+    + '</div>'
+
+    // ── Step 1 body ──
+    + '<div class="cs-modal-body" id="cs-step-body-1">'
+
+    +   '<div class="cs-field"><div class="cs-field-row"><label class="cs-label">Requestor</label><span class="cs-field-note">Comes from the account</span></div>'
+    +   '<input class="cs-input cs-input--disabled" type="text" value="Marika Roque" disabled></div>'
+
+    +   '<div class="cs-field"><label class="cs-label">Client Name</label>'
+    +   '<input class="cs-input" type="text" placeholder="e.g. Nike, Unilever…"></div>'
+
+    +   '<div class="cs-field"><label class="cs-label">Content Name</label>'
+    +   '<input class="cs-input" id="cs-rt-content-name" type="text" placeholder="e.g. Below Deck S5E3…"></div>'
+
+    // ── Enable Features ──
+    +   '<div class="cs-field">'
+    +     '<label class="cs-label">Enable Features</label>'
+    +     '<div class="cs-features-grid">'
+    +       '<label class="cs-feature-item"><input type="checkbox" class="cs-feature-cb" checked><span>Metadata analysis</span></label>'
+    +       '<label class="cs-feature-item"><input type="checkbox" class="cs-feature-cb" checked><span>Moments analysis</span></label>'
+    +       '<label class="cs-feature-item"><input type="checkbox" class="cs-feature-cb" checked><span>Taxonomy analysis</span></label>'
+    +       '<label class="cs-feature-item"><input type="checkbox" class="cs-feature-cb"><span>Show / episodes analysis</span></label>'
+    +     '</div>'
+    +   '</div>'
+
+    +   '<div class="cs-field">'
+    +     '<div class="cs-field-row"><label class="cs-label">Content Upload <span class="cs-mandatory">*</span></label></div>'
+    +     '<div class="cs-ads-toggle" style="margin-bottom:8px">'
+    +       '<div class="cs-ads-btn cs-ads-btn--act" id="cs-content-upload-btn" onclick="csContentTab(\'upload\')">Upload</div>'
+    +       '<div class="cs-ads-btn" id="cs-content-link-btn" onclick="csContentTab(\'link\')">Link</div>'
+    +     '</div>'
+    +     '<div id="cs-content-upload">'
+    +       '<div class="cs-upload-area" id="cs-upload-label" onclick="csFakeUpload()">'
+    +         '<div id="cs-upload-idle" style="display:flex;flex-direction:column;align-items:center;gap:6px">'
+    +           '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="color:var(--muted)"><path d="M12 16V8m0 0-3 3m3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.5"/></svg>'
+    +           '<div class="cs-upload-text">Click to upload a video file</div>'
+    +           '<div class="cs-upload-hint">MP4, MOV, AVI, MKV…</div>'
+    +         '</div>'
+    +         '<div id="cs-upload-chosen" style="display:none;align-items:center;gap:8px;justify-content:center">'
+    +           '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="color:#2EAD4B;flex-shrink:0"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +           '<span id="cs-upload-filename" class="cs-upload-text" style="color:var(--text)"></span>'
+    +           '<span class="cs-upload-hint" id="cs-upload-filesize"></span>'
+    +         '</div>'
+    +       '</div>'
+    +     '</div>'
+    +     '<div id="cs-content-link" style="display:none">'
+    +       '<input class="cs-input" id="cs-link-input" type="url" placeholder="https://…" style="width:100%;box-sizing:border-box">'
+    +     '</div>'
+    +   '</div>'
+
+    + '</div>'
+
+    // ── Step 2 body — Processing ──
+    + '<div class="cs-modal-body" id="cs-step-body-2" style="display:none;gap:16px">'
+
+    +   '<div class="cs-proc-preview">'
+    +     '<div class="cs-proc-thumb">'
+    +       '<div class="cs-proc-thumb-inner">'
+    +         '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" style="color:rgba(255,255,255,.55)"><rect x="2" y="4" width="20" height="16" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M9 8.5l6 3.5-6 3.5V8.5z" fill="currentColor"/><path d="M2 8h2M20 8h2M2 16h2M20 16h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+    +       '</div>'
+    +     '</div>'
+    +     '<div class="cs-proc-meta">'
+    +       '<div style="display:flex;align-items:center;gap:6px">'
+    +         '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="color:var(--muted);flex-shrink:0"><rect x="2" y="1" width="9" height="14" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 6h4M5 9h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M11 1v4h4" stroke="currentColor" stroke-width="1.2"/><path d="M11 1l4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +         '<span class="cs-proc-fname">sample_ad_creative.mp4</span>'
+    +       '</div>'
+    +       '<span class="cs-proc-fsize">47.3 MB &nbsp;·&nbsp; MP4 &nbsp;·&nbsp; HD 1080p</span>'
+    +     '</div>'
+    +   '</div>'
+
+    +   '<div class="cs-proc-bar-section">'
+    +     '<div class="cs-proc-bar-header">'
+    +       '<span class="cs-proc-status-label" id="cs-proc-status-text">Preparing analysis…</span>'
+    +       '<span class="cs-proc-pct-badge" id="cs-proc-pct">0%</span>'
+    +     '</div>'
+    +     '<div class="cs-proc-bar-track"><div class="cs-proc-bar-fill" id="cs-proc-bar" style="width:0%"></div></div>'
+    +   '</div>'
+
+    +   '<div class="cs-proc-log" id="cs-proc-log"></div>'
+
+    +   '<div id="cs-proc-success" style="display:none">'
+    +     '<div class="cs-proc-success-box">'
+    +       '<svg width="34" height="34" viewBox="0 0 34 34" fill="none"><circle cx="17" cy="17" r="16" fill="rgba(46,173,75,.12)" stroke="#2EAD4B" stroke-width="1.5"/><path d="M10 17l5 5 9-9" stroke="#2EAD4B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +       '<div class="cs-proc-success-title">Analysis Complete</div>'
+    +       '<div class="cs-proc-success-sub">Content successfully processed. All taxonomy signals have been extracted and catalogued. Click Next to configure delivery.</div>'
+    +     '</div>'
+    +   '</div>'
+
+    + '</div>'
+
+    // ── Step 3 body — Add Ads ──
+    + '<div class="cs-modal-body" id="cs-step-body-3" style="display:none">'
+
+    +   '<div class="cs-field">'
+    +     '<label class="cs-label">Ads Selection</label>'
+    +     '<div class="cs-ads-toggle" style="margin-bottom:8px">'
+    +       '<div class="cs-ads-btn cs-ads-btn--act" id="cs-rt-ads-link-btn" onclick="csRtAdsTab(\'link\')">Link</div>'
+    +       '<div class="cs-ads-btn" id="cs-rt-ads-desc-btn" onclick="csRtAdsTab(\'desc\')">Description</div>'
+    +     '</div>'
+    +     '<div id="cs-rt-ads-link">'
+    +       '<input class="cs-input" type="url" placeholder="https://ad-url.com…" style="width:100%;box-sizing:border-box">'
+    +     '</div>'
+    +     '<div id="cs-rt-ads-desc" style="display:none">'
+    +       '<textarea class="cs-textarea" placeholder="Describe the ad — product, audience, key messages…" style="width:100%;min-height:100px"></textarea>'
+    +     '</div>'
+    +   '</div>'
+
+    +   '<div class="cs-field">'
+    +     '<label class="cs-label">Desired Delivery Date</label>'
+    +     '<input class="cs-input" type="date" style="width:100%;box-sizing:border-box">'
+    +   '</div>'
+
+    + '</div>'
+
+    // Footer
+    + '<div class="cs-modal-footer">'
+    +   '<button class="cs-btn-secondary" id="cs-modal-back-btn" style="display:none;margin-right:auto" onclick="csPrevStep()">← Back</button>'
+    +   '<button class="cs-btn-secondary" id="cs-modal-skip-btn" style="display:none" onclick="csAddAndSubmit()">Submit without Ads</button>'
+    +   '<button class="cs-btn-primary" id="cs-modal-next-btn" onclick="csNextStep()">Next</button>'
+    + '</div>'
+
+    + '</div>';
+
+  modal.addEventListener('click', csCloseModal);
+  document.body.appendChild(modal);
+  setTimeout(function() { modal.classList.add('cs-modal-overlay--in'); }, 10);
 }
 
 // ── Stepper navigation ────────────────────────────────────────────────────
@@ -1180,7 +1335,7 @@ function csBackToGrid() {
       + '<option value="all">All</option><option value="comedy">Comedy</option>'
       + '<option value="drama">Drama</option><option value="reality">Reality</option>'
       + '<option value="documentary">Documentary</option></select></div>'
-      + '<button class="cs-request-btn" onclick="csOpenModalRealtime()">'
+      + '<button class="cs-request-btn" onclick="csOpenModalTaxonomy()">'
       + '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
       + ' Request New Content</button></div>'
       + '<div class="cs-grid" id="cs-grid4"></div></div></div>'
@@ -1785,6 +1940,30 @@ function sdtInjectStyles() {
       background: var(--bg);
       color: var(--text);
       box-shadow: 0 1px 3px rgba(0,0,0,.07);
+    }
+
+    /* Enable Features checkboxes */
+    .cs-features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 16px;
+      margin-top: 8px;
+    }
+    .cs-feature-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+    }
+    .cs-feature-cb {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      accent-color: var(--accent);
+      cursor: pointer;
     }
 
     /* Modal */
