@@ -2122,8 +2122,16 @@ function csTx2TaxShowResults() {
   if (!ca) return;
   var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)';
   ca.innerHTML =
+    // Back button
+    '<div style="margin-bottom:16px">'
+    + '<button class="cs-dv-back" onclick="csTx2TaxShowUpload()">'
+    +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +   ' BACK TO UPLOAD'
+    + '</button>'
+    + '</div>'
+
     // Sub-tab nav
-    '<div class="cs-dv-tabnav" style="margin-bottom:20px">'
+    + '<div class="cs-dv-tabnav" style="margin-bottom:20px">'
     + '<button class="cs-dv-tab cs-dv-tab--act" id="tx2-sub-tab-moments"    onclick="csTx2SubTab(\'moments\')">Moments</button>'
     + '<button class="cs-dv-tab"                 id="tx2-sub-tab-taxonomies" onclick="csTx2SubTab(\'taxonomies\')">Taxonomies</button>'
     + '<button class="cs-dv-tab"                 id="tx2-sub-tab-episodes"   onclick="csTx2SubTab(\'episodes\')">Episodes &amp; Shows</button>'
