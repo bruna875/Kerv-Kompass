@@ -638,17 +638,6 @@ function csOpenModalTaxonomy() {
     +   '<div class="cs-field"><label class="cs-label">Content Name</label>'
     +   '<input class="cs-input" id="cs-rt-content-name" type="text" placeholder="e.g. Below Deck S5E3…"></div>'
 
-    // ── Enable Features ──
-    +   '<div class="cs-field">'
-    +     '<label class="cs-label">Enable Features</label>'
-    +     '<div class="cs-features-grid">'
-    +       '<label class="cs-feature-item"><input type="checkbox" class="cs-feature-cb"><span>Metadata analysis</span></label>'
-    +       '<label class="cs-feature-item"><input type="checkbox" class="cs-feature-cb"><span>Moments analysis</span></label>'
-    +       '<label class="cs-feature-item"><input type="checkbox" class="cs-feature-cb"><span>Taxonomy analysis</span></label>'
-    +       '<label class="cs-feature-item"><input type="checkbox" class="cs-feature-cb"><span>Show / episodes analysis</span></label>'
-    +     '</div>'
-    +   '</div>'
-
     +   '<div class="cs-field">'
     +     '<div class="cs-field-row"><label class="cs-label">Content Upload <span class="cs-mandatory">*</span></label></div>'
     +     '<div class="cs-ads-toggle" style="margin-bottom:8px">'
