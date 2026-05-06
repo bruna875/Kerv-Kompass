@@ -220,44 +220,34 @@ function renderSdtContentForm() {
 
     </div>
     <div id="sdt-panel-taxonomy2" style="display:none">
-      <div style="display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start">
+      <div class="cs-card" style="padding:0;display:flex;min-height:520px;overflow:hidden">
 
         <!-- Sidebar -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px;position:sticky;top:0">
-          <div class="sdt-nav-item sdt-nav-item--act" id="tx2-nav-metadata" onclick="csTx2NavTab('metadata')">
-            <div>
-              <div class="sdt-nav-label">Metadata Analysis</div>
-            </div>
-          </div>
-          <div class="sdt-nav-item" id="tx2-nav-taxonomy" onclick="csTx2NavTab('taxonomy')">
-            <div>
-              <div class="sdt-nav-label">Taxonomy Explorer</div>
-            </div>
-          </div>
+        <div style="width:190px;flex-shrink:0;border-right:1px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:2px">
+          <div class="tx2-nav-item tx2-nav-item--act" id="tx2-nav-metadata" onclick="csTx2NavTab('metadata')">Metadata Analysis</div>
+          <div class="tx2-nav-item" id="tx2-nav-taxonomy" onclick="csTx2NavTab('taxonomy')">Taxonomy Explorer</div>
         </div>
 
-        <!-- Content -->
-        <div id="tx2-content-area">
-          <div class="cs-card">
-            <div class="cs-title">Content Selection</div>
-            <div class="cs-toolbar">
-              <div class="cs-filter-wrap">
-                <div class="cs-filter-label">Category</div>
-                <select class="cs-filter-select" onchange="csTx2Filter(this.value)">
-                  <option value="all">All</option>
-                  <option value="comedy">Comedy</option>
-                  <option value="drama">Drama</option>
-                  <option value="reality">Reality</option>
-                  <option value="documentary">Documentary</option>
-                </select>
-              </div>
-              <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                Request New Content
-              </button>
+        <!-- Content area -->
+        <div id="tx2-content-area" style="flex:1;min-width:0;padding:20px">
+          <div class="cs-title" style="margin-bottom:16px">Content Selection</div>
+          <div class="cs-toolbar">
+            <div class="cs-filter-wrap">
+              <div class="cs-filter-label">Category</div>
+              <select class="cs-filter-select" onchange="csTx2Filter(this.value)">
+                <option value="all">All</option>
+                <option value="comedy">Comedy</option>
+                <option value="drama">Drama</option>
+                <option value="reality">Reality</option>
+                <option value="documentary">Documentary</option>
+              </select>
             </div>
-            <div class="cs-grid" id="cs-grid5"></div>
+            <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              Request New Content
+            </button>
           </div>
+          <div class="cs-grid" id="cs-grid5"></div>
         </div>
 
       </div>
@@ -1385,17 +1375,13 @@ function csBackToGrid() {
     var panel = document.getElementById('sdt-panel-taxonomy2');
     if (!panel) return;
     panel.innerHTML =
-      '<div style="display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start">'
-      + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px;position:sticky;top:0">'
-      +   '<div class="sdt-nav-item sdt-nav-item--act" id="tx2-nav-metadata" onclick="csTx2NavTab(\'metadata\')">'
-      +     '<div><div class="sdt-nav-label">Metadata Analysis</div></div>'
-      +   '</div>'
-      +   '<div class="sdt-nav-item" id="tx2-nav-taxonomy" onclick="csTx2NavTab(\'taxonomy\')">'
-      +     '<div><div class="sdt-nav-label">Taxonomy Explorer</div></div>'
-      +   '</div>'
+      '<div class="cs-card" style="padding:0;display:flex;min-height:520px;overflow:hidden">'
+      + '<div style="width:190px;flex-shrink:0;border-right:1px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:2px">'
+      +   '<div class="tx2-nav-item tx2-nav-item--act" id="tx2-nav-metadata" onclick="csTx2NavTab(\'metadata\')">Metadata Analysis</div>'
+      +   '<div class="tx2-nav-item" id="tx2-nav-taxonomy" onclick="csTx2NavTab(\'taxonomy\')">Taxonomy Explorer</div>'
       + '</div>'
-      + '<div id="tx2-content-area">'
-      +   '<div class="cs-card"><div class="cs-title">Content Selection</div>'
+      + '<div id="tx2-content-area" style="flex:1;min-width:0;padding:20px">'
+      +   '<div class="cs-title" style="margin-bottom:16px">Content Selection</div>'
       +   '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
       +   '<select class="cs-filter-select" onchange="csTx2Filter(this.value)">'
       +   '<option value="all">All</option><option value="comedy">Comedy</option>'
@@ -1404,7 +1390,7 @@ function csBackToGrid() {
       +   '<button class="cs-request-btn" onclick="csOpenModalTaxonomy()">'
       +   '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
       +   ' Request New Content</button></div>'
-      +   '<div class="cs-grid" id="cs-grid5"></div></div>'
+      +   '<div class="cs-grid" id="cs-grid5"></div>'
       + '</div>'
       + '</div>';
     csTx2Render();
@@ -2251,6 +2237,19 @@ function sdtInjectStyles() {
       background: var(--subtle);
       color: var(--accent);
     }
+
+    /* Taxonomy v2 sidebar nav items */
+    .tx2-nav-item {
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background .13s, color .13s;
+    }
+    .tx2-nav-item:hover { background: var(--bg); color: var(--text); }
+    .tx2-nav-item--act  { background: var(--subtle); color: var(--accent); }
 
     /* Detail view tab nav (Taxonomy Explorer v1) */
     .cs-dv-tabnav {
