@@ -386,7 +386,7 @@ function csOpenModalRealtime() {
     +   '<input class="cs-input" type="text" placeholder="e.g. Nike, Unilever…"></div>'
 
     +   '<div class="cs-field"><label class="cs-label">Content Name</label>'
-    +   '<input class="cs-input" type="text" placeholder="e.g. Below Deck S5E3…"></div>'
+    +   '<input class="cs-input" id="cs-rt-content-name" type="text" placeholder="e.g. Below Deck S5E3…"></div>'
 
     +   '<div class="cs-field">'
     +     '<div class="cs-field-row"><label class="cs-label">Content Upload <span class="cs-mandatory">*</span></label></div>'
@@ -484,7 +484,7 @@ function csOpenModalRealtime() {
     // Footer
     + '<div class="cs-modal-footer">'
     +   '<button class="cs-btn-secondary" id="cs-modal-back-btn" style="display:none;margin-right:auto" onclick="csPrevStep()">← Back</button>'
-    +   '<button class="cs-btn-secondary" id="cs-modal-skip-btn" style="display:none" onclick="csCloseModal();setTimeout(csOpenSuccessModal,220)">Skip &amp; Submit</button>'
+    +   '<button class="cs-btn-secondary" id="cs-modal-skip-btn" style="display:none" onclick="csAddAndSubmit()">Submit without Ads</button>'
     +   '<button class="cs-btn-primary" id="cs-modal-next-btn" onclick="csNextStep()">Next</button>'
     + '</div>'
 
@@ -533,8 +533,7 @@ function csNextStep() {
     csCurrentStep = 3;
     csUpdateModalStepper();
   } else if (csCurrentStep === 3) {
-    csCloseModal();
-    setTimeout(csOpenSuccessModal, 220);
+    csAddAndSubmit();
   }
 }
 
@@ -640,6 +639,36 @@ function csRtAdsTab(tab) {
   document.getElementById('cs-rt-ads-desc').style.display    = tab === 'desc' ? '' : 'none';
   document.getElementById('cs-rt-ads-link-btn').className = 'cs-ads-btn' + (tab === 'link' ? ' cs-ads-btn--act' : '');
   document.getElementById('cs-rt-ads-desc-btn').className = 'cs-ads-btn' + (tab === 'desc' ? ' cs-ads-btn--act' : '');
+}
+
+// ── Add new thumbnail + submit ────────────────────────────────────────────
+
+var CS_NEW_GRADS = [
+  'linear-gradient(145deg,#ED005E,#A0003E)',
+  'linear-gradient(145deg,#7C3AED,#4C1D95)',
+  'linear-gradient(145deg,#0EA5E9,#0369A1)',
+  'linear-gradient(145deg,#10B981,#065F46)',
+  'linear-gradient(145deg,#F59E0B,#92400E)',
+];
+
+function csAddAndSubmit() {
+  // Read content name from step 1 field
+  var nameEl = document.getElementById('cs-rt-content-name');
+  var title  = (nameEl && nameEl.value.trim()) || 'New Content';
+
+  // Build initials from first two words
+  var words    = title.split(/\s+/);
+  var initials = (words[0][0] + (words[1] ? words[1][0] : words[0][1] || '')).toUpperCase();
+
+  var newId  = 900 + csNewItems3.length;
+  var grad   = CS_NEW_GRADS[csNewItems3.length % CS_NEW_GRADS.length];
+
+  csNewItems3.unshift({ id: newId, title: title, initials: initials, grad: grad });
+  csSelectedId3 = newId;
+
+  csCloseModal();
+  csRender3();
+  setTimeout(csOpenSuccessModal, 220);
 }
 
 // ── Fake upload ───────────────────────────────────────────────────────────
@@ -1000,6 +1029,7 @@ function csRenderProcess2() {
 
 var csActiveFilter3 = 'all';
 var csSelectedId3   = 3;
+var csNewItems3     = [];
 
 function csView3(view) {
   ['mockup','process'].forEach(function(v) {
@@ -1026,7 +1056,20 @@ function csRender3() {
   var shows = CS_SHOWS.filter(function(s) {
     return csActiveFilter3 === 'all' || s.category === csActiveFilter3;
   });
-  grid.innerHTML = shows.map(function(s) {
+
+  // New items always shown (no category filter)
+  var newHtml = csNewItems3.map(function(s) {
+    var sel = s.id === csSelectedId3;
+    return '<div class="cs-thumb' + (sel ? ' cs-thumb--sel' : '') + '" onclick="csSelect3(' + s.id + ')">'
+      + '<div class="cs-poster" style="background:' + s.grad + '">'
+      + '<span class="cs-poster-initials">' + s.initials + '</span>'
+      + '<div class="cs-badge cs-badge--new">NEW</div>'
+      + '</div>'
+      + '<div class="cs-thumb-title">' + s.title + '</div>'
+      + '</div>';
+  }).join('');
+
+  var existingHtml = shows.map(function(s) {
     var sel   = s.id === csSelectedId3;
     var badge = s.badge ? '<div class="cs-badge">' + s.badge + '</div>' : '';
     return '<div class="cs-thumb' + (sel ? ' cs-thumb--sel' : '') + '" onclick="csSelect3(' + s.id + ')">'
@@ -1037,6 +1080,8 @@ function csRender3() {
       + '<div class="cs-thumb-title">' + s.title + '</div>'
       + '</div>';
   }).join('');
+
+  grid.innerHTML = newHtml + existingHtml;
 }
 
 function csRenderProcess3() {
@@ -1516,6 +1561,15 @@ function sdtInjectStyles() {
       padding: 2px 4px;
       letter-spacing: .4px;
       text-transform: uppercase;
+    }
+    .cs-badge--new {
+      background: var(--accent);
+      box-shadow: 0 1px 4px rgba(237,0,94,.4);
+      animation: cs-badge-pop .3s ease;
+    }
+    @keyframes cs-badge-pop {
+      from { transform: scale(.7); opacity: 0; }
+      to   { transform: scale(1);  opacity: 1; }
     }
 
     /* Processing step */
