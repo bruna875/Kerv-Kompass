@@ -178,8 +178,51 @@ function renderSdtContentForm() {
 
     </div>
     <div id="sdt-panel-taxonomy" style="display:none">
-      <div class="sdt-panel-title">Taxonomy Explorer v1</div>
-      <div class="sdt-panel-sub">Prototype coming soon.</div>
+
+      <!-- View toggle (sticky) -->
+      <div class="cs-toggle-sticky">
+        <div class="cs-view-toggle">
+          <div class="cs-view-btn cs-view-btn--act" id="cs-vbtn4-mockup" onclick="csTxView('mockup')">Mockup</div>
+          <div class="cs-view-btn" id="cs-vbtn4-process" onclick="csTxView('process')">Process</div>
+        </div>
+      </div>
+
+      <!-- Mockup view -->
+      <div id="cs-view4-mockup">
+      <div class="cs-card">
+        <div class="cs-title">Content Library</div>
+
+        <div class="cs-toolbar">
+          <div class="cs-filter-wrap">
+            <div class="cs-filter-label">Category</div>
+            <select class="cs-filter-select" onchange="csTxFilter(this.value)">
+              <option value="all">All</option>
+              <option value="comedy">Comedy</option>
+              <option value="drama">Drama</option>
+              <option value="reality">Reality</option>
+              <option value="documentary">Documentary</option>
+            </select>
+          </div>
+          <div class="cs-filter-wrap">
+            <div class="cs-filter-label">Taxonomy</div>
+            <select class="cs-filter-select" onchange="csTxFilterTax(this.value)" id="cs-tx-tax-filter">
+              <option value="all">All</option>
+              <option value="iab">IAB Content</option>
+              <option value="garm">GARM Brand Safety</option>
+              <option value="custom">Custom Moments</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="cs-grid" id="cs-grid4"></div>
+      </div>
+      </div><!-- end mockup view 4 -->
+
+      <!-- Process view -->
+      <div id="cs-view4-process" style="display:none">
+        <div id="cs-process-container4"></div>
+      </div>
+
     </div>
     <div id="sdt-panel-taxonomy2" style="display:none">
       <div class="sdt-panel-title">Taxonomy Explorer v2</div>
@@ -1127,6 +1170,30 @@ function csBackToGrid() {
       + '<div id="cs-view2-process" style="display:none"><div id="cs-process-container2"></div></div>';
     csRender2();
     csRenderProcess2();
+  } else if (panelKey === 'taxonomy') {
+    var panel = document.getElementById('sdt-panel-taxonomy');
+    if (!panel) return;
+    panel.innerHTML =
+      '<div class="cs-toggle-sticky"><div class="cs-view-toggle">'
+      + '<div class="cs-view-btn cs-view-btn--act" id="cs-vbtn4-mockup" onclick="csTxView(\'mockup\')">Mockup</div>'
+      + '<div class="cs-view-btn" id="cs-vbtn4-process" onclick="csTxView(\'process\')">Process</div>'
+      + '</div></div>'
+      + '<div id="cs-view4-mockup">'
+      + '<div class="cs-card"><div class="cs-title">Content Library</div>'
+      + '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
+      + '<select class="cs-filter-select" onchange="csTxFilter(this.value)">'
+      + '<option value="all">All</option><option value="comedy">Comedy</option>'
+      + '<option value="drama">Drama</option><option value="reality">Reality</option>'
+      + '<option value="documentary">Documentary</option></select></div>'
+      + '<div class="cs-filter-wrap"><div class="cs-filter-label">Taxonomy</div>'
+      + '<select class="cs-filter-select" onchange="csTxFilterTax(this.value)" id="cs-tx-tax-filter">'
+      + '<option value="all">All</option><option value="iab">IAB Content</option>'
+      + '<option value="garm">GARM Brand Safety</option><option value="custom">Custom Moments</option></select></div>'
+      + '</div>'
+      + '<div class="cs-grid" id="cs-grid4"></div></div></div>'
+      + '<div id="cs-view4-process" style="display:none"><div id="cs-process-container4"></div></div>';
+    csTxRender();
+    csTxRenderProcess();
   } else {
     csBackToGrid3();
   }
@@ -1473,6 +1540,137 @@ function csRenderProcess3() {
   container.innerHTML = legendHtml + rowHtml;
 }
 
+// ── Panel 4 (Taxonomy Explorer v1) helpers ───────────────────────────────
+
+var csActiveTxFilter    = 'all';
+var csActiveTxTaxFilter = 'all';
+var csSelectedTxId      = 1;
+
+// Taxonomy-specific data: each show has a dominant taxonomy label shown in the grid
+var CS_TX_SHOWS = [
+  { id:1,  title:'Parks and Recreation',    category:'comedy',    grad:'linear-gradient(145deg,#D4820A,#A05E08)', initials:'PR', taxLabel:'Comedy • IAB1-7',    taxType:'iab'    },
+  { id:2,  title:'Yellowstone',             category:'drama',     grad:'linear-gradient(145deg,#4A3820,#2E2210)', initials:'YS', taxLabel:'Drama • GARM-G2',    taxType:'garm'   },
+  { id:3,  title:'Below Deck',              category:'reality',   grad:'linear-gradient(145deg,#1A6FC4,#0D4A8A)', initials:'BD', taxLabel:'Reality • IAB20-3',  taxType:'iab',   badge:'Peacock Original' },
+  { id:4,  title:'Everybody Loves Raymond', category:'comedy',    grad:'linear-gradient(145deg,#C44B1A,#8A2E0D)', initials:'EL', taxLabel:'Comedy • IAB1-7',    taxType:'iab'    },
+  { id:5,  title:'ted',                     category:'comedy',    grad:'linear-gradient(145deg,#2E8B57,#1A5C38)', initials:'te', taxLabel:'Custom • Humor',      taxType:'custom' },
+  { id:6,  title:'Wolf Like Me',            category:'drama',     grad:'linear-gradient(145deg,#5A3080,#3A1A5A)', initials:'WL', taxLabel:'Drama • GARM-G3',    taxType:'garm'   },
+  { id:7,  title:'A.P. Bio',               category:'comedy',    grad:'linear-gradient(145deg,#1A6FC4,#0D4080)', initials:'AP', taxLabel:'Comedy • IAB1-7',    taxType:'iab'    },
+  { id:8,  title:'Below Deck',              category:'reality',   grad:'linear-gradient(145deg,#1A6FC4,#0D4A8A)', initials:'BD', taxLabel:'Reality • IAB20-3',  taxType:'iab',   badge:'Peacock Original' },
+  { id:9,  title:'Show Title',              category:'drama',     grad:'linear-gradient(145deg,#4A5568,#2D3748)', initials:'ST', taxLabel:'Drama • GARM-G2',    taxType:'garm'   },
+  { id:10, title:'Show Title',             category:'comedy',    grad:'linear-gradient(145deg,#1A6FC4,#0D4080)', initials:'ST', taxLabel:'Comedy • IAB1-7',    taxType:'iab'    },
+];
+
+function csTxView(view) {
+  ['mockup','process'].forEach(function(v) {
+    var btn   = document.getElementById('cs-vbtn4-' + v);
+    var panel = document.getElementById('cs-view4-' + v);
+    if (btn)   btn.className       = 'cs-view-btn' + (v === view ? ' cs-view-btn--act' : '');
+    if (panel) panel.style.display = v === view ? '' : 'none';
+  });
+}
+
+function csTxFilter(val) {
+  csActiveTxFilter = val;
+  csTxRender();
+}
+
+function csTxFilterTax(val) {
+  csActiveTxTaxFilter = val;
+  csTxRender();
+}
+
+function csTxSelect(id) {
+  if (id <= 3) {
+    var it = CS_TX_SHOWS.filter(function(s) { return s.id === id; })[0];
+    if (it) { csShowDetailView('taxonomy', it); return; }
+  }
+  csSelectedTxId = id;
+  csTxRender();
+}
+
+function csTxRender() {
+  var grid = document.getElementById('cs-grid4');
+  if (!grid) return;
+  var shows = CS_TX_SHOWS.filter(function(s) {
+    var catOk = csActiveTxFilter === 'all' || s.category === csActiveTxFilter;
+    var taxOk = csActiveTxTaxFilter === 'all' || s.taxType === csActiveTxTaxFilter;
+    return catOk && taxOk;
+  });
+  grid.innerHTML = shows.map(function(s) {
+    var sel   = s.id === csSelectedTxId;
+    var badge = s.badge ? '<div class="cs-badge">' + s.badge + '</div>' : '';
+    return '<div class="cs-thumb' + (sel ? ' cs-thumb--sel' : '') + '" onclick="csTxSelect(' + s.id + ')">'
+      + '<div class="cs-poster" style="background:' + s.grad + '">'
+      + '<span class="cs-poster-initials">' + s.initials + '</span>'
+      + badge
+      + '</div>'
+      + '<div class="cs-thumb-title">' + s.title + '</div>'
+      + '<div class="cs-thumb-tax">' + s.taxLabel + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function csTxRenderProcess() {
+  var container = document.getElementById('cs-process-container4');
+  if (!container) return;
+
+  var legendHtml = '<div class="wf-legend-sticky">'
+    + '<div class="wf-legend">'
+    + Object.values(WF_ACTORS).map(function(a) {
+        var members = a.label === 'Sales' ? ' — Marika, Ryan…'
+          : a.label === 'Product / Tech' ? ' — Bruna, Grant, Ben'
+          : '';
+        return '<div class="wf-legend-item">'
+          + '<span class="wf-legend-dot" style="background:' + a.color + '"></span>'
+          + '<span class="wf-legend-name" style="color:' + a.color + ';font-weight:500">' + a.label + '</span>'
+          + (members ? '<span class="wf-legend-members">' + members + '</span>' : '')
+          + '</div>';
+      }).join('')
+    + '</div>'
+    + '</div>';
+
+  function nodeHtml(step, i) {
+    var actors = step.actors.map(function(k) { return WF_ACTORS[k]; });
+    var barBg;
+    if (actors.length === 1) {
+      barBg = actors[0].color;
+    } else {
+      var pct = 100 / actors.length;
+      var stops = actors.map(function(a, j) {
+        return a.color + ' ' + (j * pct) + '%, ' + a.color + ' ' + ((j + 1) * pct) + '%';
+      }).join(', ');
+      barBg = 'linear-gradient(90deg,' + stops + ')';
+    }
+    var pillsHtml = actors.map(function(a) {
+      return '<span class="wf-pill" style="color:' + a.color + ';background:' + a.bg + '">' + a.label + '</span>';
+    }).join('');
+    return '<div class="wf-node">'
+      + '<div class="wf-node-bar" style="background:' + barBg + '"></div>'
+      + '<div class="wf-node-body">'
+      + '<div class="wf-node-num">Step ' + (i + 1) + '</div>'
+      + '<div class="wf-node-title">' + step.title + '</div>'
+      + '<div class="wf-node-desc">' + step.desc + '</div>'
+      + '<div class="wf-node-pills">' + pillsHtml + '</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  var arrowRight = '<div class="wf-arrow-h">'
+    + '<svg width="20" height="12" viewBox="0 0 20 12" fill="none">'
+    + '<path d="M0 6h16M11 1l5 5-5 5" stroke="#D0CFC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '</svg></div>';
+
+  var rowHtml = '<div class="wf-scroll-outer">'
+    + '<div class="wf-row-h">'
+    + WF_STEPS.map(function(s, i) {
+        return nodeHtml(s, i) + (i < WF_STEPS.length - 1 ? arrowRight : '');
+      }).join('')
+    + '</div>'
+    + '</div>';
+
+  container.innerHTML = legendHtml + rowHtml;
+}
+
 // ── Navigation ────────────────────────────────────────────────────────────
 var sdtActive = 'manual';
 
@@ -1489,13 +1687,15 @@ function sdtNav(id) {
 function sdtInit() {
   // Reset state to match the freshly-rendered HTML
   sdtActive = 'manual';
-  csActiveFilter  = 'all'; csSelectedId  = 3;
-  csActiveFilter2 = 'all'; csSelectedId2 = 3;
-  csActiveFilter3 = 'all'; csSelectedId3 = 3;
+  csActiveFilter    = 'all'; csSelectedId    = 3;
+  csActiveFilter2   = 'all'; csSelectedId2   = 3;
+  csActiveFilter3   = 'all'; csSelectedId3   = 3;
+  csActiveTxFilter  = 'all'; csActiveTxTaxFilter = 'all'; csSelectedTxId = 1;
   sdtInjectStyles();
-  csRender();  csRenderProcess();
-  csRender2(); csRenderProcess2();
-  csRender3(); csRenderProcess3();
+  csRender();   csRenderProcess();
+  csRender2();  csRenderProcess2();
+  csRender3();  csRenderProcess3();
+  csTxRender(); csTxRenderProcess();
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────
@@ -1615,6 +1815,16 @@ function sdtInjectStyles() {
       background: var(--bg);
       color: var(--text);
       box-shadow: 0 1px 3px rgba(0,0,0,.07);
+    }
+
+    /* Taxonomy label under thumbnail */
+    .cs-thumb-tax {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* Modal */
