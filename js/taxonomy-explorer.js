@@ -83,7 +83,7 @@ function renderTaxonomyExplorer() {
 
     <div id="tx-results-content" style="display:none">
       <div class="tabnav" style="margin-bottom:16px">
-        <button class="tabitem act" id="tx-rtab-cat" onclick="txResTab('cat')">Categories</button>
+        <button class="tabitem act" id="tx-rtab-cat" onclick="txResTab('cat')">Moments</button>
         <button class="tabitem" id="tx-rtab-eps" onclick="txResTab('eps')">Episodes &amp; Shows</button>
       </div>
 
@@ -268,7 +268,8 @@ function txRenderCategories() {
   var tbody = document.getElementById('tx-cat-body');
   if (!tbody) return;
   tbody.innerHTML = TX_CATEGORIES.map(function(c, i) {
-    return '<tr style="border-bottom:1px solid var(--border)">'
+    var safeN = c.name.replace(/'/g, "\\'");
+    return '<tr class="tx-cat-row" style="border-bottom:1px solid var(--border);cursor:pointer" onclick="txOpenMomentModal(\'' + safeN + '\',' + c.score + ',' + c.assets + ')">'
       + '<td style="padding:11px 12px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px">'
       + '<span style="font-size:10px;font-weight:600;color:var(--faint);min-width:16px">#' + (i+1) + '</span>'
       + c.name + '</td>'
@@ -291,6 +292,142 @@ function txRenderEpisodes() {
       + '<td style="padding:11px 12px">' + txScoreBar(e.match) + '</td>'
       + '</tr>';
   }).join('');
+}
+
+// ── Moment modal data ─────────────────────────────────────────────────────
+var TX_MOMENT_DATA = {
+  emotion: [
+    { taxonomy:'Emotion > High Arousal',           category:'Excitement',      score:94 },
+    { taxonomy:'Emotion > Positive',               category:'Inspiration',     score:88 },
+    { taxonomy:'Emotion > High Arousal',           category:'Thrill',          score:82 },
+    { taxonomy:'Emotion > Motivational',           category:'Determination',   score:77 },
+    { taxonomy:'Emotion > Positive',               category:'Pride',           score:71 },
+    { taxonomy:'Emotion > Competitive',            category:'Challenge',       score:65 },
+  ],
+  location: [
+    { taxonomy:'Location > Urban > Exterior',      category:'City Streets',    score:91 },
+    { taxonomy:'Location > Sports > Outdoor',      category:'Running Track',   score:85 },
+    { taxonomy:'Location > Natural > Terrain',     category:'Mountain Path',   score:78 },
+    { taxonomy:'Location > Urban > Interior',      category:'Gym / Fitness',   score:72 },
+    { taxonomy:'Location > Sports > Stadium',      category:'Arena',           score:64 },
+  ],
+  objects: [
+    { taxonomy:'Objects > Footwear > Sports',      category:'Running Shoes',   score:96 },
+    { taxonomy:'Objects > Apparel > Athletic',     category:'Sportswear',      score:90 },
+    { taxonomy:'Objects > Electronics > Wearable', category:'Smartwatch',      score:83 },
+    { taxonomy:'Objects > Equipment > Timing',     category:'Stopwatch',       score:74 },
+    { taxonomy:'Objects > Terrain > Surface',      category:'Asphalt Road',    score:67 },
+  ],
+  sentiment: [
+    { taxonomy:'Sentiment > Positive > Energetic',    category:'High Energy',  score:93 },
+    { taxonomy:'Sentiment > Positive > Aspirational', category:'Aspirational', score:87 },
+    { taxonomy:'Sentiment > Competitive > Drive',     category:'Competitive',  score:81 },
+    { taxonomy:'Sentiment > Positive > Empowering',   category:'Empowerment',  score:75 },
+    { taxonomy:'Sentiment > Neutral > Informative',   category:'Informative',  score:58 },
+  ],
+  iab: [
+    { taxonomy:'IAB17 > Sports',                   category:'Athletics',          score:95 },
+    { taxonomy:'IAB17 > Sports > Running',         category:'Running & Jogging',  score:92 },
+    { taxonomy:'IAB9 > Hobbies & Interests > Fitness', category:'Fitness & Workout', score:86 },
+    { taxonomy:'IAB17 > Sports > Extreme',         category:'Action Sports',      score:79 },
+    { taxonomy:'IAB11 > Urban Lifestyle',          category:'Street Culture',     score:71 },
+    { taxonomy:'IAB7 > Health > Exercise',         category:'Exercise',           score:66 },
+  ],
+  brandsafety: [
+    { taxonomy:'Brand Safety > Safe',              category:'Family Friendly',    score:100 },
+    { taxonomy:'Brand Safety > Safe > Sports',     category:'Sports Content',     score:100 },
+    { taxonomy:'Brand Safety > Safe > Positive',   category:'Positive Messaging', score:98  },
+    { taxonomy:'Brand Safety > Safe > Language',   category:'Clean Language',     score:97  },
+    { taxonomy:'Brand Safety > Safe > Violence',   category:'Non-Violent',        score:95  },
+  ],
+};
+
+var txModalActiveTab  = 'emotion';
+var TX_MODAL_TABS = [
+  { id:'emotion',     label:'Emotion'      },
+  { id:'location',    label:'Location'     },
+  { id:'objects',     label:'Objects'      },
+  { id:'sentiment',   label:'Sentiment'    },
+  { id:'iab',         label:'IAB'          },
+  { id:'brandsafety', label:'Brand Safety' },
+];
+
+// ── Moment modal ──────────────────────────────────────────────────────────
+function txOpenMomentModal(name, score, assets) {
+  if (document.getElementById('tx-moment-modal')) return;
+  txModalActiveTab = 'emotion';
+
+  var tabsHtml = TX_MODAL_TABS.map(function(t) {
+    return '<div class="tx-mtab' + (t.id === 'emotion' ? ' tx-mtab--act' : '') + '" id="tx-mtab-' + t.id + '" onclick="txModalTab(\'' + t.id + '\')">' + t.label + '</div>';
+  }).join('');
+
+  var modal = document.createElement('div');
+  modal.id = 'tx-moment-modal';
+  modal.className = 'tx-modal-overlay';
+  modal.innerHTML =
+    '<div class="tx-modal" onclick="event.stopPropagation()">'
+    + '<div class="tx-modal-header">'
+    +   '<div>'
+    +     '<div class="tx-modal-title">' + name + '</div>'
+    +     '<div class="tx-modal-meta">'
+    +       '<span class="tx-modal-badge" style="color:' + txScoreColor(score) + ';background:' + txScoreColor(score) + '1a">Score ' + score + '</span>'
+    +       '<span class="tx-modal-dot"></span>'
+    +       '<span style="font-size:12px;color:var(--muted)">' + assets.toLocaleString() + ' assets</span>'
+    +     '</div>'
+    +   '</div>'
+    +   '<button class="tx-modal-close" onclick="txCloseMomentModal()">'
+    +     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+    +   '</button>'
+    + '</div>'
+    + '<div class="tx-mtabs-nav">' + tabsHtml + '</div>'
+    + '<div class="tx-modal-body" id="tx-modal-body"></div>'
+    + '</div>';
+
+  modal.addEventListener('click', txCloseMomentModal);
+  document.body.appendChild(modal);
+  setTimeout(function() {
+    modal.classList.add('tx-modal-overlay--in');
+    txModalTab('emotion');
+  }, 10);
+}
+
+function txCloseMomentModal() {
+  var modal = document.getElementById('tx-moment-modal');
+  if (!modal) return;
+  modal.classList.remove('tx-modal-overlay--in');
+  setTimeout(function() { modal.remove(); }, 200);
+}
+
+function txModalTab(tab) {
+  txModalActiveTab = tab;
+  TX_MODAL_TABS.forEach(function(t) {
+    var el = document.getElementById('tx-mtab-' + t.id);
+    if (el) el.className = 'tx-mtab' + (t.id === tab ? ' tx-mtab--act' : '');
+  });
+
+  var rows = TX_MOMENT_DATA[tab] || [];
+  var sorted = rows.slice().sort(function(a,b){ return b.score - a.score; });
+
+  var body = document.getElementById('tx-modal-body');
+  if (!body) return;
+  body.innerHTML =
+    '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr>'
+    + '<th class="tx-th" style="width:32px">#</th>'
+    + '<th class="tx-th">Taxonomy</th>'
+    + '<th class="tx-th">Category</th>'
+    + '<th class="tx-th" style="text-align:right">Score</th>'
+    + '</tr></thead>'
+    + '<tbody>'
+    + sorted.map(function(r, i) {
+        return '<tr style="border-bottom:1px solid var(--border)">'
+          + '<td style="padding:10px 12px;font-size:10px;font-weight:600;color:var(--faint)">#' + (i+1) + '</td>'
+          + '<td style="padding:10px 12px;font-size:11px;color:var(--faint)">' + r.taxonomy + '</td>'
+          + '<td style="padding:10px 12px;font-size:13px;color:var(--text);font-weight:500">' + r.category + '</td>'
+          + '<td style="padding:10px 12px">' + txScoreBar(r.score) + '</td>'
+          + '</tr>';
+      }).join('')
+    + '</tbody></table>';
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────
@@ -398,6 +535,82 @@ function txInjectStyles() {
       background: var(--accent);
       border-radius: 4px;
       transition: width .1s linear;
+    }
+
+    /* Clickable category rows */
+    .tx-cat-row:hover { background: var(--bg); }
+
+    /* Moment modal */
+    .tx-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(13,30,54,.45);
+      z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .2s;
+    }
+    .tx-modal-overlay--in { opacity: 1; }
+    .tx-modal {
+      background: var(--surface);
+      border-radius: 14px;
+      width: 640px;
+      max-width: calc(100vw - 32px);
+      max-height: calc(100vh - 64px);
+      display: flex; flex-direction: column;
+      box-shadow: 0 12px 48px rgba(0,0,0,.18);
+      transform: translateY(8px); transition: transform .2s;
+      position: relative; z-index: 10000;
+    }
+    .tx-modal-overlay--in .tx-modal { transform: translateY(0); }
+    .tx-modal-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      flex-shrink: 0;
+    }
+    .tx-modal-title { font-size: 16px; font-weight: 500; letter-spacing: -.3px; color: var(--text); }
+    .tx-modal-meta  { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+    .tx-modal-badge {
+      font-size: 11px; font-weight: 600; padding: 2px 8px;
+      border-radius: 20px; letter-spacing: .2px;
+    }
+    .tx-modal-dot {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: var(--faint); flex-shrink: 0;
+    }
+    .tx-modal-close {
+      width: 28px; height: 28px; border-radius: 6px; border: none;
+      background: none; cursor: pointer; color: var(--faint);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .13s, color .13s; flex-shrink: 0;
+    }
+    .tx-modal-close:hover { background: var(--bg); color: var(--text); }
+    .tx-mtabs-nav {
+      display: flex; gap: 0;
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+    .tx-mtabs-nav::-webkit-scrollbar { display: none; }
+    .tx-mtab {
+      padding: 10px 14px; font-size: 12px; font-weight: 500;
+      color: var(--muted); cursor: pointer; white-space: nowrap;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color .13s, border-color .13s;
+      user-select: none;
+    }
+    .tx-mtab:hover { color: var(--text); }
+    .tx-mtab--act  { color: var(--accent); border-bottom-color: var(--accent); }
+    .tx-modal-body {
+      overflow-y: auto; flex: 1;
+    }
+    .tx-th {
+      text-align: left; padding: 9px 12px;
+      font-size: 10px; font-weight: 500; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--faint);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky; top: 0; z-index: 1;
     }
   `;
   document.head.appendChild(s);
