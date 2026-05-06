@@ -84,7 +84,7 @@ function renderTaxonomyExplorer() {
     <div id="tx-results-content" style="display:none">
       <div class="tabnav" style="margin-bottom:16px">
         <button class="tabitem act" id="tx-rtab-cat"    onclick="txResTab('cat')">Moments</button>
-        <button class="tabitem"     id="tx-rtab-custom" onclick="txResTab('custom')">Custom Moments</button>
+        <button class="tabitem"     id="tx-rtab-custom" onclick="txResTab('custom')">Taxonomies</button>
         <button class="tabitem"     id="tx-rtab-eps"    onclick="txResTab('eps')">Episodes &amp; Shows</button>
       </div>
 
@@ -102,14 +102,14 @@ function renderTaxonomyExplorer() {
         </table>
         <!-- Saved custom moments appear here -->
         <div id="tx-custom-saved-section" style="display:none;margin-top:20px">
-          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);padding:8px 12px 6px;border-top:1px solid var(--border)">Custom Moments</div>
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);padding:8px 12px 6px;border-top:1px solid var(--border)">Taxonomies</div>
           <table style="width:100%;border-collapse:collapse">
             <tbody id="tx-custom-saved-body"></tbody>
           </table>
         </div>
       </div>
 
-      <!-- Tab: Custom Moments -->
+      <!-- Tab: Taxonomies -->
       <div id="tx-tab-custom" style="display:none">
         <div style="display:grid;grid-template-columns:1fr 256px;gap:16px;align-items:start">
 
@@ -344,7 +344,7 @@ function txRenderEpisodes() {
   }).join('');
 }
 
-// ── Custom Moments data ───────────────────────────────────────────────────
+// ── Taxonomies data ───────────────────────────────────────────────────
 var TX_CUSTOM_DATA = {
   emotion: [
     { taxonomy:'Emotion > High Arousal > Excitement',      score:94 },
@@ -438,7 +438,7 @@ var txSelCounter         = 0;
 var txSavedCustomMoments = [];
 var TX_ITEMS_PER_PAGE    = 10;
 
-// ── Custom Moments functions ──────────────────────────────────────────────
+// ── Taxonomies functions ──────────────────────────────────────────────
 
 function txCustomTab(tab) {
   txCustomActiveTab   = tab;
@@ -878,7 +878,7 @@ function txInjectStyles() {
     /* Clickable category rows */
     .tx-cat-row:hover { background: var(--bg); }
 
-    /* Custom Moments – taxonomy tab nav */
+    /* Taxonomies – taxonomy tab nav */
     .tx-ctabs-nav {
       display: flex; overflow-x: auto; border-bottom: 1px solid var(--border); margin-bottom: 0;
     }
