@@ -42,7 +42,7 @@ function renderSdtContentForm() {
 
   <!-- ── Right: content ── -->
   <div id="sdt-content-area" style="min-width:0">
-    <div id="sdt-panel-manual" class="tx-panel">
+    <div id="sdt-panel-manual">
 
       <!-- View toggle (sticky) -->
       <div class="cs-toggle-sticky">
@@ -85,7 +85,7 @@ function renderSdtContentForm() {
       </div>
 
     </div>
-    <div id="sdt-panel-selfserve" class="tx-panel" style="display:none">
+    <div id="sdt-panel-selfserve" style="display:none">
 
       <!-- View toggle (sticky) -->
       <div class="cs-toggle-sticky">
@@ -127,11 +127,11 @@ function renderSdtContentForm() {
       </div>
 
     </div>
-    <div id="sdt-panel-realtime"  class="tx-panel" style="display:none">
+    <div id="sdt-panel-realtime" style="display:none">
       <div class="sdt-panel-title">Real-time Analysis process</div>
       <div class="sdt-panel-sub">Prototype coming soon.</div>
     </div>
-    <div id="sdt-panel-taxonomy" class="tx-panel" style="display:none">
+    <div id="sdt-panel-taxonomy" style="display:none">
       <div class="sdt-panel-title">Taxonomy Explorer integration</div>
       <div class="sdt-panel-sub">Prototype coming soon.</div>
     </div>
