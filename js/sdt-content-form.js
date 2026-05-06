@@ -220,36 +220,64 @@ function renderSdtContentForm() {
 
     </div>
     <div id="sdt-panel-taxonomy2" style="display:none">
-      <div class="cs-card" style="padding:0;display:flex;min-height:520px;overflow:hidden">
+      <div class="cs-card" style="padding:0;display:flex;flex-direction:column;overflow:hidden">
 
-        <!-- Sidebar -->
-        <div style="width:190px;flex-shrink:0;border-right:1px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:2px">
-          <div class="tx2-nav-item tx2-nav-item--act" id="tx2-nav-metadata" onclick="csTx2NavTab('metadata')">Metadata Analysis</div>
-          <div class="tx2-nav-item" id="tx2-nav-taxonomy" onclick="csTx2NavTab('taxonomy')">Taxonomy Explorer</div>
-        </div>
-
-        <!-- Content area -->
-        <div id="tx2-content-area" style="flex:1;min-width:0;padding:20px">
-          <div class="cs-title" style="margin-bottom:16px">Content Selection</div>
-          <div class="cs-toolbar">
-            <div class="cs-filter-wrap">
-              <div class="cs-filter-label">Category</div>
-              <select class="cs-filter-select" onchange="csTx2Filter(this.value)">
-                <option value="all">All</option>
-                <option value="comedy">Comedy</option>
-                <option value="drama">Drama</option>
-                <option value="reality">Reality</option>
-                <option value="documentary">Documentary</option>
-              </select>
-            </div>
-            <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-              Request New Content
+        <!-- Dashboard topbar -->
+        <div class="tx2-topbar">
+          <div class="tx2-topbar-brand">
+            <div class="tx2-topbar-dot"></div>
+            <span class="tx2-topbar-title">KervSDT</span>
+          </div>
+          <div class="tx2-topbar-actions">
+            <button class="tx2-icon-btn" title="Notifications">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M8.5 16.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span class="tx2-notif-dot"></span>
             </button>
           </div>
-          <div class="cs-grid" id="cs-grid5"></div>
         </div>
 
+        <!-- Body: sidebar + content -->
+        <div style="display:flex;flex:1;min-height:480px">
+
+          <!-- Sidebar -->
+          <div class="tx2-sidebar">
+            <div class="tx2-sidebar-section">Navigation</div>
+            <div class="tx2-nav-item tx2-nav-item--act" id="tx2-nav-metadata" onclick="csTx2NavTab('metadata')">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+              Metadata Analysis
+            </div>
+            <div class="tx2-nav-item" id="tx2-nav-taxonomy" onclick="csTx2NavTab('taxonomy')">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+              Taxonomy Explorer
+            </div>
+          </div>
+
+          <!-- Content area -->
+          <div id="tx2-content-area" style="flex:1;min-width:0;padding:20px;border-left:1px solid var(--border)">
+            <div class="cs-title" style="margin-bottom:16px">Content Selection</div>
+            <div class="cs-toolbar">
+              <div class="cs-filter-wrap">
+                <div class="cs-filter-label">Category</div>
+                <select class="cs-filter-select" onchange="csTx2Filter(this.value)">
+                  <option value="all">All</option>
+                  <option value="comedy">Comedy</option>
+                  <option value="drama">Drama</option>
+                  <option value="reality">Reality</option>
+                  <option value="documentary">Documentary</option>
+                </select>
+              </div>
+              <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                Request New Content
+              </button>
+            </div>
+            <div class="cs-grid" id="cs-grid5"></div>
+          </div>
+
+        </div>
       </div>
     </div>
   </div>
@@ -1375,22 +1403,48 @@ function csBackToGrid() {
     var panel = document.getElementById('sdt-panel-taxonomy2');
     if (!panel) return;
     panel.innerHTML =
-      '<div class="cs-card" style="padding:0;display:flex;min-height:520px;overflow:hidden">'
-      + '<div style="width:190px;flex-shrink:0;border-right:1px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:2px">'
-      +   '<div class="tx2-nav-item tx2-nav-item--act" id="tx2-nav-metadata" onclick="csTx2NavTab(\'metadata\')">Metadata Analysis</div>'
-      +   '<div class="tx2-nav-item" id="tx2-nav-taxonomy" onclick="csTx2NavTab(\'taxonomy\')">Taxonomy Explorer</div>'
+      '<div class="cs-card" style="padding:0;display:flex;flex-direction:column;overflow:hidden">'
+      // topbar
+      + '<div class="tx2-topbar">'
+      +   '<div class="tx2-topbar-brand">'
+      +     '<div class="tx2-topbar-dot"></div>'
+      +     '<span class="tx2-topbar-title">KervSDT</span>'
+      +   '</div>'
+      +   '<div class="tx2-topbar-actions">'
+      +     '<button class="tx2-icon-btn" title="Notifications">'
+      +       '<svg width="16" height="16" viewBox="0 0 20 20" fill="none">'
+      +         '<path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>'
+      +         '<path d="M8.5 16.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
+      +       '</svg>'
+      +       '<span class="tx2-notif-dot"></span>'
+      +     '</button>'
+      +   '</div>'
       + '</div>'
-      + '<div id="tx2-content-area" style="flex:1;min-width:0;padding:20px">'
-      +   '<div class="cs-title" style="margin-bottom:16px">Content Selection</div>'
-      +   '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
-      +   '<select class="cs-filter-select" onchange="csTx2Filter(this.value)">'
-      +   '<option value="all">All</option><option value="comedy">Comedy</option>'
-      +   '<option value="drama">Drama</option><option value="reality">Reality</option>'
-      +   '<option value="documentary">Documentary</option></select></div>'
-      +   '<button class="cs-request-btn" onclick="csOpenModalTaxonomy()">'
-      +   '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
-      +   ' Request New Content</button></div>'
-      +   '<div class="cs-grid" id="cs-grid5"></div>'
+      // body: sidebar + content
+      + '<div style="display:flex;flex:1;min-height:480px">'
+      +   '<div class="tx2-sidebar">'
+      +     '<div class="tx2-sidebar-section">Navigation</div>'
+      +     '<div class="tx2-nav-item tx2-nav-item--act" id="tx2-nav-metadata" onclick="csTx2NavTab(\'metadata\')">'
+      +       '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>'
+      +       'Metadata Analysis'
+      +     '</div>'
+      +     '<div class="tx2-nav-item" id="tx2-nav-taxonomy" onclick="csTx2NavTab(\'taxonomy\')">'
+      +       '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>'
+      +       'Taxonomy Explorer'
+      +     '</div>'
+      +   '</div>'
+      +   '<div id="tx2-content-area" style="flex:1;min-width:0;padding:20px;border-left:1px solid var(--border)">'
+      +     '<div class="cs-title" style="margin-bottom:16px">Content Selection</div>'
+      +     '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
+      +     '<select class="cs-filter-select" onchange="csTx2Filter(this.value)">'
+      +     '<option value="all">All</option><option value="comedy">Comedy</option>'
+      +     '<option value="drama">Drama</option><option value="reality">Reality</option>'
+      +     '<option value="documentary">Documentary</option></select></div>'
+      +     '<button class="cs-request-btn" onclick="csOpenModalTaxonomy()">'
+      +     '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+      +     ' Request New Content</button></div>'
+      +     '<div class="cs-grid" id="cs-grid5"></div>'
+      +   '</div>'
       + '</div>'
       + '</div>';
     csTx2Render();
@@ -2238,8 +2292,89 @@ function sdtInjectStyles() {
       color: var(--accent);
     }
 
+    /* Taxonomy v2 dashboard: topbar */
+    .tx2-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--surface);
+    }
+    .tx2-topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tx2-topbar-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+    .tx2-topbar-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -.3px;
+      color: var(--text);
+    }
+    .tx2-topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tx2-icon-btn {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .13s, color .13s, border-color .13s;
+    }
+    .tx2-icon-btn:hover { background: var(--surface); color: var(--text); border-color: var(--border-md); }
+    .tx2-notif-dot {
+      position: absolute;
+      top: 6px;
+      right: 7px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 1.5px solid var(--bg);
+    }
+
+    /* Taxonomy v2 dashboard: sidebar */
+    .tx2-sidebar {
+      width: 200px;
+      flex-shrink: 0;
+      background: var(--surface);
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .tx2-sidebar-section {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--faint);
+      padding: 4px 10px 8px;
+    }
+
     /* Taxonomy v2 sidebar nav items */
     .tx2-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       padding: 9px 12px;
       border-radius: 8px;
       font-size: 13px;
