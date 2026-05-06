@@ -1994,37 +1994,102 @@ function csTx2TaxShowUpload() {
     return type === 'text' ? textArea : uploadZone;
   }
 
-  ca.innerHTML =
-      '<div class="tx2-upload-wrap">'
+  var TX2_LIBRARY = [
+    { type:'video', name:'below-deck-s12e03.mp4',        date:'2 May 2025',   moments:14, taxonomies:38 },
+    { type:'video', name:'parks-and-rec-s04e11.mp4',     date:'29 Apr 2025',  moments:9,  taxonomies:22 },
+    { type:'doc',   name:'Q1-content-brief.pdf',         date:'25 Apr 2025',  moments:6,  taxonomies:17 },
+    { type:'text',  name:'Campaign brief — Spring 2025', date:'18 Apr 2025',  moments:4,  taxonomies:11 },
+    { type:'video', name:'yellowstone-s05e08.mp4',       date:'11 Apr 2025',  moments:21, taxonomies:54 },
+    { type:'doc',   name:'Brand-safety-guidelines.docx', date:'3 Apr 2025',   moments:3,  taxonomies:9  },
+  ];
 
-    + '<div style="margin-bottom:28px">'
-    +   '<div class="cs-title" style="margin-bottom:4px">Analyse Content</div>'
-    +   '<div style="font-size:13px;color:var(--muted)">Choose an input type to get started</div>'
-    + '</div>'
+  function typeIcon(t) {
+    return t === 'video'
+      ? '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
+      : t === 'doc'
+      ? '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+      : '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  }
+
+  var libraryRows = TX2_LIBRARY.map(function(item, i) {
+    return '<div class="tx2-lib-row" onclick="csTx2LibLoad(' + i + ')">'
+      + '<div class="tx2-lib-icon">' + typeIcon(item.type) + '</div>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<div style="font-size:12px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + item.name + '</div>'
+      +   '<div style="font-size:11px;color:var(--faint);margin-top:2px">' + item.date + ' &nbsp;·&nbsp; ' + item.moments + ' moments &nbsp;·&nbsp; ' + item.taxonomies + ' taxonomies</div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
+      +   '<span style="font-size:10px;font-weight:600;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:2px 8px">Completed</span>'
+      +   '<button class="tx2-lib-load-btn">Load</button>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+
+  ca.innerHTML =
+    '<div style="display:flex;gap:0;min-height:400px">'
+
+    // ── Left: New Analysis ──
+    + '<div style="width:300px;flex-shrink:0;padding-right:24px;border-right:1px solid var(--border)">'
+    +   '<div style="margin-bottom:20px">'
+    +     '<div style="font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.2px;margin-bottom:3px">New Analysis</div>'
+    +     '<div style="font-size:12px;color:var(--muted)">Choose an input type</div>'
+    +   '</div>'
 
     // Option selector
-    + '<div class="tx2-opt-row">'
-    +   '<div class="tx2-opt tx2-opt--act" id="tx2-opt-video" onclick="csTx2TaxSelectInput(\'video\')">'
-    +     '<svg width="15" height="15" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
-    +     '<span>Video</span>'
+    +   '<div class="tx2-opt-row" style="flex-direction:column;gap:7px;margin-bottom:16px">'
+    +     '<div class="tx2-opt tx2-opt--act" id="tx2-opt-video" onclick="csTx2TaxSelectInput(\'video\')">'
+    +       '<svg width="15" height="15" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
+    +       '<span>Video</span>'
+    +     '</div>'
+    +     '<div class="tx2-opt" id="tx2-opt-doc" onclick="csTx2TaxSelectInput(\'doc\')">'
+    +       '<svg width="15" height="15" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +       '<span>Document / PDF</span>'
+    +     '</div>'
+    +     '<div class="tx2-opt" id="tx2-opt-text" onclick="csTx2TaxSelectInput(\'text\')">'
+    +       '<svg width="15" height="15" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="26" cy="26" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M29 29l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +       '<span>Free Text</span>'
+    +     '</div>'
     +   '</div>'
-    +   '<div class="tx2-opt" id="tx2-opt-doc" onclick="csTx2TaxSelectInput(\'doc\')">'
-    +     '<svg width="15" height="15" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
-    +     '<span>Document / PDF</span>'
+
+    // Input area
+    +   '<div id="tx2-input-area" style="margin-bottom:16px">' + inputArea('video') + '</div>'
+
+    +   '<button class="cs-btn-primary" style="width:100%;height:38px;font-size:13px" onclick="csTx2TaxAnalyze()">Start Analysis</button>'
+    + '</div>'
+
+    // ── Right: Library ──
+    + '<div style="flex:1;min-width:0;padding-left:24px;display:flex;flex-direction:column">'
+    +   '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">'
+    +     '<div>'
+    +       '<div style="font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.2px;margin-bottom:3px">Previous Analyses</div>'
+    +       '<div style="font-size:12px;color:var(--muted)">' + TX2_LIBRARY.length + ' completed</div>'
+    +     '</div>'
+    +     '<div style="display:flex;gap:6px">'
+    +       '<input type="text" placeholder="Search…" style="height:28px;border:1px solid var(--border-md);border-radius:6px;padding:0 10px;font-size:12px;font-family:inherit;color:var(--text);background:var(--surface);outline:none;width:140px">'
+    +     '</div>'
     +   '</div>'
-    +   '<div class="tx2-opt" id="tx2-opt-text" onclick="csTx2TaxSelectInput(\'text\')">'
-    +     '<svg width="15" height="15" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="26" cy="26" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M29 29l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
-    +     '<span>Free Text</span>'
+    +   '<div style="display:flex;flex-direction:column;gap:0;overflow-y:auto;flex:1">'
+    +     libraryRows
     +   '</div>'
     + '</div>'
 
-    // Input area (swapped by csTx2TaxSelectInput)
-    + '<div id="tx2-input-area" style="margin-bottom:20px">' + inputArea('video') + '</div>'
-
-    // Analyse button
-    + '<button class="cs-btn-primary" style="width:100%;height:42px;font-size:14px" onclick="csTx2TaxAnalyze()">Start Analysis</button>'
-
     + '</div>';
+}
+
+function csTx2LibLoad(idx) {
+  var TX2_LIBRARY = [
+    { type:'video', name:'below-deck-s12e03.mp4' },
+    { type:'video', name:'parks-and-rec-s04e11.mp4' },
+    { type:'doc',   name:'Q1-content-brief.pdf' },
+    { type:'text',  name:'Campaign brief — Spring 2025' },
+    { type:'video', name:'yellowstone-s05e08.mp4' },
+    { type:'doc',   name:'Brand-safety-guidelines.docx' },
+  ];
+  var item = TX2_LIBRARY[idx];
+  if (!item) return;
+  csTx2TaxInputType = item.type;
+  csTx2TaxFileName  = item.name;
+  csTx2TaxShowResults();
 }
 
 function csTx2TaxSelectInput(type) {
@@ -2519,6 +2584,46 @@ function sdtInjectStyles() {
       transition: border-color .15s, background .15s;
     }
     .tx2-upload-zone:hover { border-color: var(--accent); background: rgba(237,0,94,.025); }
+
+    /* ── Taxonomy Explorer: Library ── */
+    .tx2-lib-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .13s;
+      border-bottom: 1px solid var(--border);
+    }
+    .tx2-lib-row:last-child { border-bottom: none; }
+    .tx2-lib-row:hover { background: var(--bg); }
+    .tx2-lib-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .tx2-lib-load-btn {
+      height: 26px;
+      padding: 0 12px;
+      border: 1px solid var(--border-md);
+      border-radius: 6px;
+      background: var(--surface);
+      font-size: 11px;
+      font-weight: 500;
+      font-family: inherit;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color .13s, color .13s, background .13s;
+    }
+    .tx2-lib-load-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(237,0,94,.04); }
 
     /* ── Taxonomy Explorer: Progress ── */
     .tx2-progress-wrap {
