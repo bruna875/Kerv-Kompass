@@ -225,7 +225,7 @@ function renderSdtContentForm() {
         <!-- Dashboard topbar -->
         <div class="tx2-topbar">
           <div class="tx2-topbar-brand">
-            <div class="tx2-topbar-dot"></div>
+            <div class="tx2-logo-mark">K</div>
             <span class="tx2-topbar-title">KervSDT</span>
           </div>
           <div class="tx2-topbar-actions">
@@ -1400,53 +1400,20 @@ function csBackToGrid() {
     csTxRender();
     csTxRenderProcess();
   } else if (panelKey === 'taxonomy2') {
-    var panel = document.getElementById('sdt-panel-taxonomy2');
-    if (!panel) return;
-    panel.innerHTML =
-      '<div class="cs-card" style="padding:0;display:flex;flex-direction:column;overflow:hidden">'
-      // topbar
-      + '<div class="tx2-topbar">'
-      +   '<div class="tx2-topbar-brand">'
-      +     '<div class="tx2-topbar-dot"></div>'
-      +     '<span class="tx2-topbar-title">KervSDT</span>'
-      +   '</div>'
-      +   '<div class="tx2-topbar-actions">'
-      +     '<button class="tx2-icon-btn" title="Notifications">'
-      +       '<svg width="16" height="16" viewBox="0 0 20 20" fill="none">'
-      +         '<path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>'
-      +         '<path d="M8.5 16.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
-      +       '</svg>'
-      +       '<span class="tx2-notif-dot"></span>'
-      +     '</button>'
-      +   '</div>'
-      + '</div>'
-      // body: sidebar + content
-      + '<div style="display:flex;flex:1;min-height:480px">'
-      +   '<div class="tx2-sidebar">'
-      +     '<div class="tx2-sidebar-section">Navigation</div>'
-      +     '<div class="tx2-nav-item tx2-nav-item--act" id="tx2-nav-metadata" onclick="csTx2NavTab(\'metadata\')">'
-      +       '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>'
-      +       'Metadata Analysis'
-      +     '</div>'
-      +     '<div class="tx2-nav-item" id="tx2-nav-taxonomy" onclick="csTx2NavTab(\'taxonomy\')">'
-      +       '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>'
-      +       'Taxonomy Explorer'
-      +     '</div>'
-      +   '</div>'
-      +   '<div id="tx2-content-area" style="flex:1;min-width:0;padding:20px;border-left:1px solid var(--border)">'
-      +     '<div class="cs-title" style="margin-bottom:16px">Content Selection</div>'
-      +     '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
-      +     '<select class="cs-filter-select" onchange="csTx2Filter(this.value)">'
-      +     '<option value="all">All</option><option value="comedy">Comedy</option>'
-      +     '<option value="drama">Drama</option><option value="reality">Reality</option>'
-      +     '<option value="documentary">Documentary</option></select></div>'
-      +     '<button class="cs-request-btn" onclick="csOpenModalTaxonomy()">'
-      +     '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
-      +     ' Request New Content</button></div>'
-      +     '<div class="cs-grid" id="cs-grid5"></div>'
-      +   '</div>'
-      + '</div>'
-      + '</div>';
+    // Dashboard shell (topbar + sidebar) stays — only restore the content area
+    var ca = document.getElementById('tx2-content-area');
+    if (!ca) return;
+    ca.innerHTML =
+        '<div class="cs-title" style="margin-bottom:16px">Content Selection</div>'
+      + '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
+      + '<select class="cs-filter-select" onchange="csTx2Filter(this.value)">'
+      + '<option value="all">All</option><option value="comedy">Comedy</option>'
+      + '<option value="drama">Drama</option><option value="reality">Reality</option>'
+      + '<option value="documentary">Documentary</option></select></div>'
+      + '<button class="cs-request-btn" onclick="csOpenModalTaxonomy()">'
+      + '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+      + ' Request New Content</button></div>'
+      + '<div class="cs-grid" id="cs-grid5"></div>';
     csTx2Render();
   } else {
     csBackToGrid3();
@@ -1506,6 +1473,10 @@ var CS_DETAIL_JSON = `{
 }`;
 
 function csShowDetailView(panelKey, item) {
+  // For taxonomy2 the dashboard shell (topbar + sidebar) stays put;
+  // we only swap out the content area.
+  var isTax2 = panelKey === 'taxonomy2';
+
   var panelId = panelKey === 'manual'    ? 'sdt-panel-manual'
               : panelKey === 'selfserve'  ? 'sdt-panel-selfserve'
               : panelKey === 'taxonomy'   ? 'sdt-panel-taxonomy'
@@ -1513,6 +1484,12 @@ function csShowDetailView(panelKey, item) {
               : 'sdt-panel-realtime';
   var panel = document.getElementById(panelId);
   if (!panel) return;
+
+  // For taxonomy2 target only the inner content area
+  var renderTarget = isTax2
+    ? (document.getElementById('tx2-content-area') || panel)
+    : panel;
+
   csDetailViewPanel = panelKey;
   csDetailPanels3 = { tax: true, prod: true, json: true };
 
@@ -1587,18 +1564,20 @@ function csShowDetailView(panelKey, item) {
 
     : '';
 
-  panel.innerHTML =
+  // Build the shared detail view card HTML
+  var detailCard =
+    // ── Mockup / Process toggle — hidden for taxonomy2 (dashboard mode) ──
+    (isTax2 ? '' :
+      '<div class="cs-toggle-sticky">'
+      + '<div class="cs-view-toggle">'
+      +   '<div class="cs-view-btn cs-view-btn--act" id="cs-dv-vbtn-mockup" onclick="csDvToggleView(\'mockup\')">Mockup</div>'
+      +   '<div class="cs-view-btn" id="cs-dv-vbtn-process" onclick="csDvToggleView(\'process\')">Process</div>'
+      + '</div>'
+      + '</div>'
+    )
 
-    // ── Mockup / Process toggle (same position as other panels) ──
-    '<div class="cs-toggle-sticky">'
-    + '<div class="cs-view-toggle">'
-    +   '<div class="cs-view-btn cs-view-btn--act" id="cs-dv-vbtn-mockup" onclick="csDvToggleView(\'mockup\')">Mockup</div>'
-    +   '<div class="cs-view-btn" id="cs-dv-vbtn-process" onclick="csDvToggleView(\'process\')">Process</div>'
-    + '</div>'
-    + '</div>'
-
-    // ── Mockup view ──
-    + '<div id="cs-dv-view-mockup">'
+    // ── Mockup view wrapper (tax2: no wrapper; others: wrapped for toggle) ──
+    + (isTax2 ? '' : '<div id="cs-dv-view-mockup">')
     + '<div class="cs-card" style="display:flex;flex-direction:column;gap:14px">'
 
     // Top bar
@@ -1681,15 +1660,20 @@ function csShowDetailView(panelKey, item) {
     + txExtraContent
 
     + '</div>' // close cs-card
-    + '</div>' // close cs-dv-view-mockup
+    + (isTax2 ? '' : '</div>') // close cs-dv-view-mockup (non-tax2 only)
 
-    // ── Process view ──
-    + '<div id="cs-dv-view-process" style="display:none">'
-    +   '<div id="cs-process-container3"></div>'
-    + '</div>';
+    // ── Process view — non-tax2 only ──
+    + (isTax2 ? '' :
+        '<div id="cs-dv-view-process" style="display:none">'
+        + '<div id="cs-process-container3"></div>'
+        + '</div>'
+      );
 
-  csRenderProcess3();
-  // Ensure taxonomy-explorer styles are available when viewing tab 4 detail
+  // Inject into the correct target
+  renderTarget.innerHTML = detailCard;
+
+  if (!isTax2) csRenderProcess3();
+  // Ensure taxonomy-explorer styles are available when viewing tab 4/5 detail
   if ((panelKey === 'taxonomy' || panelKey === 'taxonomy2') && typeof txInjectStyles === 'function') txInjectStyles();
 }
 
@@ -2307,12 +2291,20 @@ function sdtInjectStyles() {
       align-items: center;
       gap: 8px;
     }
-    .tx2-topbar-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
+    .tx2-logo-mark {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
       background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -.5px;
+      line-height: 1;
     }
     .tx2-topbar-title {
       font-size: 14px;
