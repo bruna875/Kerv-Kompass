@@ -6,7 +6,9 @@ var PAGES = {
   roadmap:            renderRoadmap,
   teamcapacity:       renderTeamCapacity,
   'sdt-content-form': renderSdtContentForm,
-  'taxonomy-explorer': renderTaxonomyExplorer
+  'taxonomy-explorer': renderTaxonomyExplorer,
+  'taxonomy-v1':      renderTaxonomyV1,
+  'taxonomy-v2':      renderTaxonomyV2
 };
 
 // ── Nav ──

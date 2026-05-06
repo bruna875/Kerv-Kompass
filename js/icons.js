@@ -21,5 +21,12 @@ var NAV_CONFIG = [
       { id: 'sdt-content-form',  label: 'SDT - New Content Form', icon: ico.sdtform  },
       { id: 'taxonomy-explorer', label: 'Taxonomy Explorer',       icon: ico.taxonomy }
     ]
+  },
+  {
+    section: 'Live Prototypes',
+    items: [
+      { id: 'taxonomy-v1', label: 'Taxonomy Explorer – v1', icon: ico.taxonomy },
+      { id: 'taxonomy-v2', label: 'Taxonomy Explorer – v2', icon: ico.taxonomy }
+    ]
   }
 ];

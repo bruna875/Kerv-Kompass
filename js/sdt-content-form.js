@@ -284,6 +284,134 @@ function renderSdtContentForm() {
 </div>`;
 }
 
+// ── Live Prototype: Taxonomy Explorer v1 ─────────────────────────────────
+
+function renderTaxonomyV1() {
+  setTimeout(function() {
+    csActiveTxFilter = 'all'; csSelectedTxId = 1;
+    sdtInjectStyles();
+    csTxRender();
+    csTxRenderProcess();
+  }, 0);
+  return `
+<div class="ptitle">Taxonomy Explorer</div>
+<div class="psub" style="margin-bottom:20px">v1 — Content analysis &amp; taxonomy tagging</div>
+
+<div id="sdt-panel-taxonomy">
+  <!-- View toggle -->
+  <div class="cs-toggle-sticky">
+    <div class="cs-view-toggle">
+      <div class="cs-view-btn cs-view-btn--act" id="cs-vbtn4-mockup" onclick="csTxView('mockup')">Mockup</div>
+      <div class="cs-view-btn" id="cs-vbtn4-process" onclick="csTxView('process')">Process</div>
+    </div>
+  </div>
+  <!-- Mockup view -->
+  <div id="cs-view4-mockup">
+  <div class="cs-card">
+    <div class="cs-title">Content Selection</div>
+    <div class="cs-toolbar">
+      <div class="cs-filter-wrap">
+        <div class="cs-filter-label">Category</div>
+        <select class="cs-filter-select" onchange="csTxFilter(this.value)">
+          <option value="all">All</option>
+          <option value="comedy">Comedy</option>
+          <option value="drama">Drama</option>
+          <option value="reality">Reality</option>
+          <option value="documentary">Documentary</option>
+        </select>
+      </div>
+      <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        Request New Content
+      </button>
+    </div>
+    <div class="cs-grid" id="cs-grid4"></div>
+  </div>
+  </div>
+  <!-- Process view -->
+  <div id="cs-view4-process" style="display:none">
+    <div id="cs-process-container4"></div>
+  </div>
+</div>`;
+}
+
+// ── Live Prototype: Taxonomy Explorer v2 ─────────────────────────────────
+
+function renderTaxonomyV2() {
+  setTimeout(function() {
+    csActiveTx2Filter = 'all'; csSelectedTx2Id = 1;
+    csTx2TaxStep = 'upload'; csTx2TaxInputType = 'video'; csTx2TaxFileName = '';
+    sdtInjectStyles();
+    csTx2Render();
+    csTx2RenderProcess();
+  }, 0);
+  return `
+<div class="ptitle">Taxonomy Explorer</div>
+<div class="psub" style="margin-bottom:20px">v2 — KervSDT integrated dashboard</div>
+
+<div id="sdt-panel-taxonomy2">
+  <div class="cs-card" style="padding:0;display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- Dashboard topbar -->
+    <div class="tx2-topbar">
+      <div class="tx2-topbar-brand">
+        <div class="tx2-logo-mark">K</div>
+        <span class="tx2-topbar-title">KervSDT</span>
+      </div>
+      <div class="tx2-topbar-actions">
+        <button class="tx2-icon-btn" title="Notifications">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M8.5 16.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="tx2-notif-dot"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Body: sidebar + content -->
+    <div style="display:flex;flex:1;min-height:480px">
+
+      <!-- Sidebar -->
+      <div class="tx2-sidebar">
+        <div class="tx2-sidebar-section">Navigation</div>
+        <div class="tx2-nav-item tx2-nav-item--act" id="tx2-nav-metadata" onclick="csTx2NavTab('metadata')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+          Metadata Analysis
+        </div>
+        <div class="tx2-nav-item" id="tx2-nav-taxonomy" onclick="csTx2NavTab('taxonomy')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+          Taxonomy Explorer
+        </div>
+      </div>
+
+      <!-- Content area -->
+      <div id="tx2-content-area" style="flex:1;min-width:0;padding:20px;border-left:1px solid var(--border)">
+        <div class="cs-title" style="margin-bottom:16px">Content Selection</div>
+        <div class="cs-toolbar">
+          <div class="cs-filter-wrap">
+            <div class="cs-filter-label">Category</div>
+            <select class="cs-filter-select" onchange="csTx2Filter(this.value)">
+              <option value="all">All</option>
+              <option value="comedy">Comedy</option>
+              <option value="drama">Drama</option>
+              <option value="reality">Reality</option>
+              <option value="documentary">Documentary</option>
+            </select>
+          </div>
+          <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            Request New Content
+          </button>
+        </div>
+        <div class="cs-grid" id="cs-grid5"></div>
+      </div>
+
+    </div>
+  </div>
+</div>`;
+}
+
 // ── Content Selection data ────────────────────────────────────────────────
 var CS_SHOWS = [
   { id:1,  title:'Parks and Recreation',    category:'comedy',    grad:'linear-gradient(145deg,#D4820A,#A05E08)', initials:'PR' },
