@@ -2020,7 +2020,6 @@ function csTx2TaxShowUpload() {
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
       +   '<span style="font-size:10px;font-weight:600;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:2px 8px">Completed</span>'
-      +   '<button class="tx2-lib-load-btn">Load</button>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -2029,7 +2028,7 @@ function csTx2TaxShowUpload() {
     '<div style="display:flex;gap:0;min-height:400px">'
 
     // ── Left: New Analysis ──
-    + '<div style="width:300px;flex-shrink:0;padding-right:24px;border-right:1px solid var(--border)">'
+    + '<div style="width:300px;flex-shrink:0;padding:16px;margin-right:24px;border-right:1px solid var(--border);background:var(--bg);border-radius:10px">'
     +   '<div style="margin-bottom:20px">'
     +     '<div style="font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.2px;margin-bottom:3px">New Analysis</div>'
     +     '<div style="font-size:12px;color:var(--muted)">Choose an input type</div>'
