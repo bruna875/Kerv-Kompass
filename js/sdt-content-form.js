@@ -1912,8 +1912,10 @@ function csTxRenderProcess() {
 
 // ── Panel 5 (Taxonomy Explorer v2) helpers ───────────────────────────────
 
-var csActiveTx2Filter = 'all';
-var csSelectedTx2Id   = 1;
+var csActiveTx2Filter  = 'all';
+var csSelectedTx2Id    = 1;
+var csTx2TaxStep       = 'upload'; // 'upload' | 'progress' | 'results'
+var csTx2TaxInputType  = 'video';  // 'video' | 'doc' | 'text'
 
 function csTx2View(view) {
   ['mockup','process'].forEach(function(v) {
@@ -1950,71 +1952,237 @@ function csTx2NavTab(tab) {
     csTx2Render();
 
   } else if (tab === 'taxonomy') {
-    var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)';
-    ca.innerHTML =
-      // Sub-tab nav
-      '<div class="cs-dv-tabnav" style="margin-bottom:20px">'
-      + '<button class="cs-dv-tab cs-dv-tab--act" id="tx2-sub-tab-moments"    onclick="csTx2SubTab(\'moments\')">Moments</button>'
-      + '<button class="cs-dv-tab"                 id="tx2-sub-tab-taxonomies" onclick="csTx2SubTab(\'taxonomies\')">Taxonomies</button>'
-      + '<button class="cs-dv-tab"                 id="tx2-sub-tab-episodes"   onclick="csTx2SubTab(\'episodes\')">Episodes &amp; Shows</button>'
-      + '</div>'
+    // Branch on current step
+    if (csTx2TaxStep === 'results') {
+      csTx2TaxShowResults();
+    } else {
+      csTx2TaxShowUpload();
+    }
+  }
+}
 
-      // ── Moments ──
-      + '<div id="tx2-sub-content-moments" style="overflow-y:auto">'
-      +   '<table style="width:100%;border-collapse:collapse"><thead><tr>'
-      +     '<th style="text-align:left;'  + TH + '">Category</th>'
-      +     '<th style="text-align:right;' + TH + '">Score</th>'
-      +     '<th style="text-align:right;' + TH + '">Assets</th>'
-      +   '</tr></thead><tbody id="tx-cat-body"></tbody></table>'
-      + '</div>'
+// ── Taxonomy Explorer: Upload step ───────────────────────────────────────────
 
-      // ── Taxonomies ──
-      + '<div id="tx2-sub-content-taxonomies" style="display:none">'
-      +   '<div style="display:grid;grid-template-columns:1fr 256px;gap:16px;align-items:start">'
-      +     '<div style="min-width:0">'
-      +       '<div class="tx-ctabs-nav">'
-      +         '<div class="tx-ctab tx-ctab--act" id="tx-ctab-emotion"     onclick="txCustomTab(\'emotion\')">Emotion</div>'
-      +         '<div class="tx-ctab"              id="tx-ctab-location"    onclick="txCustomTab(\'location\')">Location</div>'
-      +         '<div class="tx-ctab"              id="tx-ctab-objects"     onclick="txCustomTab(\'objects\')">Objects</div>'
-      +         '<div class="tx-ctab"              id="tx-ctab-sentiment"   onclick="txCustomTab(\'sentiment\')">Sentiment</div>'
-      +         '<div class="tx-ctab"              id="tx-ctab-iab"         onclick="txCustomTab(\'iab\')">IAB</div>'
-      +         '<div class="tx-ctab"              id="tx-ctab-brandsafety" onclick="txCustomTab(\'brandsafety\')">Brand Safety</div>'
-      +       '</div>'
-      +       '<div id="tx-ctab-table"></div>'
-      +       '<div id="tx-ctab-pagination"></div>'
-      +     '</div>'
-      +     '<div style="display:flex;flex-direction:column;height:480px;gap:0">'
-      +       '<div class="tx-chips-panel" id="tx-chips-panel">'
-      +         '<div class="tx-chips-title">Selected Taxonomies</div>'
-      +         '<div class="tx-chips-empty" id="tx-chips-empty">Select taxonomies from the table</div>'
-      +         '<div id="tx-chips-content" style="display:none"></div>'
-      +       '</div>'
-      +       '<div class="tx-save-panel">'
-      +         '<div class="tx-save-label">Save as Moment</div>'
-      +         '<input class="tx-moment-input" id="tx-moment-name" type="text" placeholder="Name this moment…">'
-      +         '<button class="tx-save-btn" onclick="txSaveMoment()">'
-      +           '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2h8l2 2v8a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M5 13V8h4v5M4 2v3h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
-      +           ' Save Moment'
-      +         '</button>'
-      +       '</div>'
-      +     '</div>'
-      +   '</div>'
-      + '</div>'
+function csTx2TaxShowUpload() {
+  csTx2TaxStep = 'upload';
+  var ca = document.getElementById('tx2-content-area');
+  if (!ca) return;
 
-      // ── Episodes & Shows ──
-      + '<div id="tx2-sub-content-episodes" style="display:none">'
-      +   '<table style="width:100%;border-collapse:collapse"><thead><tr>'
-      +     '<th style="text-align:left;'  + TH + '">Show / Episode</th>'
-      +     '<th style="text-align:left;'  + TH + '">Channel</th>'
-      +     '<th style="text-align:right;' + TH + '">Match</th>'
-      +   '</tr></thead><tbody id="tx-eps-body"></tbody></table>'
+  function inputArea(type) {
+    var uploadZone =
+        '<div class="tx2-upload-zone" onclick="document.getElementById(\'tx2-file-input-' + type + '\').click()">'
+      + '  <input type="file" id="tx2-file-input-' + type + '" style="display:none"'
+      + (type === 'video' ? ' accept="video/*"' : ' accept=".pdf,.doc,.docx"') + '>'
+      + '  <svg width="28" height="28" viewBox="0 0 32 32" fill="none" style="color:var(--faint)">'
+      + (type === 'video'
+          ? '<rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>'
+          : '<path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.6"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>')
+      + '  </svg>'
+      + '  <div style="font-size:13px;font-weight:500;color:var(--text);margin-top:6px">'
+      + (type === 'video' ? 'Drop video file here' : 'Drop PDF or document here')
+      + '  </div>'
+      + '  <div style="font-size:11px;color:var(--faint);margin-top:2px">'
+      + (type === 'video' ? 'MP4, MOV, AVI — up to 2 GB' : 'PDF, DOCX, TXT — up to 50 MB')
+      + '  </div>'
+      + '  <button class="cs-request-btn" style="margin-top:12px;pointer-events:none">Browse file</button>'
       + '</div>';
 
-    // Ensure TX styles and render Moments by default
-    if (typeof txInjectStyles === 'function') txInjectStyles();
-    txCustomSelections = [];
-    txRenderCategories();
+    var textArea =
+        '<textarea class="cs-textarea" id="tx2-text-input" placeholder="Paste or type your text here. The AI will analyse topics, sentiments, moments and taxonomy classifications…" style="min-height:160px;resize:vertical"></textarea>';
+
+    return type === 'text' ? textArea : uploadZone;
   }
+
+  ca.innerHTML =
+      '<div class="tx2-upload-wrap">'
+
+    + '<div style="margin-bottom:28px">'
+    +   '<div class="cs-title" style="margin-bottom:4px">Analyse Content</div>'
+    +   '<div style="font-size:13px;color:var(--muted)">Choose an input type to get started</div>'
+    + '</div>'
+
+    // Option selector
+    + '<div class="tx2-opt-row">'
+    +   '<div class="tx2-opt tx2-opt--act" id="tx2-opt-video" onclick="csTx2TaxSelectInput(\'video\')">'
+    +     '<svg width="20" height="20" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
+    +     '<span>Video</span>'
+    +   '</div>'
+    +   '<div class="tx2-opt" id="tx2-opt-doc" onclick="csTx2TaxSelectInput(\'doc\')">'
+    +     '<svg width="20" height="20" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +     '<span>Document / PDF</span>'
+    +   '</div>'
+    +   '<div class="tx2-opt" id="tx2-opt-text" onclick="csTx2TaxSelectInput(\'text\')">'
+    +     '<svg width="20" height="20" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="26" cy="26" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M29 29l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +     '<span>Free Text</span>'
+    +   '</div>'
+    + '</div>'
+
+    // Input area (swapped by csTx2TaxSelectInput)
+    + '<div id="tx2-input-area" style="margin-bottom:20px">' + inputArea('video') + '</div>'
+
+    // Analyse button
+    + '<button class="cs-btn-primary" style="width:100%;height:42px;font-size:14px" onclick="csTx2TaxAnalyze()">Start Analysis</button>'
+
+    + '</div>';
+}
+
+function csTx2TaxSelectInput(type) {
+  csTx2TaxInputType = type;
+  ['video', 'doc', 'text'].forEach(function(t) {
+    var el = document.getElementById('tx2-opt-' + t);
+    if (el) el.className = 'tx2-opt' + (t === type ? ' tx2-opt--act' : '');
+  });
+  var area = document.getElementById('tx2-input-area');
+  if (!area) return;
+
+  var uploadZone = function(t) {
+    return '<div class="tx2-upload-zone" onclick="document.getElementById(\'tx2-file-input-' + t + '\').click()">'
+      + '<input type="file" id="tx2-file-input-' + t + '" style="display:none"'
+      + (t === 'video' ? ' accept="video/*"' : ' accept=".pdf,.doc,.docx"') + '>'
+      + '<svg width="28" height="28" viewBox="0 0 32 32" fill="none" style="color:var(--faint)">'
+      + (t === 'video'
+          ? '<rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>'
+          : '<path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.6"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>')
+      + '</svg>'
+      + '<div style="font-size:13px;font-weight:500;color:var(--text);margin-top:6px">'
+      + (t === 'video' ? 'Drop video file here' : 'Drop PDF or document here')
+      + '</div>'
+      + '<div style="font-size:11px;color:var(--faint);margin-top:2px">'
+      + (t === 'video' ? 'MP4, MOV, AVI — up to 2 GB' : 'PDF, DOCX, TXT — up to 50 MB')
+      + '</div>'
+      + '<button class="cs-request-btn" style="margin-top:12px;pointer-events:none">Browse file</button>'
+      + '</div>';
+  };
+
+  if (type === 'text') {
+    area.innerHTML = '<textarea class="cs-textarea" id="tx2-text-input" placeholder="Paste or type your text here. The AI will analyse topics, sentiments, moments and taxonomy classifications…" style="min-height:160px;resize:vertical"></textarea>';
+  } else {
+    area.innerHTML = uploadZone(type);
+  }
+}
+
+function csTx2TaxAnalyze() {
+  var ca = document.getElementById('tx2-content-area');
+  if (!ca) return;
+  csTx2TaxStep = 'progress';
+
+  var typeLabel = csTx2TaxInputType === 'video' ? 'video file'
+               : csTx2TaxInputType === 'doc'   ? 'document'
+               : 'text input';
+
+  var progressSteps = [
+    'Extracting content…',
+    'Detecting scenes & objects…',
+    'Classifying moments…',
+    'Building taxonomy map…',
+    'Matching episodes & shows…'
+  ];
+
+  ca.innerHTML =
+      '<div class="tx2-progress-wrap">'
+    + '  <div class="tx2-progress-icon">'
+    +    '<svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="var(--border-md)" stroke-width="2"/><circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="2" stroke-dasharray="88" stroke-dashoffset="88" id="tx2-prog-circle" style="transform-origin:center;transform:rotate(-90deg);transition:stroke-dashoffset .15s"/></svg>'
+    + '  </div>'
+    + '  <div class="tx2-progress-title">Analysing ' + typeLabel + '</div>'
+    + '  <div class="tx2-progress-step" id="tx2-progress-label">' + progressSteps[0] + '</div>'
+    + '  <div class="tx2-progress-track">'
+    + '    <div class="tx2-progress-fill" id="tx2-progress-bar" style="width:0%"></div>'
+    + '  </div>'
+    + '  <div class="tx2-progress-pct" id="tx2-progress-pct">0%</div>'
+    + '</div>';
+
+  var pct = 0;
+  var stepIdx = 0;
+  var interval = setInterval(function() {
+    pct = Math.min(pct + 1.6, 100);
+    var bar     = document.getElementById('tx2-progress-bar');
+    var circle  = document.getElementById('tx2-prog-circle');
+    var label   = document.getElementById('tx2-progress-label');
+    var pctEl   = document.getElementById('tx2-progress-pct');
+    if (bar)    bar.style.width = pct + '%';
+    if (pctEl)  pctEl.textContent = Math.round(pct) + '%';
+    if (circle) circle.style.strokeDashoffset = 88 - (pct / 100 * 88);
+    var newStep = Math.min(Math.floor(pct / 20), progressSteps.length - 1);
+    if (newStep !== stepIdx) {
+      stepIdx = newStep;
+      if (label) label.textContent = progressSteps[stepIdx];
+    }
+    if (pct >= 100) {
+      clearInterval(interval);
+      setTimeout(csTx2TaxShowResults, 500);
+    }
+  }, 25); // ~1.6s total
+}
+
+// ── Taxonomy Explorer: Results step (Moments / Taxonomies / Episodes) ─────────
+
+function csTx2TaxShowResults() {
+  csTx2TaxStep = 'results';
+  var ca = document.getElementById('tx2-content-area');
+  if (!ca) return;
+  var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)';
+  ca.innerHTML =
+    // Sub-tab nav
+    '<div class="cs-dv-tabnav" style="margin-bottom:20px">'
+    + '<button class="cs-dv-tab cs-dv-tab--act" id="tx2-sub-tab-moments"    onclick="csTx2SubTab(\'moments\')">Moments</button>'
+    + '<button class="cs-dv-tab"                 id="tx2-sub-tab-taxonomies" onclick="csTx2SubTab(\'taxonomies\')">Taxonomies</button>'
+    + '<button class="cs-dv-tab"                 id="tx2-sub-tab-episodes"   onclick="csTx2SubTab(\'episodes\')">Episodes &amp; Shows</button>'
+    + '</div>'
+
+    // ── Moments ──
+    + '<div id="tx2-sub-content-moments" style="overflow-y:auto">'
+    +   '<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    +     '<th style="text-align:left;'  + TH + '">Category</th>'
+    +     '<th style="text-align:right;' + TH + '">Score</th>'
+    +     '<th style="text-align:right;' + TH + '">Assets</th>'
+    +   '</tr></thead><tbody id="tx-cat-body"></tbody></table>'
+    + '</div>'
+
+    // ── Taxonomies ──
+    + '<div id="tx2-sub-content-taxonomies" style="display:none">'
+    +   '<div style="display:grid;grid-template-columns:1fr 256px;gap:16px;align-items:start">'
+    +     '<div style="min-width:0">'
+    +       '<div class="tx-ctabs-nav">'
+    +         '<div class="tx-ctab tx-ctab--act" id="tx-ctab-emotion"     onclick="txCustomTab(\'emotion\')">Emotion</div>'
+    +         '<div class="tx-ctab"              id="tx-ctab-location"    onclick="txCustomTab(\'location\')">Location</div>'
+    +         '<div class="tx-ctab"              id="tx-ctab-objects"     onclick="txCustomTab(\'objects\')">Objects</div>'
+    +         '<div class="tx-ctab"              id="tx-ctab-sentiment"   onclick="txCustomTab(\'sentiment\')">Sentiment</div>'
+    +         '<div class="tx-ctab"              id="tx-ctab-iab"         onclick="txCustomTab(\'iab\')">IAB</div>'
+    +         '<div class="tx-ctab"              id="tx-ctab-brandsafety" onclick="txCustomTab(\'brandsafety\')">Brand Safety</div>'
+    +       '</div>'
+    +       '<div id="tx-ctab-table"></div>'
+    +       '<div id="tx-ctab-pagination"></div>'
+    +     '</div>'
+    +     '<div style="display:flex;flex-direction:column;height:480px;gap:0">'
+    +       '<div class="tx-chips-panel" id="tx-chips-panel">'
+    +         '<div class="tx-chips-title">Selected Taxonomies</div>'
+    +         '<div class="tx-chips-empty" id="tx-chips-empty">Select taxonomies from the table</div>'
+    +         '<div id="tx-chips-content" style="display:none"></div>'
+    +       '</div>'
+    +       '<div class="tx-save-panel">'
+    +         '<div class="tx-save-label">Save as Moment</div>'
+    +         '<input class="tx-moment-input" id="tx-moment-name" type="text" placeholder="Name this moment…">'
+    +         '<button class="tx-save-btn" onclick="txSaveMoment()">'
+    +           '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2h8l2 2v8a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M5 13V8h4v5M4 2v3h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +           ' Save Moment'
+    +         '</button>'
+    +       '</div>'
+    +     '</div>'
+    +   '</div>'
+    + '</div>'
+
+    // ── Episodes & Shows ──
+    + '<div id="tx2-sub-content-episodes" style="display:none">'
+    +   '<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    +     '<th style="text-align:left;'  + TH + '">Show / Episode</th>'
+    +     '<th style="text-align:left;'  + TH + '">Channel</th>'
+    +     '<th style="text-align:right;' + TH + '">Match</th>'
+    +   '</tr></thead><tbody id="tx-eps-body"></tbody></table>'
+    + '</div>';
+
+  if (typeof txInjectStyles === 'function') txInjectStyles();
+  txCustomSelections = [];
+  txRenderCategories();
 }
 
 function csTx2SubTab(tab) {
@@ -2144,6 +2312,7 @@ function sdtInit() {
   csActiveFilter3   = 'all'; csSelectedId3   = 3;
   csActiveTxFilter  = 'all'; csSelectedTxId  = 1;
   csActiveTx2Filter = 'all'; csSelectedTx2Id = 1;
+  csTx2TaxStep = 'upload'; csTx2TaxInputType = 'video';
   sdtInjectStyles();
   csRender();    csRenderProcess();
   csRender2();   csRenderProcess2();
@@ -2273,6 +2442,97 @@ function sdtInjectStyles() {
 
     /* Taxonomy v2 detail view: panels shrink to fit, no horizontal scroll */
     #tx2-content-area .cs-dv-panel { min-width: 0; }
+
+    /* ── Taxonomy Explorer: Upload form ── */
+    .tx2-upload-wrap {
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 8px 0 24px;
+    }
+    .tx2-opt-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .tx2-opt {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 12px;
+      border: 1.5px solid var(--border-md);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      text-align: center;
+      transition: border-color .15s, background .15s, color .15s;
+      user-select: none;
+    }
+    .tx2-opt:hover { border-color: var(--accent); color: var(--text); background: var(--bg); }
+    .tx2-opt--act  { border-color: var(--accent); color: var(--accent); background: rgba(237,0,94,.04); }
+    .tx2-upload-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 32px 20px;
+      border: 1.5px dashed var(--border-md);
+      border-radius: 10px;
+      cursor: pointer;
+      background: var(--bg);
+      text-align: center;
+      transition: border-color .15s, background .15s;
+    }
+    .tx2-upload-zone:hover { border-color: var(--accent); background: rgba(237,0,94,.025); }
+
+    /* ── Taxonomy Explorer: Progress ── */
+    .tx2-progress-wrap {
+      max-width: 400px;
+      margin: 60px auto 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+    }
+    .tx2-progress-icon { position: relative; width: 64px; height: 64px; }
+    .tx2-progress-icon svg { width: 64px; height: 64px; }
+    .tx2-progress-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -.3px;
+    }
+    .tx2-progress-step {
+      font-size: 12px;
+      color: var(--muted);
+      min-height: 18px;
+      transition: opacity .2s;
+    }
+    .tx2-progress-track {
+      width: 100%;
+      height: 6px;
+      background: var(--bg);
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .tx2-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width .1s linear;
+    }
+    .tx2-progress-pct {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: .3px;
+    }
 
     /* Taxonomies sub-nav: override tabs → buttons (detail view + sidebar Taxonomy Explorer view) */
     #cs-dv-tab-content-taxonomies .tx-ctabs-nav,
