@@ -83,11 +83,12 @@ function renderTaxonomyExplorer() {
 
     <div id="tx-results-content" style="display:none">
       <div class="tabnav" style="margin-bottom:16px">
-        <button class="tabitem act" id="tx-rtab-cat" onclick="txResTab('cat')">Moments</button>
-        <button class="tabitem" id="tx-rtab-eps" onclick="txResTab('eps')">Episodes &amp; Shows</button>
+        <button class="tabitem act" id="tx-rtab-cat"    onclick="txResTab('cat')">Moments</button>
+        <button class="tabitem"     id="tx-rtab-custom" onclick="txResTab('custom')">Custom Moments</button>
+        <button class="tabitem"     id="tx-rtab-eps"    onclick="txResTab('eps')">Episodes &amp; Shows</button>
       </div>
 
-      <!-- Tab: Categories -->
+      <!-- Tab: Moments -->
       <div id="tx-tab-cat">
         <table style="width:100%;border-collapse:collapse">
           <thead>
@@ -99,6 +100,51 @@ function renderTaxonomyExplorer() {
           </thead>
           <tbody id="tx-cat-body"></tbody>
         </table>
+        <!-- Saved custom moments appear here -->
+        <div id="tx-custom-saved-section" style="display:none;margin-top:20px">
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);padding:8px 12px 6px;border-top:1px solid var(--border)">Custom Moments</div>
+          <table style="width:100%;border-collapse:collapse">
+            <tbody id="tx-custom-saved-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Custom Moments -->
+      <div id="tx-tab-custom" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 256px;gap:16px;align-items:start">
+
+          <!-- Left: taxonomy browser -->
+          <div style="min-width:0">
+            <div class="tx-ctabs-nav">
+              <div class="tx-ctab tx-ctab--act" id="tx-ctab-emotion"     onclick="txCustomTab('emotion')">Emotion</div>
+              <div class="tx-ctab"              id="tx-ctab-location"    onclick="txCustomTab('location')">Location</div>
+              <div class="tx-ctab"              id="tx-ctab-objects"     onclick="txCustomTab('objects')">Objects</div>
+              <div class="tx-ctab"              id="tx-ctab-sentiment"   onclick="txCustomTab('sentiment')">Sentiment</div>
+              <div class="tx-ctab"              id="tx-ctab-iab"         onclick="txCustomTab('iab')">IAB</div>
+              <div class="tx-ctab"              id="tx-ctab-brandsafety" onclick="txCustomTab('brandsafety')">Brand Safety</div>
+            </div>
+            <div id="tx-ctab-table"></div>
+            <div id="tx-ctab-pagination"></div>
+          </div>
+
+          <!-- Right: chips + save -->
+          <div>
+            <div class="tx-chips-panel" id="tx-chips-panel">
+              <div class="tx-chips-title">Selected Taxonomies</div>
+              <div class="tx-chips-empty" id="tx-chips-empty">Select taxonomies from the table</div>
+              <div id="tx-chips-content" style="display:none"></div>
+            </div>
+            <div class="tx-save-panel">
+              <div class="tx-save-label">Save as Moment</div>
+              <input class="tx-moment-input" id="tx-moment-name" type="text" placeholder="Name this moment…">
+              <button class="tx-save-btn" id="tx-save-btn" onclick="txSaveMoment()">
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2h8l2 2v8a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M5 13V8h4v5M4 2v3h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Save Moment
+              </button>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       <!-- Tab: Episodes -->
@@ -163,6 +209,8 @@ var TX_STEPS = [
 // ── Init & tabs ───────────────────────────────────────────────────────────
 function txInit() {
   txInjectStyles();
+  txCustomRenderTable();
+  txRenderChips();
 }
 
 function txTab(tab) {
@@ -184,11 +232,12 @@ function txFileReady(name) {
 
 function txResTab(tab) {
   txActiveResTab = tab;
-  ['cat','eps'].forEach(function(t) {
+  ['cat','custom','eps'].forEach(function(t) {
     document.getElementById('tx-tab-' + t).style.display = t === tab ? '' : 'none';
     var btn = document.getElementById('tx-rtab-' + t);
-    btn.className = 'tabitem' + (t === tab ? ' act' : '');
+    if (btn) btn.className = 'tabitem' + (t === tab ? ' act' : '');
   });
+  if (tab === 'custom') { txCustomRenderTable(); txRenderChips(); }
 }
 
 // ── Analysis ──────────────────────────────────────────────────────────────
@@ -249,6 +298,7 @@ function txShowResults() {
   document.getElementById('tx-results-content').style.display = 'block';
   txRenderCategories();
   txRenderEpisodes();
+  txRenderMomentsCustomSection();
 }
 
 function txScoreColor(s) {
@@ -290,6 +340,294 @@ function txRenderEpisodes() {
       + '</td>'
       + '<td style="padding:11px 12px;font-size:12px;color:var(--muted);white-space:nowrap">' + e.channel + '</td>'
       + '<td style="padding:11px 12px">' + txScoreBar(e.match) + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+// ── Custom Moments data ───────────────────────────────────────────────────
+var TX_CUSTOM_DATA = {
+  emotion: [
+    { taxonomy:'Emotion > High Arousal > Excitement',      score:94 },
+    { taxonomy:'Emotion > Positive > Inspiration',         score:88 },
+    { taxonomy:'Emotion > High Arousal > Thrill',          score:82 },
+    { taxonomy:'Emotion > Motivational > Determination',   score:77 },
+    { taxonomy:'Emotion > Positive > Pride',               score:71 },
+    { taxonomy:'Emotion > Competitive > Challenge',        score:65 },
+    { taxonomy:'Emotion > Positive > Joy',                 score:62 },
+    { taxonomy:'Emotion > Social > Connection',            score:58 },
+    { taxonomy:'Emotion > Nostalgic > Memory',             score:48 },
+    { taxonomy:'Emotion > Calm > Relaxation',              score:42 },
+    { taxonomy:'Emotion > Fear > Tension',                 score:35 },
+    { taxonomy:'Emotion > Negative > Frustration',         score:28 },
+  ],
+  location: [
+    { taxonomy:'Location > Urban > Exterior > City Streets',  score:91 },
+    { taxonomy:'Location > Sports > Outdoor > Running Track', score:85 },
+    { taxonomy:'Location > Natural > Mountain > Trail',       score:78 },
+    { taxonomy:'Location > Urban > Interior > Gym',           score:72 },
+    { taxonomy:'Location > Sports > Stadium > Arena',         score:64 },
+    { taxonomy:'Location > Natural > Beach > Coastline',      score:58 },
+    { taxonomy:'Location > Urban > Interior > Office',        score:52 },
+    { taxonomy:'Location > Natural > Forest > Trail',         score:47 },
+    { taxonomy:'Location > Indoor > Home > Living Room',      score:41 },
+    { taxonomy:'Location > Transport > Road > Highway',       score:36 },
+    { taxonomy:'Location > Indoor > Mall > Retail',           score:29 },
+    { taxonomy:'Location > Outdoor > Rural > Countryside',    score:22 },
+  ],
+  objects: [
+    { taxonomy:'Objects > Footwear > Sports > Running Shoes', score:96 },
+    { taxonomy:'Objects > Apparel > Athletic > Sportswear',   score:90 },
+    { taxonomy:'Objects > Electronics > Wearable > Watch',    score:83 },
+    { taxonomy:'Objects > Equipment > Timing > Stopwatch',    score:74 },
+    { taxonomy:'Objects > Vehicle > Bicycle > Road Bike',     score:68 },
+    { taxonomy:'Objects > Nutrition > Drink > Sports Bottle', score:61 },
+    { taxonomy:'Objects > Equipment > Training > Weights',    score:55 },
+    { taxonomy:'Objects > Apparel > Headwear > Cap',          score:49 },
+    { taxonomy:'Objects > Electronics > Audio > Earphones',   score:43 },
+    { taxonomy:'Objects > Equipment > Safety > Helmet',       score:38 },
+    { taxonomy:'Objects > Natural > Terrain > Asphalt',       score:31 },
+    { taxonomy:'Objects > Apparel > Eyewear > Sunglasses',    score:25 },
+  ],
+  sentiment: [
+    { taxonomy:'Sentiment > Positive > High Energy > Energetic',    score:93 },
+    { taxonomy:'Sentiment > Positive > Aspirational > Ambitious',   score:87 },
+    { taxonomy:'Sentiment > Competitive > Driven > Focused',        score:81 },
+    { taxonomy:'Sentiment > Positive > Empowering > Motivating',    score:75 },
+    { taxonomy:'Sentiment > Positive > Celebratory > Triumphant',   score:69 },
+    { taxonomy:'Sentiment > Neutral > Informative > Educational',   score:58 },
+    { taxonomy:'Sentiment > Positive > Playful > Fun',              score:52 },
+    { taxonomy:'Sentiment > Neutral > Professional > Corporate',    score:44 },
+    { taxonomy:'Sentiment > Positive > Romantic > Heartwarming',    score:38 },
+    { taxonomy:'Sentiment > Negative > Tense > Stressful',          score:29 },
+    { taxonomy:'Sentiment > Negative > Melancholic > Sad',          score:21 },
+  ],
+  iab: [
+    { taxonomy:'IAB17 > Sports > Athletics',                        score:95 },
+    { taxonomy:'IAB17 > Sports > Running and Jogging',              score:92 },
+    { taxonomy:'IAB9 > Hobbies and Interests > Fitness',            score:86 },
+    { taxonomy:'IAB17 > Sports > Extreme Sports',                   score:79 },
+    { taxonomy:'IAB11 > Urban Lifestyle > Street Culture',          score:71 },
+    { taxonomy:'IAB7 > Health and Fitness > Exercise',              score:66 },
+    { taxonomy:'IAB17 > Sports > Team Sports',                      score:60 },
+    { taxonomy:'IAB9 > Hobbies > Outdoor Recreation',               score:54 },
+    { taxonomy:'IAB7 > Health > Nutrition',                         score:48 },
+    { taxonomy:'IAB3 > Business > Advertising',                     score:41 },
+    { taxonomy:'IAB1 > Entertainment > Music',                      score:35 },
+    { taxonomy:'IAB14 > Society > Youth Culture',                   score:28 },
+  ],
+  brandsafety: [
+    { taxonomy:'Brand Safety > Safe > Family Friendly',             score:100 },
+    { taxonomy:'Brand Safety > Safe > Sports > Athletic',           score:100 },
+    { taxonomy:'Brand Safety > Safe > Positive Messaging',          score:98  },
+    { taxonomy:'Brand Safety > Safe > Language > Clean',            score:97  },
+    { taxonomy:'Brand Safety > Safe > Violence-Free',               score:95  },
+    { taxonomy:'Brand Safety > Safe > Drug-Free',                   score:95  },
+    { taxonomy:'Brand Safety > Safe > Age-Appropriate',             score:93  },
+    { taxonomy:'Brand Safety > Safe > Inclusivity',                 score:90  },
+    { taxonomy:'Brand Safety > Caution > Competitive',              score:72  },
+    { taxonomy:'Brand Safety > Caution > Intense Imagery',          score:65  },
+    { taxonomy:'Brand Safety > Caution > Extreme Sports Risk',      score:58  },
+    { taxonomy:'Brand Safety > Restricted > Violent Themes',        score:12  },
+  ],
+};
+
+var txCustomActiveTab    = 'emotion';
+var txCustomCurrentPage  = 1;
+var txCustomSelections   = [];  // [{id, tab, taxonomy, score}]
+var txSelCounter         = 0;
+var txSavedCustomMoments = [];
+var TX_ITEMS_PER_PAGE    = 10;
+
+// ── Custom Moments functions ──────────────────────────────────────────────
+
+function txCustomTab(tab) {
+  txCustomActiveTab   = tab;
+  txCustomCurrentPage = 1;
+  TX_MODAL_TABS.forEach(function(t) {
+    var el = document.getElementById('tx-ctab-' + t.id);
+    if (el) el.className = 'tx-ctab' + (t.id === tab ? ' tx-ctab--act' : '');
+  });
+  txCustomRenderTable();
+}
+
+function txCustomRenderTable() {
+  var tableEl = document.getElementById('tx-ctab-table');
+  if (!tableEl) return;
+
+  var rows = (TX_CUSTOM_DATA[txCustomActiveTab] || []).slice();
+  rows.sort(function(a,b){ return b.score - a.score; });
+
+  var total  = rows.length;
+  var pages  = Math.max(1, Math.ceil(total / TX_ITEMS_PER_PAGE));
+  txCustomCurrentPage = Math.min(txCustomCurrentPage, pages);
+  var start  = (txCustomCurrentPage - 1) * TX_ITEMS_PER_PAGE;
+  var paged  = rows.slice(start, start + TX_ITEMS_PER_PAGE);
+
+  var isSel = function(taxonomy) {
+    return txCustomSelections.some(function(s) {
+      return s.tab === txCustomActiveTab && s.taxonomy === taxonomy;
+    });
+  };
+
+  tableEl.innerHTML =
+    '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr>'
+    + '<th class="tx-th" style="width:32px">#</th>'
+    + '<th class="tx-th">Taxonomy</th>'
+    + '<th class="tx-th" style="text-align:right">Score</th>'
+    + '<th class="tx-th" style="width:40px"></th>'
+    + '</tr></thead><tbody>'
+    + paged.map(function(r, i) {
+        var rank = start + i + 1;
+        var sel  = isSel(r.taxonomy);
+        var safeT = r.taxonomy.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return '<tr class="tx-custom-row' + (sel ? ' tx-custom-row--sel' : '') + '" onclick="txCustomToggle(\'' + txCustomActiveTab + '\',\'' + safeT + '\',' + r.score + ')">'
+          + '<td style="padding:10px 12px;font-size:10px;font-weight:600;color:var(--faint)">#' + rank + '</td>'
+          + '<td style="padding:10px 12px;font-size:13px;color:var(--text)">' + r.taxonomy + '</td>'
+          + '<td style="padding:10px 12px">' + txScoreBar(r.score) + '</td>'
+          + '<td style="padding:10px 12px;text-align:center">'
+          + '<div class="tx-check' + (sel ? ' tx-check--sel' : '') + '">'
+          + (sel ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '')
+          + '</div></td>'
+          + '</tr>';
+      }).join('')
+    + '</tbody></table>';
+
+  // Pagination
+  var pag = document.getElementById('tx-ctab-pagination');
+  if (!pag) return;
+  if (pages <= 1) { pag.innerHTML = ''; return; }
+  pag.innerHTML =
+    '<div class="tx-pag-row">'
+    + '<button class="tx-pag-btn"' + (txCustomCurrentPage <= 1 ? ' disabled' : '') + ' onclick="txCustomPaginate(-1)">← Prev</button>'
+    + '<span class="tx-pag-info">Page ' + txCustomCurrentPage + ' of ' + pages + '</span>'
+    + '<button class="tx-pag-btn"' + (txCustomCurrentPage >= pages ? ' disabled' : '') + ' onclick="txCustomPaginate(1)">Next →</button>'
+    + '</div>';
+}
+
+function txCustomToggle(tab, taxonomy, score) {
+  var idx = -1;
+  for (var i = 0; i < txCustomSelections.length; i++) {
+    if (txCustomSelections[i].tab === tab && txCustomSelections[i].taxonomy === taxonomy) {
+      idx = i; break;
+    }
+  }
+  if (idx >= 0) {
+    txCustomSelections.splice(idx, 1);
+  } else {
+    txCustomSelections.push({ id: txSelCounter++, tab: tab, taxonomy: taxonomy, score: score });
+  }
+  txCustomRenderTable();
+  txRenderChips();
+}
+
+function txCustomPaginate(dir) {
+  txCustomCurrentPage = Math.max(1, txCustomCurrentPage + dir);
+  txCustomRenderTable();
+}
+
+function txRenderChips() {
+  var empty   = document.getElementById('tx-chips-empty');
+  var content = document.getElementById('tx-chips-content');
+  if (!empty || !content) return;
+
+  if (!txCustomSelections.length) {
+    empty.style.display   = '';
+    content.style.display = 'none';
+    content.innerHTML     = '';
+    return;
+  }
+  empty.style.display   = 'none';
+  content.style.display = '';
+
+  var groups = {};
+  TX_MODAL_TABS.forEach(function(t) { groups[t.id] = []; });
+  txCustomSelections.forEach(function(s) { groups[s.tab].push(s); });
+
+  content.innerHTML = TX_MODAL_TABS
+    .filter(function(t) { return groups[t.id].length > 0; })
+    .map(function(t) {
+      return '<div class="tx-chip-group">'
+        + '<div class="tx-chip-group-label">' + t.label + '</div>'
+        + '<div class="tx-chip-list">'
+        + groups[t.id].map(function(s) {
+            var parts   = s.taxonomy.split('>');
+            var display = parts[parts.length - 1].trim();
+            return '<div class="tx-chip">'
+              + '<span class="tx-chip-text">' + display + '</span>'
+              + '<button class="tx-chip-x" onclick="txRemoveChip(' + s.id + ');event.stopPropagation()">'
+              + '<svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 1l6 6M7 1L1 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+              + '</button>'
+              + '</div>';
+          }).join('')
+        + '</div></div>';
+    }).join('');
+}
+
+function txRemoveChip(id) {
+  txCustomSelections = txCustomSelections.filter(function(s) { return s.id !== id; });
+  txCustomRenderTable();
+  txRenderChips();
+}
+
+function txSaveMoment() {
+  var nameInput = document.getElementById('tx-moment-name');
+  var name = nameInput ? nameInput.value.trim() : '';
+  if (!name) {
+    if (nameInput) { nameInput.classList.add('tx-input--error'); nameInput.focus(); }
+    return;
+  }
+  if (!txCustomSelections.length) {
+    var panel = document.getElementById('tx-chips-panel');
+    if (panel) {
+      panel.style.outline = '2px solid #E5243B';
+      setTimeout(function() { panel.style.outline = ''; }, 900);
+    }
+    return;
+  }
+
+  var avgScore = Math.round(
+    txCustomSelections.reduce(function(sum, s) { return sum + s.score; }, 0) / txCustomSelections.length
+  );
+
+  txSavedCustomMoments.push({
+    name:       name,
+    selections: txCustomSelections.slice(),
+    score:      avgScore,
+    count:      txCustomSelections.length,
+  });
+
+  // Reset
+  txCustomSelections = [];
+  if (nameInput) { nameInput.value = ''; nameInput.classList.remove('tx-input--error'); }
+  txCustomRenderTable();
+  txRenderChips();
+  txRenderMomentsCustomSection();
+
+  // Success feedback on button
+  var btn = document.getElementById('tx-save-btn');
+  if (btn) {
+    var orig = btn.innerHTML;
+    btn.textContent   = '✓ Saved!';
+    btn.style.background = '#2EAD4B';
+    setTimeout(function() { btn.innerHTML = orig; btn.style.background = ''; }, 1800);
+  }
+}
+
+function txRenderMomentsCustomSection() {
+  var section = document.getElementById('tx-custom-saved-section');
+  if (!section) return;
+  if (!txSavedCustomMoments.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  var body = document.getElementById('tx-custom-saved-body');
+  if (!body) return;
+  body.innerHTML = txSavedCustomMoments.map(function(m) {
+    return '<tr class="tx-cat-row" style="border-bottom:1px solid var(--border)">'
+      + '<td style="padding:11px 12px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px">'
+      + '<span style="font-size:11px;color:var(--accent)">★</span>'
+      + m.name + '</td>'
+      + '<td style="padding:11px 12px">' + txScoreBar(m.score) + '</td>'
+      + '<td style="padding:11px 12px;text-align:right;font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap">' + m.count + ' taxonomies</td>'
       + '</tr>';
   }).join('');
 }
@@ -539,6 +877,107 @@ function txInjectStyles() {
 
     /* Clickable category rows */
     .tx-cat-row:hover { background: var(--bg); }
+
+    /* Custom Moments – taxonomy tab nav */
+    .tx-ctabs-nav {
+      display: flex; overflow-x: auto; border-bottom: 1px solid var(--border); margin-bottom: 0;
+    }
+    .tx-ctabs-nav::-webkit-scrollbar { display: none; }
+    .tx-ctab {
+      padding: 9px 13px; font-size: 12px; font-weight: 500;
+      color: var(--muted); cursor: pointer; white-space: nowrap;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color .13s, border-color .13s; user-select: none;
+    }
+    .tx-ctab:hover { color: var(--text); }
+    .tx-ctab--act  { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Table rows */
+    .tx-custom-row { cursor: pointer; transition: background .1s; }
+    .tx-custom-row:hover { background: var(--bg); }
+    .tx-custom-row--sel { background: rgba(237,0,94,.04); }
+
+    /* Checkbox */
+    .tx-check {
+      width: 16px; height: 16px; border-radius: 4px;
+      border: 1.5px solid var(--border-md);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto; transition: all .1s;
+    }
+    .tx-check--sel { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* Pagination */
+    .tx-pag-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; padding: 10px 12px;
+    }
+    .tx-pag-btn {
+      height: 28px; padding: 0 12px; border-radius: 6px;
+      border: 1px solid var(--border-md); background: none;
+      font-size: 11px; font-weight: 500; font-family: inherit;
+      color: var(--text); cursor: pointer; transition: background .12s;
+    }
+    .tx-pag-btn:hover:not(:disabled) { background: var(--bg); }
+    .tx-pag-btn:disabled { color: var(--faint); cursor: default; }
+    .tx-pag-info { font-size: 11px; color: var(--muted); }
+
+    /* Chips panel */
+    .tx-chips-panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;
+      min-height: 72px;
+    }
+    .tx-chips-title {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--faint); margin-bottom: 10px;
+    }
+    .tx-chips-empty {
+      font-size: 12px; color: var(--faint); text-align: center; padding: 8px 0;
+    }
+    .tx-chip-group { margin-bottom: 10px; }
+    .tx-chip-group:last-child { margin-bottom: 0; }
+    .tx-chip-group-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .4px; color: var(--muted); margin-bottom: 6px;
+    }
+    .tx-chip-list { display: flex; flex-wrap: wrap; gap: 5px; }
+    .tx-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      height: 24px; padding: 0 6px 0 10px;
+      background: var(--subtle); border: 1px solid var(--border);
+      border-radius: 20px; font-size: 11px; color: var(--text); max-width: 220px;
+    }
+    .tx-chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tx-chip-x {
+      display: flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border: none; background: none;
+      cursor: pointer; color: var(--faint); padding: 0; flex-shrink: 0;
+      border-radius: 50%; transition: background .1s, color .1s;
+    }
+    .tx-chip-x:hover { background: var(--border-md); color: var(--text); }
+
+    /* Save panel */
+    .tx-save-panel { display: flex; flex-direction: column; gap: 8px; }
+    .tx-save-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--faint);
+    }
+    .tx-moment-input {
+      height: 34px; border: 1px solid var(--border-md); border-radius: 8px;
+      padding: 0 11px; font-size: 13px; font-family: inherit;
+      color: var(--text); background: var(--surface); outline: none;
+      transition: border .15s; width: 100%; box-sizing: border-box;
+    }
+    .tx-moment-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(237,0,94,.1); }
+    .tx-input--error { border-color: #E5243B !important; box-shadow: 0 0 0 3px rgba(229,36,59,.1) !important; }
+    .tx-save-btn {
+      height: 34px; background: var(--accent); color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 12px; font-weight: 500; font-family: inherit;
+      cursor: pointer; display: flex; align-items: center;
+      justify-content: center; gap: 6px; transition: opacity .13s, background .3s;
+    }
+    .tx-save-btn:hover { opacity: .88; }
 
     /* Moment modal */
     .tx-modal-overlay {
