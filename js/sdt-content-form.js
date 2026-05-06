@@ -2046,27 +2046,25 @@ function sdtInjectStyles() {
       margin-bottom: 12px;
     }
     #cs-dv-tab-content-taxonomies .tx-ctab {
-      border: 1.5px solid var(--border-md);
-      border-radius: 7px;
-      background: var(--surface);
-      padding: 5px 14px;
+      border: none;
+      border-radius: 6px;
+      background: var(--bg);
+      padding: 4px 10px;
       height: auto;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 500;
       color: var(--muted);
       cursor: pointer;
-      transition: background .13s, color .13s, border-color .13s;
-      border-bottom: 1.5px solid var(--border-md);
+      transition: background .13s, color .13s;
       margin-bottom: 0;
     }
     #cs-dv-tab-content-taxonomies .tx-ctab:hover {
-      background: var(--bg);
-      color: var(--text);
+      background: var(--subtle);
+      color: var(--accent);
     }
     #cs-dv-tab-content-taxonomies .tx-ctab--act {
       background: var(--subtle);
       color: var(--accent);
-      border-color: var(--accent);
     }
 
     /* Detail view tab nav (Taxonomy Explorer v1) */
