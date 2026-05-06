@@ -128,7 +128,7 @@ function renderTaxonomyExplorer() {
           </div>
 
           <!-- Right: chips + save (sticky, fixed height, chips scroll) -->
-          <div style="position:sticky;top:16px;display:flex;flex-direction:column;height:calc(100vh - 220px);gap:0">
+          <div style="position:sticky;top:16px;display:flex;flex-direction:column;height:510px;gap:0">
             <div class="tx-chips-panel" id="tx-chips-panel">
               <div class="tx-chips-title">Selected Taxonomies</div>
               <div class="tx-chips-empty" id="tx-chips-empty">Select taxonomies from the table</div>
