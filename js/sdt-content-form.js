@@ -1400,8 +1400,9 @@ var CS_DETAIL_JSON = `{
 }`;
 
 function csShowDetailView(panelKey, item) {
-  var panelId = panelKey === 'manual' ? 'sdt-panel-manual'
+  var panelId = panelKey === 'manual'   ? 'sdt-panel-manual'
               : panelKey === 'selfserve' ? 'sdt-panel-selfserve'
+              : panelKey === 'taxonomy'  ? 'sdt-panel-taxonomy'
               : 'sdt-panel-realtime';
   var panel = document.getElementById(panelId);
   if (!panel) return;
