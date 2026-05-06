@@ -298,15 +298,6 @@ function renderTaxonomyV1() {
 <div class="psub" style="margin-bottom:20px">v1 — Content analysis &amp; taxonomy tagging</div>
 
 <div id="sdt-panel-taxonomy">
-  <!-- View toggle -->
-  <div class="cs-toggle-sticky">
-    <div class="cs-view-toggle">
-      <div class="cs-view-btn cs-view-btn--act" id="cs-vbtn4-mockup" onclick="csTxView('mockup')">Mockup</div>
-      <div class="cs-view-btn" id="cs-vbtn4-process" onclick="csTxView('process')">Process</div>
-    </div>
-  </div>
-  <!-- Mockup view -->
-  <div id="cs-view4-mockup">
   <div class="cs-card">
     <div class="cs-title">Content Selection</div>
     <div class="cs-toolbar">
@@ -326,11 +317,6 @@ function renderTaxonomyV1() {
       </button>
     </div>
     <div class="cs-grid" id="cs-grid4"></div>
-  </div>
-  </div>
-  <!-- Process view -->
-  <div id="cs-view4-process" style="display:none">
-    <div id="cs-process-container4"></div>
   </div>
 </div>`;
 }
