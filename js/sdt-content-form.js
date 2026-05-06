@@ -161,7 +161,7 @@ function renderSdtContentForm() {
               <option value="documentary">Documentary</option>
             </select>
           </div>
-          <button class="cs-request-btn" onclick="csOpenModal()">
+          <button class="cs-request-btn" onclick="csOpenModalRealtime()">
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             Request New Content
           </button>
@@ -209,10 +209,147 @@ var csSelectedId    = 3;
 var csActiveFilter2 = 'all';
 var csSelectedId2   = 3;
 
-// ── Request New Content Modal (3-step) ────────────────────────────────────
-var csCurrentStep = 1;
+// ── Request New Content Modal — single-step (Enhanced Manual & Partially Automated) ──
 
 function csOpenModal() {
+  if (document.getElementById('cs-modal')) return;
+  var modal = document.createElement('div');
+  modal.id = 'cs-modal';
+  modal.className = 'cs-modal-overlay';
+  modal.innerHTML = `
+    <div class="cs-modal" onclick="event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="cs-modal-header">
+        <div>
+          <div class="cs-modal-title">Request New Content</div>
+          <div class="cs-modal-sub">Fill in the details below to submit your request</div>
+        </div>
+        <button class="cs-modal-close" onclick="csCloseModal()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="cs-modal-body">
+
+        <div class="cs-field">
+          <div class="cs-field-row">
+            <label class="cs-label">Requestor</label>
+            <span class="cs-field-note">Comes from the account</span>
+          </div>
+          <input class="cs-input cs-input--disabled" type="text" value="Marika Roque" disabled>
+        </div>
+
+        <div class="cs-field">
+          <label class="cs-label">Client Name</label>
+          <input class="cs-input" type="text" placeholder="e.g. Nike, Unilever…">
+        </div>
+
+        <div class="cs-field">
+          <label class="cs-label">Content Name</label>
+          <input class="cs-input" type="text" placeholder="e.g. Below Deck S5E3…">
+        </div>
+
+        <div class="cs-field">
+          <div class="cs-field-row">
+            <label class="cs-label">Content Upload <span class="cs-mandatory">*</span></label>
+          </div>
+          <div class="cs-ads-toggle" style="margin-bottom:8px">
+            <div class="cs-ads-btn cs-ads-btn--act" id="cs-content-link-btn" onclick="csContentTab('link')">Link</div>
+            <div class="cs-ads-btn" id="cs-content-upload-btn" onclick="csContentTab('upload')">Upload</div>
+          </div>
+          <div id="cs-content-link">
+            <input class="cs-input" id="cs-link-input" type="url" placeholder="https://…" style="width:100%;box-sizing:border-box">
+          </div>
+          <div id="cs-content-upload" style="display:none">
+            <label class="cs-upload-area" id="cs-upload-label">
+              <input type="file" accept="video/*" id="cs-file-input" style="display:none" onchange="csFileChosen(this)">
+              <div id="cs-upload-idle" style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="color:var(--muted)"><path d="M12 16V8m0 0-3 3m3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.5"/></svg>
+                <div class="cs-upload-text">Click to select a video file</div>
+                <div class="cs-upload-hint">MP4, MOV, AVI, MKV…</div>
+              </div>
+              <div id="cs-upload-chosen" style="display:none;align-items:center;gap:8px;justify-content:center">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="color:#2EAD4B;flex-shrink:0"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span id="cs-upload-filename" class="cs-upload-text" style="color:var(--text)"></span>
+                <span class="cs-upload-hint" id="cs-upload-filesize"></span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="cs-field">
+          <label class="cs-label">Ads Selection</label>
+          <div class="cs-ads-toggle">
+            <div class="cs-ads-btn cs-ads-btn--act" id="cs-ads-link-btn" onclick="csAdsTab('link')">Link</div>
+            <div class="cs-ads-btn" id="cs-ads-desc-btn" onclick="csAdsTab('desc')">Description</div>
+          </div>
+          <div id="cs-ads-link">
+            <input class="cs-input" type="url" placeholder="https://ad-url.com…" style="margin-top:8px;width:100%;box-sizing:border-box">
+          </div>
+          <div id="cs-ads-desc" style="display:none">
+            <textarea class="cs-textarea" placeholder="Describe the ad — product, audience, key messages…" style="margin-top:8px;width:100%;min-height:100px"></textarea>
+          </div>
+        </div>
+
+        <div class="cs-field">
+          <label class="cs-label">Desired Delivery Date</label>
+          <input class="cs-input" type="date">
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="cs-modal-footer">
+        <button class="cs-btn-secondary" onclick="csCloseModal()">Cancel</button>
+        <button class="cs-btn-primary" onclick="csSubmitModal()">Submit Request</button>
+      </div>
+
+    </div>
+  `;
+  modal.addEventListener('click', csCloseModal);
+  document.body.appendChild(modal);
+  setTimeout(function() { modal.classList.add('cs-modal-overlay--in'); }, 10);
+}
+
+function csFileChosen(input) {
+  var file = input.files[0];
+  if (!file) return;
+  document.getElementById('cs-upload-idle').style.display   = 'none';
+  document.getElementById('cs-upload-chosen').style.display = 'flex';
+  document.getElementById('cs-upload-filename').textContent = file.name;
+  document.getElementById('cs-upload-filesize').textContent = (file.size / 1024 / 1024).toFixed(1) + ' MB';
+  var ul = document.getElementById('cs-upload-label');
+  if (ul) ul.classList.remove('cs-upload-area--error');
+}
+
+function csSubmitModal() {
+  var uploadMode = document.getElementById('cs-content-upload') &&
+                   document.getElementById('cs-content-upload').style.display !== 'none';
+  if (uploadMode) {
+    var fi = document.getElementById('cs-file-input');
+    if (!fi || !fi.files.length) {
+      var ul = document.getElementById('cs-upload-label');
+      if (ul) ul.classList.add('cs-upload-area--error');
+      return;
+    }
+  } else {
+    var link = document.getElementById('cs-link-input');
+    if (!link || !link.value.trim()) {
+      link.classList.add('cs-input--error');
+      link.focus();
+      return;
+    }
+  }
+  csCloseModal();
+  setTimeout(csOpenSuccessModal, 220);
+}
+
+// ── Request New Content Modal — 3-step (Real-time Analysis) ──────────────
+var csCurrentStep = 1;
+
+function csOpenModalRealtime() {
   if (document.getElementById('cs-modal')) return;
   csCurrentStep = 1;
   var modal = document.createElement('div');
