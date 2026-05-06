@@ -2035,18 +2035,18 @@ function csTx2TaxShowUpload() {
     +     '<div style="font-size:12px;color:var(--muted)">Choose an input type</div>'
     +   '</div>'
 
-    // Option selector
-    +   '<div class="tx2-opt-row" style="flex-direction:column;gap:7px;margin-bottom:16px">'
-    +     '<div class="tx2-opt tx2-opt--act" id="tx2-opt-video" onclick="csTx2TaxSelectInput(\'video\')">'
-    +       '<svg width="15" height="15" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
+    // Option selector — horizontal segmented toggle
+    +   '<div style="display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:16px">'
+    +     '<div class="tx2-seg tx2-seg--act" id="tx2-opt-video" onclick="csTx2TaxSelectInput(\'video\')">'
+    +       '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
     +       '<span>Video</span>'
     +     '</div>'
-    +     '<div class="tx2-opt" id="tx2-opt-doc" onclick="csTx2TaxSelectInput(\'doc\')">'
-    +       '<svg width="15" height="15" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
-    +       '<span>Document / PDF</span>'
+    +     '<div class="tx2-seg" id="tx2-opt-doc" onclick="csTx2TaxSelectInput(\'doc\')">'
+    +       '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +       '<span>Doc / PDF</span>'
     +     '</div>'
-    +     '<div class="tx2-opt" id="tx2-opt-text" onclick="csTx2TaxSelectInput(\'text\')">'
-    +       '<svg width="15" height="15" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="26" cy="26" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M29 29l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +     '<div class="tx2-seg" id="tx2-opt-text" onclick="csTx2TaxSelectInput(\'text\')">'
+    +       '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="26" cy="26" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M29 29l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
     +       '<span>Free Text</span>'
     +     '</div>'
     +   '</div>'
@@ -2096,7 +2096,7 @@ function csTx2TaxSelectInput(type) {
   csTx2TaxInputType = type;
   ['video', 'doc', 'text'].forEach(function(t) {
     var el = document.getElementById('tx2-opt-' + t);
-    if (el) el.className = 'tx2-opt' + (t === type ? ' tx2-opt--act' : '');
+    if (el) el.className = 'tx2-seg' + (t === type ? ' tx2-seg--act' : '');
   });
   var area = document.getElementById('tx2-input-area');
   if (!area) return;
@@ -2569,6 +2569,25 @@ function sdtInjectStyles() {
     }
     .tx2-opt:hover { border-color: var(--accent); color: var(--text); background: var(--bg); }
     .tx2-opt--act  { border-color: var(--accent); color: var(--accent); background: rgba(237,0,94,.04); }
+    .tx2-seg {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: background .13s, color .13s;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .tx2-seg:hover { color: var(--text); }
+    .tx2-seg--act  { background: var(--surface); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.07); }
     .tx2-upload-zone {
       display: flex;
       flex-direction: column;
