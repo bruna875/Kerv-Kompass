@@ -1152,14 +1152,14 @@ function csShowDetailView3(item) {
     // ── Settings row (inline, no separate card) ──
     + '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">'
     +   '<div class="cs-field"><label class="cs-label">Tier Selection</label>'
-    +     '<select class="cs-filter-select" onchange="csDvUpdateTitle()" id="cs-dv-tier" style="min-width:170px;border-color:var(--border-md);background-image:url(\'data:image/svg+xml,%3Csvg width=\\'10\\' height=\\'6\\' viewBox=\\'0 0 10 6\\' fill=\\'none\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cpath d=\\'M1 1l4 4 4-4\\' stroke=\\'%236B7280\\' stroke-width=\\'1.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'/%3E%3C/svg%3E\')">'
+    +     '<select class="cs-dv-select" onchange="csDvUpdateTitle()" id="cs-dv-tier" style="min-width:170px">'
     +       '<option>Exact Product Match</option>'
     +       '<option>Contextual Match</option>'
     +       '<option>Audience Match</option>'
     +     '</select>'
     +   '</div>'
     +   '<div class="cs-field"><label class="cs-label">Ad Playback Mode</label>'
-    +     '<select class="cs-filter-select" onchange="csDvUpdateTitle()" id="cs-dv-mode" style="min-width:150px;border-color:var(--border-md);background-image:url(\'data:image/svg+xml,%3Csvg width=\\'10\\' height=\\'6\\' viewBox=\\'0 0 10 6\\' fill=\\'none\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cpath d=\\'M1 1l4 4 4-4\\' stroke=\\'%236B7280\\' stroke-width=\\'1.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'/%3E%3C/svg%3E\')">'
+    +     '<select class="cs-dv-select" onchange="csDvUpdateTitle()" id="cs-dv-mode" style="min-width:150px">'
     +       '<option>Sync L Bar</option>'
     +       '<option>Pre-roll</option>'
     +       '<option>Mid-roll</option>'
@@ -1228,7 +1228,7 @@ function csDvTaxPanel() {
     +   '<div style="display:flex;gap:4px"><button class="cs-dv-panel-ico" title="Expand">⤢</button><button class="cs-dv-panel-ico cs-dv-panel-ico--red" onclick="csDvToggle(\'tax\')" title="Close">✕</button></div>'
     + '</div>'
     + '<div class="cs-dv-panel-sub">'
-    +   '<select class="cs-filter-select" style="width:100%;border-color:var(--border-md);background-image:url(\'data:image/svg+xml,%3Csvg width=\\'10\\' height=\\'6\\' viewBox=\\'0 0 10 6\\' fill=\\'none\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cpath d=\\'M1 1l4 4 4-4\\' stroke=\\'%236B7280\\' stroke-width=\\'1.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'/%3E%3C/svg%3E\')"><option>IAB Taxonomy</option><option>Brand Safety</option><option>Custom Moments</option></select>'
+    +   '<select class="cs-dv-select" style="width:100%"><option>IAB Taxonomy</option><option>Brand Safety</option><option>Custom Moments</option></select>'
     + '</div>'
     + '<div class="cs-dv-panel-body">'
     + CS_DETAIL_SCENES.map(function(sc) {
@@ -1970,6 +1970,25 @@ function sdtInjectStyles() {
     .cs-dv-json-key { color: #7dd3fc; }
     .cs-dv-json-str { color: #f9a8d4; }
     .cs-dv-json-num { color: #86efac; }
+    /* Detail view select (neutral border, no accent) */
+    .cs-dv-select {
+      height: 34px;
+      border: 1.5px solid var(--border-md);
+      border-radius: 7px;
+      padding: 0 28px 0 10px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 9px center;
+    }
+    .cs-dv-select:focus { border-color: var(--border-md); box-shadow: 0 0 0 3px rgba(107,114,128,.1); }
+
     /* Toggle buttons: rounded square, subtle bg, no border */
     .cs-dv-tog {
       display: inline-flex;
