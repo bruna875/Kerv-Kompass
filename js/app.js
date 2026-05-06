@@ -25,7 +25,7 @@ function buildNav() {
   }).join('');
 }
 
-function setPage(id, label) {
+function setPage(id, label, noPush) {
   activeId = id;
   document.getElementById('pgname').textContent = label;
   var content = document.getElementById('content');
@@ -36,7 +36,31 @@ function setPage(id, label) {
   }
   buildNav();
   if (id === 'roadmap') setTimeout(ganttTooltipInit, 50);
+  if (!noPush) history.pushState({ id: id, label: label }, '', '/' + id);
 }
+
+// ── URL routing helpers ──
+
+function pageFromPath() {
+  var path = location.pathname.replace(/^\//, '').replace(/\/$/, '') || 'roadmap';
+  // find matching nav item
+  var found = null;
+  NAV_CONFIG.forEach(function(sec) {
+    sec.items.forEach(function(item) {
+      if (item.id === path) found = item;
+    });
+  });
+  return found || NAV_CONFIG[0].items[0];
+}
+
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.id) {
+    setPage(e.state.id, e.state.label, true);
+  } else {
+    var item = pageFromPath();
+    setPage(item.id, item.label, true);
+  }
+});
 
 // ── Data loading ──
 
@@ -266,9 +290,10 @@ function login() {
     new Promise(function(resolve) { loadData(resolve); })
       .then(function() {
         buildColorMaps();
+        var startItem = pageFromPath();
+        activeId = startItem.id;
         buildNav();
-        document.getElementById('content').innerHTML = PAGES[activeId]();
-        setTimeout(ganttTooltipInit, 50);
+        setPage(startItem.id, startItem.label, true);
       });
   } else {
     document.getElementById('err').textContent = 'Invalid credentials.';

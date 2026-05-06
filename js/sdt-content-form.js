@@ -6,36 +6,43 @@ function renderSdtContentForm() {
 <div class="ptitle">SDT – New Content Form</div>
 <div class="psub" style="margin-bottom:20px">Select a process to get started</div>
 
-<div style="display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:start">
+<div id="sdt-grid" style="display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:start">
 
   <!-- ── Left: sidebar nav ── -->
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px;position:sticky;top:0;align-self:start;">
+  <div class="sdt-sb" id="sdt-sb" style="position:sticky;top:0;align-self:start;">
 
     <div class="sdt-nav-item sdt-nav-item--act" id="sdt-nav-manual" onclick="sdtNav('manual')">
       <div class="sdt-nav-num">1</div>
-      <div><div class="sdt-nav-label">Enhanced Manual</div><div class="sdt-nav-sub">process</div></div>
+      <div class="sdt-nav-text"><div class="sdt-nav-label">Enhanced Manual</div><div class="sdt-nav-sub">process</div></div>
     </div>
 
     <div class="sdt-nav-item" id="sdt-nav-selfserve" onclick="sdtNav('selfserve')">
       <div class="sdt-nav-num">2</div>
-      <div><div class="sdt-nav-label">Partially Automated</div><div class="sdt-nav-sub">process</div></div>
+      <div class="sdt-nav-text"><div class="sdt-nav-label">Partially Automated</div><div class="sdt-nav-sub">process</div></div>
     </div>
 
     <div class="sdt-nav-item" id="sdt-nav-realtime" onclick="sdtNav('realtime')">
       <div class="sdt-nav-num">3</div>
-      <div><div class="sdt-nav-label">Real-time Analysis</div><div class="sdt-nav-sub">process</div></div>
+      <div class="sdt-nav-text"><div class="sdt-nav-label">Real-time Analysis</div><div class="sdt-nav-sub">process</div></div>
     </div>
 
-    <div style="height:1px;background:var(--border);margin:4px 6px"></div>
+    <div class="sdt-sb-divider"></div>
 
     <div class="sdt-nav-item" id="sdt-nav-taxonomy" onclick="sdtNav('taxonomy')">
       <div class="sdt-nav-num">4</div>
-      <div><div class="sdt-nav-label">Taxonomy Explorer v1</div><div class="sdt-nav-sub">integration</div></div>
+      <div class="sdt-nav-text"><div class="sdt-nav-label">Taxonomy Explorer v1</div><div class="sdt-nav-sub">integration</div></div>
     </div>
 
     <div class="sdt-nav-item" id="sdt-nav-taxonomy2" onclick="sdtNav('taxonomy2')">
       <div class="sdt-nav-num">5</div>
-      <div><div class="sdt-nav-label">Taxonomy Explorer v2</div><div class="sdt-nav-sub">integration</div></div>
+      <div class="sdt-nav-text"><div class="sdt-nav-label">Taxonomy Explorer v2</div><div class="sdt-nav-sub">integration</div></div>
+    </div>
+
+    <!-- toggle button -->
+    <div class="sdt-sb-tog" onclick="sdtSbToggle()" title="Collapse sidebar">
+      <svg id="sdt-sb-ico" width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <path d="M6 2L3 5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
     </div>
 
   </div>
@@ -2367,7 +2374,20 @@ function csTx2RenderProcess() {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────
-var sdtActive = 'manual';
+var sdtActive     = 'manual';
+var sdtSbCol      = false;
+
+function sdtSbToggle() {
+  sdtSbCol = !sdtSbCol;
+  var sb   = document.getElementById('sdt-sb');
+  var grid = document.getElementById('sdt-grid');
+  var ico  = document.getElementById('sdt-sb-ico');
+  if (sb)   sb.classList.toggle('sdt-sb--col', sdtSbCol);
+  if (grid) grid.style.gridTemplateColumns = sdtSbCol ? '44px 1fr' : '220px 1fr';
+  if (ico)  ico.innerHTML = sdtSbCol
+    ? '<path d="M4 2l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    : '<path d="M6 2L3 5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+}
 
 function sdtNav(id) {
   ['manual','selfserve','realtime','taxonomy','taxonomy2'].forEach(function(k) {
@@ -2382,6 +2402,7 @@ function sdtNav(id) {
 function sdtInit() {
   // Reset state to match the freshly-rendered HTML
   sdtActive = 'manual';
+  sdtSbCol  = false;
   csActiveFilter    = 'all'; csSelectedId    = 3;
   csActiveFilter2   = 'all'; csSelectedId2   = 3;
   csActiveFilter3   = 'all'; csSelectedId3   = 3;
@@ -2402,6 +2423,34 @@ function sdtInjectStyles() {
   var s = document.createElement('style');
   s.id = 'sdt-styles';
   s.textContent = `
+    /* Sidebar shell */
+    .sdt-sb {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 6px;
+      transition: width .2s;
+    }
+    .sdt-sb-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 6px;
+      transition: margin .2s;
+    }
+    .sdt-sb-tog {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 28px;
+      margin-top: 4px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--faint);
+      transition: background .13s, color .13s;
+    }
+    .sdt-sb-tog:hover { background: var(--bg); color: var(--muted); }
+
+    /* Nav items */
     .sdt-nav-item {
       display: flex;
       align-items: center;
@@ -2411,6 +2460,7 @@ function sdtInjectStyles() {
       cursor: pointer;
       transition: background .13s;
       margin-bottom: 2px;
+      overflow: hidden;
     }
     .sdt-nav-item:hover { background: var(--bg); }
     .sdt-nav-item--act  { background: var(--subtle); }
@@ -2430,6 +2480,12 @@ function sdtInjectStyles() {
       flex-shrink: 0;
       transition: background .13s, color .13s;
     }
+    .sdt-nav-text {
+      overflow: hidden;
+      transition: opacity .15s, max-width .2s;
+      max-width: 180px;
+      white-space: nowrap;
+    }
     .sdt-nav-label {
       font-size: 12px;
       font-weight: 500;
@@ -2442,6 +2498,12 @@ function sdtInjectStyles() {
       color: var(--faint);
       line-height: 1.2;
     }
+
+    /* Collapsed state */
+    .sdt-sb--col .sdt-nav-item { padding: 10px 0; justify-content: center; gap: 0; }
+    .sdt-sb--col .sdt-nav-text { opacity: 0; max-width: 0; }
+    .sdt-sb--col .sdt-sb-divider { margin: 4px 8px; }
+
     .sdt-panel-title {
       font-size: 15px;
       font-weight: 500;
