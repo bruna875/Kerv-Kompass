@@ -1984,11 +1984,11 @@ function csTx2TaxShowUpload() {
       + '  <div style="font-size:11px;color:var(--faint);margin-top:2px">'
       + (type === 'video' ? 'MP4, MOV, AVI — up to 2 GB' : 'PDF, DOCX, TXT — up to 50 MB')
       + '  </div>'
-      + '  <button class="cs-request-btn" style="margin-top:12px;pointer-events:none">Browse file</button>'
+      + ''
       + '</div>';
 
     var textArea =
-        '<textarea class="cs-textarea" id="tx2-text-input" placeholder="Paste or type your text here. The AI will analyse topics, sentiments, moments and taxonomy classifications…" style="min-height:160px;resize:vertical"></textarea>';
+        '<textarea class="cs-textarea" id="tx2-text-input" placeholder="Paste or type your text here. The AI will analyse topics, sentiments, moments and taxonomy classifications…" style="width:100%;box-sizing:border-box;min-height:160px;resize:vertical"></textarea>';
 
     return type === 'text' ? textArea : uploadZone;
   }
@@ -2004,15 +2004,15 @@ function csTx2TaxShowUpload() {
     // Option selector
     + '<div class="tx2-opt-row">'
     +   '<div class="tx2-opt tx2-opt--act" id="tx2-opt-video" onclick="csTx2TaxSelectInput(\'video\')">'
-    +     '<svg width="20" height="20" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
+    +     '<svg width="15" height="15" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
     +     '<span>Video</span>'
     +   '</div>'
     +   '<div class="tx2-opt" id="tx2-opt-doc" onclick="csTx2TaxSelectInput(\'doc\')">'
-    +     '<svg width="20" height="20" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +     '<svg width="15" height="15" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
     +     '<span>Document / PDF</span>'
     +   '</div>'
     +   '<div class="tx2-opt" id="tx2-opt-text" onclick="csTx2TaxSelectInput(\'text\')">'
-    +     '<svg width="20" height="20" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="26" cy="26" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M29 29l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +     '<svg width="15" height="15" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="26" cy="26" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M29 29l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
     +     '<span>Free Text</span>'
     +   '</div>'
     + '</div>'
@@ -2050,12 +2050,12 @@ function csTx2TaxSelectInput(type) {
       + '<div style="font-size:11px;color:var(--faint);margin-top:2px">'
       + (t === 'video' ? 'MP4, MOV, AVI — up to 2 GB' : 'PDF, DOCX, TXT — up to 50 MB')
       + '</div>'
-      + '<button class="cs-request-btn" style="margin-top:12px;pointer-events:none">Browse file</button>'
+      + ''
       + '</div>';
   };
 
   if (type === 'text') {
-    area.innerHTML = '<textarea class="cs-textarea" id="tx2-text-input" placeholder="Paste or type your text here. The AI will analyse topics, sentiments, moments and taxonomy classifications…" style="min-height:160px;resize:vertical"></textarea>';
+    area.innerHTML = '<textarea class="cs-textarea" id="tx2-text-input" placeholder="Paste or type your text here. The AI will analyse topics, sentiments, moments and taxonomy classifications…" style="width:100%;box-sizing:border-box;min-height:160px;resize:vertical"></textarea>';
   } else {
     area.innerHTML = uploadZone(type);
   }
@@ -2457,19 +2457,20 @@ function sdtInjectStyles() {
     .tx2-opt {
       flex: 1;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      gap: 8px;
-      padding: 16px 12px;
+      justify-content: center;
+      gap: 7px;
+      padding: 9px 12px;
       border: 1.5px solid var(--border-md);
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: pointer;
       font-size: 12px;
       font-weight: 500;
       color: var(--muted);
-      text-align: center;
       transition: border-color .15s, background .15s, color .15s;
       user-select: none;
+      white-space: nowrap;
     }
     .tx2-opt:hover { border-color: var(--accent); color: var(--text); background: var(--bg); }
     .tx2-opt--act  { border-color: var(--accent); color: var(--accent); background: rgba(237,0,94,.04); }
