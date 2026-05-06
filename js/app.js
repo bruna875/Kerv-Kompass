@@ -295,3 +295,8 @@ document.getElementById('linkSaveBtn').addEventListener('click', saveLink);
 document.getElementById('linkClearBtn').addEventListener('click', clearLink);
 document.getElementById('pw').addEventListener('keydown', function(e) { if (e.key === 'Enter') login(); });
 document.getElementById('em').addEventListener('keydown', function(e) { if (e.key === 'Enter') login(); });
+
+// Auto-login
+document.getElementById('em').value = 'product@kerv.ai';
+document.getElementById('pw').value = 'roadmap';
+login();
