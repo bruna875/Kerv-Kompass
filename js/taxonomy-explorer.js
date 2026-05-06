@@ -127,8 +127,8 @@ function renderTaxonomyExplorer() {
             <div id="tx-ctab-pagination"></div>
           </div>
 
-          <!-- Right: chips + save -->
-          <div>
+          <!-- Right: chips + save (sticky, fixed height, chips scroll) -->
+          <div style="position:sticky;top:16px;display:flex;flex-direction:column;height:calc(100vh - 220px);gap:0">
             <div class="tx-chips-panel" id="tx-chips-panel">
               <div class="tx-chips-title">Selected Taxonomies</div>
               <div class="tx-chips-empty" id="tx-chips-empty">Select taxonomies from the table</div>
@@ -924,8 +924,8 @@ function txInjectStyles() {
     /* Chips panel */
     .tx-chips-panel {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;
-      min-height: 72px;
+      border-radius: 10px 10px 0 0; padding: 12px 14px;
+      flex: 1; min-height: 0; overflow-y: auto;
     }
     .tx-chips-title {
       font-size: 10px; font-weight: 600; text-transform: uppercase;
@@ -957,7 +957,14 @@ function txInjectStyles() {
     .tx-chip-x:hover { background: var(--border-md); color: var(--text); }
 
     /* Save panel */
-    .tx-save-panel { display: flex; flex-direction: column; gap: 8px; }
+    .tx-save-panel {
+      display: flex; flex-direction: column; gap: 8px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border); border-top: none;
+      border-radius: 0 0 10px 10px;
+      padding: 12px 14px;
+    }
     .tx-save-label {
       font-size: 10px; font-weight: 600; text-transform: uppercase;
       letter-spacing: .5px; color: var(--faint);
