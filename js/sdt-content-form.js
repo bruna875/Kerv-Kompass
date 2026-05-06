@@ -8,44 +8,68 @@ function renderSdtContentForm() {
 
 <div style="display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:start">
 
-  <!-- ── Left: sidebar nav ── -->
+  <!-- ── Left: sidebar nav (accordion) ── -->
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px;position:sticky;top:0;align-self:start;">
-    <div class="sdt-nav-item sdt-nav-item--act" id="sdt-nav-manual"   onclick="sdtNav('manual')">
+
+    <!-- 1 Enhanced Manual -->
+    <div class="sdt-nav-item sdt-nav-item--act" id="sdt-nav-manual" onclick="sdtNavToggle('manual')">
       <div class="sdt-nav-num">1</div>
-      <div>
-        <div class="sdt-nav-label">Enhanced Manual</div>
-        <div class="sdt-nav-sub">process</div>
-      </div>
+      <div style="flex:1"><div class="sdt-nav-label">Enhanced Manual</div><div class="sdt-nav-sub">process</div></div>
+      <svg class="sdt-acc-chev sdt-acc-chev--open" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
-    <div class="sdt-nav-item" id="sdt-nav-selfserve" onclick="sdtNav('selfserve')">
+    <div class="sdt-acc-body" id="sdt-acc-manual">
+      <div class="sdt-acc-link" onclick="sdtSubNav('manual','mockup')">Mockup view</div>
+      <div class="sdt-acc-link" onclick="sdtSubNav('manual','process')">Process flow</div>
+    </div>
+
+    <!-- 2 Partially Automated -->
+    <div class="sdt-nav-item" id="sdt-nav-selfserve" onclick="sdtNavToggle('selfserve')">
       <div class="sdt-nav-num">2</div>
-      <div>
-        <div class="sdt-nav-label">Partially Automated</div>
-        <div class="sdt-nav-sub">process</div>
-      </div>
+      <div style="flex:1"><div class="sdt-nav-label">Partially Automated</div><div class="sdt-nav-sub">process</div></div>
+      <svg class="sdt-acc-chev" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
-    <div class="sdt-nav-item" id="sdt-nav-realtime" onclick="sdtNav('realtime')">
+    <div class="sdt-acc-body" id="sdt-acc-selfserve" style="display:none">
+      <div class="sdt-acc-link" onclick="sdtSubNav('selfserve','mockup')">Mockup view</div>
+      <div class="sdt-acc-link" onclick="sdtSubNav('selfserve','process')">Process flow</div>
+    </div>
+
+    <!-- 3 Real-time Analysis -->
+    <div class="sdt-nav-item" id="sdt-nav-realtime" onclick="sdtNavToggle('realtime')">
       <div class="sdt-nav-num">3</div>
-      <div>
-        <div class="sdt-nav-label">Real-time Analysis</div>
-        <div class="sdt-nav-sub">process</div>
-      </div>
+      <div style="flex:1"><div class="sdt-nav-label">Real-time Analysis</div><div class="sdt-nav-sub">process</div></div>
+      <svg class="sdt-acc-chev" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
+    <div class="sdt-acc-body" id="sdt-acc-realtime" style="display:none">
+      <div class="sdt-acc-link" onclick="sdtSubNav('realtime','mockup')">Mockup view</div>
+      <div class="sdt-acc-link" onclick="sdtSubNav('realtime','process')">Process flow</div>
+    </div>
+
     <div style="height:1px;background:var(--border);margin:4px 6px"></div>
-    <div class="sdt-nav-item" id="sdt-nav-taxonomy" onclick="sdtNav('taxonomy')">
+
+    <!-- 4 Taxonomy Explorer v1 -->
+    <div class="sdt-nav-item" id="sdt-nav-taxonomy" onclick="sdtNavToggle('taxonomy')">
       <div class="sdt-nav-num">4</div>
-      <div>
-        <div class="sdt-nav-label">Taxonomy Explorer v1</div>
-        <div class="sdt-nav-sub">integration</div>
-      </div>
+      <div style="flex:1"><div class="sdt-nav-label">Taxonomy Explorer v1</div><div class="sdt-nav-sub">integration</div></div>
+      <svg class="sdt-acc-chev" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
-    <div class="sdt-nav-item" id="sdt-nav-taxonomy2" onclick="sdtNav('taxonomy2')">
+    <div class="sdt-acc-body" id="sdt-acc-taxonomy" style="display:none">
+      <div class="sdt-acc-link" onclick="sdtSubNav('taxonomy','mockup')">Mockup view</div>
+      <div class="sdt-acc-link" onclick="sdtSubNav('taxonomy','process')">Process flow</div>
+    </div>
+
+    <!-- 5 Taxonomy Explorer v2 -->
+    <div class="sdt-nav-item" id="sdt-nav-taxonomy2" onclick="sdtNavToggle('taxonomy2')">
       <div class="sdt-nav-num">5</div>
-      <div>
-        <div class="sdt-nav-label">Taxonomy Explorer v2</div>
-        <div class="sdt-nav-sub">integration</div>
-      </div>
+      <div style="flex:1"><div class="sdt-nav-label">Taxonomy Explorer v2</div><div class="sdt-nav-sub">integration</div></div>
+      <svg class="sdt-acc-chev" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
+    <div class="sdt-acc-body" id="sdt-acc-taxonomy2" style="display:none">
+      <div class="sdt-acc-link" onclick="sdtSubNav('taxonomy2','metadata')">Metadata Analysis</div>
+      <div class="sdt-acc-link" onclick="sdtSubNav('taxonomy2','new')">New Analysis</div>
+      <div class="sdt-acc-link" onclick="sdtSubNav('taxonomy2','library')">Library</div>
+      <div class="sdt-acc-link" onclick="sdtSubNav('taxonomy2','taxonomy')">Taxonomy Explorer</div>
+    </div>
+
   </div>
 
   <!-- ── Right: content ── -->
@@ -2375,7 +2399,8 @@ function csTx2RenderProcess() {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────
-var sdtActive = 'manual';
+var sdtActive  = 'manual';
+var sdtAccOpen = 'manual';
 
 function sdtNav(id) {
   ['manual','selfserve','realtime','taxonomy','taxonomy2'].forEach(function(k) {
@@ -2387,9 +2412,49 @@ function sdtNav(id) {
   sdtActive = id;
 }
 
+function sdtNavToggle(id) {
+  // Switch the main panel
+  sdtNav(id);
+  // Toggle accordion: clicking the already-open item collapses it
+  var wasOpen = sdtAccOpen === id;
+  sdtAccOpen = wasOpen ? null : id;
+  ['manual','selfserve','realtime','taxonomy','taxonomy2'].forEach(function(k) {
+    var body = document.getElementById('sdt-acc-' + k);
+    var chev = document.querySelector('#sdt-nav-' + k + ' .sdt-acc-chev');
+    var open = k === sdtAccOpen;
+    if (body) body.style.display = open ? 'block' : 'none';
+    if (chev) chev.style.transform = open ? 'rotate(90deg)' : '';
+  });
+}
+
+function sdtSubNav(panel, sub) {
+  // Open parent panel if not already active
+  if (sdtActive !== panel) sdtNavToggle(panel);
+  // Handle sub-page routing
+  if (panel === 'taxonomy2') {
+    if (sub === 'metadata')  { csTx2NavTab('metadata'); }
+    else if (sub === 'taxonomy') { csTx2NavTab('taxonomy'); }
+    else if (sub === 'new')  { csTx2NavTab('taxonomy'); csTx2TaxShowUpload(); }
+    else if (sub === 'library') { csTx2NavTab('taxonomy'); csTx2TaxShowUpload(); }
+  } else if (panel === 'manual') {
+    if (sub === 'mockup')  csView('mockup');
+    else if (sub === 'process') csView('process');
+  } else if (panel === 'selfserve') {
+    if (sub === 'mockup')  csView2('mockup');
+    else if (sub === 'process') csView2('process');
+  } else if (panel === 'realtime') {
+    if (sub === 'mockup')  csView3('mockup');
+    else if (sub === 'process') csView3('process');
+  } else if (panel === 'taxonomy') {
+    if (sub === 'mockup')  csTxView('mockup');
+    else if (sub === 'process') csTxView('process');
+  }
+}
+
 function sdtInit() {
   // Reset state to match the freshly-rendered HTML
-  sdtActive = 'manual';
+  sdtActive  = 'manual';
+  sdtAccOpen = 'manual';
   csActiveFilter    = 'all'; csSelectedId    = 3;
   csActiveFilter2   = 'all'; csSelectedId2   = 3;
   csActiveFilter3   = 'all'; csSelectedId3   = 3;
@@ -2450,6 +2515,24 @@ function sdtInjectStyles() {
       color: var(--faint);
       line-height: 1.2;
     }
+    .sdt-acc-chev {
+      color: var(--faint);
+      flex-shrink: 0;
+      transition: transform .2s;
+    }
+    .sdt-acc-chev--open { transform: rotate(90deg); }
+    .sdt-acc-body {
+      padding: 2px 6px 6px 40px;
+    }
+    .sdt-acc-link {
+      font-size: 11px;
+      color: var(--muted);
+      padding: 5px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background .13s, color .13s;
+    }
+    .sdt-acc-link:hover { background: var(--bg); color: var(--text); }
     .sdt-panel-title {
       font-size: 15px;
       font-weight: 500;
