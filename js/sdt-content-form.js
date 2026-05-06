@@ -1032,7 +1032,6 @@ function csAddAndSubmit() {
 
   csCloseModal();
   csRender3();
-  setTimeout(csOpenSuccessModal, 220);
 }
 
 // ── Fake upload ───────────────────────────────────────────────────────────
