@@ -2037,6 +2037,38 @@ function sdtInjectStyles() {
       box-shadow: 0 1px 3px rgba(0,0,0,.07);
     }
 
+    /* Taxonomies sub-nav: override tabs → buttons inside the detail view */
+    #cs-dv-tab-content-taxonomies .tx-ctabs-nav {
+      gap: 6px;
+      flex-wrap: wrap;
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 12px;
+    }
+    #cs-dv-tab-content-taxonomies .tx-ctab {
+      border: 1.5px solid var(--border-md);
+      border-radius: 7px;
+      background: var(--surface);
+      padding: 5px 14px;
+      height: auto;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background .13s, color .13s, border-color .13s;
+      border-bottom: 1.5px solid var(--border-md);
+      margin-bottom: 0;
+    }
+    #cs-dv-tab-content-taxonomies .tx-ctab:hover {
+      background: var(--bg);
+      color: var(--text);
+    }
+    #cs-dv-tab-content-taxonomies .tx-ctab--act {
+      background: var(--subtle);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
     /* Detail view tab nav (Taxonomy Explorer v1) */
     .cs-dv-tabnav {
       display: flex;
