@@ -373,7 +373,7 @@ function csOpenModalRealtime() {
     +   '<div class="cs-step-line"></div>'
     +   '<div class="cs-step" id="cs-step-ind-2"><div class="cs-step-circle"><span>2</span></div><div class="cs-step-label">Processing</div></div>'
     +   '<div class="cs-step-line"></div>'
-    +   '<div class="cs-step" id="cs-step-ind-3"><div class="cs-step-circle"><span>3</span></div><div class="cs-step-label">Delivery</div></div>'
+    +   '<div class="cs-step" id="cs-step-ind-3"><div class="cs-step-circle"><span>3</span></div><div class="cs-step-label">Add Ads</div></div>'
     + '</div>'
 
     // ── Step 1 body ──
@@ -457,15 +457,34 @@ function csOpenModalRealtime() {
 
     + '</div>'
 
-    // ── Step 3 body (placeholder) ──
+    // ── Step 3 body — Add Ads ──
     + '<div class="cs-modal-body" id="cs-step-body-3" style="display:none">'
-    +   '<div style="padding:40px 0;text-align:center;color:var(--muted);font-size:13px">Step 3 — Delivery coming soon</div>'
+
+    +   '<div class="cs-field">'
+    +     '<label class="cs-label">Ads Selection</label>'
+    +     '<div class="cs-ads-toggle" style="margin-bottom:8px">'
+    +       '<div class="cs-ads-btn cs-ads-btn--act" id="cs-rt-ads-link-btn" onclick="csRtAdsTab(\'link\')">Link</div>'
+    +       '<div class="cs-ads-btn" id="cs-rt-ads-desc-btn" onclick="csRtAdsTab(\'desc\')">Description</div>'
+    +     '</div>'
+    +     '<div id="cs-rt-ads-link">'
+    +       '<input class="cs-input" type="url" placeholder="https://ad-url.com…" style="width:100%;box-sizing:border-box">'
+    +     '</div>'
+    +     '<div id="cs-rt-ads-desc" style="display:none">'
+    +       '<textarea class="cs-textarea" placeholder="Describe the ad — product, audience, key messages…" style="width:100%;min-height:100px"></textarea>'
+    +     '</div>'
+    +   '</div>'
+
+    +   '<div class="cs-field">'
+    +     '<label class="cs-label">Desired Delivery Date</label>'
+    +     '<input class="cs-input" type="date" style="width:100%;box-sizing:border-box">'
+    +   '</div>'
+
     + '</div>'
 
     // Footer
     + '<div class="cs-modal-footer">'
     +   '<button class="cs-btn-secondary" id="cs-modal-back-btn" style="display:none;margin-right:auto" onclick="csPrevStep()">← Back</button>'
-    +   '<button class="cs-btn-secondary" onclick="csCloseModal()">Cancel</button>'
+    +   '<button class="cs-btn-secondary" id="cs-modal-skip-btn" style="display:none" onclick="csCloseModal();setTimeout(csOpenSuccessModal,220)">Skip &amp; Submit</button>'
     +   '<button class="cs-btn-primary" id="cs-modal-next-btn" onclick="csNextStep()">Next</button>'
     + '</div>'
 
@@ -608,8 +627,19 @@ function csUpdateModalStepper() {
   });
   var backBtn = document.getElementById('cs-modal-back-btn');
   var nextBtn = document.getElementById('cs-modal-next-btn');
+  var skipBtn = document.getElementById('cs-modal-skip-btn');
   if (backBtn) backBtn.style.display = csCurrentStep > 1 ? '' : 'none';
-  if (nextBtn) nextBtn.textContent   = csCurrentStep === 3 ? 'Submit Request' : 'Next';
+  if (skipBtn) skipBtn.style.display = csCurrentStep === 3 ? '' : 'none';
+  if (nextBtn) nextBtn.textContent   = csCurrentStep === 3 ? 'Submit' : 'Next';
+}
+
+// ── Ads tab toggle for Real-time step 3 ──────────────────────────────────
+
+function csRtAdsTab(tab) {
+  document.getElementById('cs-rt-ads-link').style.display    = tab === 'link' ? '' : 'none';
+  document.getElementById('cs-rt-ads-desc').style.display    = tab === 'desc' ? '' : 'none';
+  document.getElementById('cs-rt-ads-link-btn').className = 'cs-ads-btn' + (tab === 'link' ? ' cs-ads-btn--act' : '');
+  document.getElementById('cs-rt-ads-desc-btn').className = 'cs-ads-btn' + (tab === 'desc' ? ' cs-ads-btn--act' : '');
 }
 
 // ── Fake upload ───────────────────────────────────────────────────────────
