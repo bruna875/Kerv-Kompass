@@ -1409,6 +1409,16 @@ function csShowDetailView(panelKey, item) {
   csDetailViewPanel = panelKey;
   csDetailPanels3 = { tax: true, prod: true, json: true };
 
+  // Tab nav — only for Taxonomy Explorer v1
+  var txTabNav = panelKey === 'taxonomy'
+    ? '<div class="cs-dv-tabnav">'
+    +   '<button class="cs-dv-tab cs-dv-tab--act" id="cs-dv-tab-metadata"   onclick="csDvTab(\'metadata\')">Metadata</button>'
+    +   '<button class="cs-dv-tab" id="cs-dv-tab-moments"                   onclick="csDvTab(\'moments\')">Moments</button>'
+    +   '<button class="cs-dv-tab" id="cs-dv-tab-taxonomies"                onclick="csDvTab(\'taxonomies\')">Taxonomies</button>'
+    +   '<button class="cs-dv-tab" id="cs-dv-tab-episodes"                  onclick="csDvTab(\'episodes\')">Episodes &amp; Shows</button>'
+    + '</div>'
+    : '';
+
   panel.innerHTML =
 
     // ── Mockup / Process toggle (same position as other panels) ──
@@ -1434,6 +1444,9 @@ function csShowDetailView(panelKey, item) {
     +     '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 6l5-4 5 4M3 10l5 4 5-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     +   '</button>'
     + '</div>'
+
+    // Tab nav (taxonomy only)
+    + txTabNav
 
     // Settings row
     + '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">'
@@ -1509,6 +1522,13 @@ function csDvToggleView(view) {
     var pnl = document.getElementById('cs-dv-view-' + v);
     if (btn) btn.className = 'cs-view-btn' + (v === view ? ' cs-view-btn--act' : '');
     if (pnl) pnl.style.display = v === view ? '' : 'none';
+  });
+}
+
+function csDvTab(tab) {
+  ['metadata', 'moments', 'taxonomies', 'episodes'].forEach(function(t) {
+    var btn = document.getElementById('cs-dv-tab-' + t);
+    if (btn) btn.className = 'cs-dv-tab' + (t === tab ? ' cs-dv-tab--act' : '');
   });
 }
 
@@ -1942,6 +1962,31 @@ function sdtInjectStyles() {
       color: var(--text);
       box-shadow: 0 1px 3px rgba(0,0,0,.07);
     }
+
+    /* Detail view tab nav (Taxonomy Explorer v1) */
+    .cs-dv-tabnav {
+      display: flex;
+      gap: 2px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+    .cs-dv-tab {
+      height: 34px;
+      padding: 0 16px;
+      border: none;
+      background: none;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color .13s, border-color .13s;
+      white-space: nowrap;
+    }
+    .cs-dv-tab:hover { color: var(--text); }
+    .cs-dv-tab--act  { color: var(--accent); border-bottom-color: var(--accent); }
 
     /* Enable Features checkboxes */
     .cs-features-grid {
