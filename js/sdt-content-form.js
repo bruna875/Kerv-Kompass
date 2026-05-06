@@ -1419,6 +1419,66 @@ function csShowDetailView(panelKey, item) {
     + '</div>'
     : '';
 
+  // Tab content wrappers (taxonomy only) — wrap metadata, build the other three
+  var metaOpen  = panelKey === 'taxonomy' ? '<div id="cs-dv-tab-content-metadata">' : '';
+  var metaClose = panelKey === 'taxonomy' ? '</div>' : '';
+
+  var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)';
+  var txExtraContent = panelKey === 'taxonomy'
+
+    // ── Moments ──
+    ? '<div id="cs-dv-tab-content-moments" style="display:none;overflow-y:auto;max-height:calc(100vh - 320px)">'
+    +   '<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    +     '<th style="text-align:left;'  + TH + '">Category</th>'
+    +     '<th style="text-align:right;' + TH + '">Score</th>'
+    +     '<th style="text-align:right;' + TH + '">Assets</th>'
+    +   '</tr></thead><tbody id="tx-cat-body"></tbody></table>'
+    + '</div>'
+
+    // ── Taxonomies ──
+    + '<div id="cs-dv-tab-content-taxonomies" style="display:none;overflow-y:auto;max-height:calc(100vh - 320px)">'
+    +   '<div style="display:grid;grid-template-columns:1fr 256px;gap:16px;align-items:start">'
+    +     '<div style="min-width:0">'
+    +       '<div class="tx-ctabs-nav">'
+    +         '<div class="tx-ctab tx-ctab--act" id="tx-ctab-emotion"     onclick="txCustomTab(\'emotion\')">Emotion</div>'
+    +         '<div class="tx-ctab"              id="tx-ctab-location"    onclick="txCustomTab(\'location\')">Location</div>'
+    +         '<div class="tx-ctab"              id="tx-ctab-objects"     onclick="txCustomTab(\'objects\')">Objects</div>'
+    +         '<div class="tx-ctab"              id="tx-ctab-sentiment"   onclick="txCustomTab(\'sentiment\')">Sentiment</div>'
+    +         '<div class="tx-ctab"              id="tx-ctab-iab"         onclick="txCustomTab(\'iab\')">IAB</div>'
+    +         '<div class="tx-ctab"              id="tx-ctab-brandsafety" onclick="txCustomTab(\'brandsafety\')">Brand Safety</div>'
+    +       '</div>'
+    +       '<div id="tx-ctab-table"></div>'
+    +       '<div id="tx-ctab-pagination"></div>'
+    +     '</div>'
+    +     '<div style="position:sticky;top:16px;display:flex;flex-direction:column;height:480px;gap:0">'
+    +       '<div class="tx-chips-panel" id="tx-chips-panel">'
+    +         '<div class="tx-chips-title">Selected Taxonomies</div>'
+    +         '<div class="tx-chips-empty" id="tx-chips-empty">Select taxonomies from the table</div>'
+    +         '<div id="tx-chips-content" style="display:none"></div>'
+    +       '</div>'
+    +       '<div class="tx-save-panel">'
+    +         '<div class="tx-save-label">Save as Moment</div>'
+    +         '<input class="tx-moment-input" id="tx-moment-name" type="text" placeholder="Name this moment…">'
+    +         '<button class="tx-save-btn" onclick="txSaveMoment()">'
+    +           '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2h8l2 2v8a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M5 13V8h4v5M4 2v3h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +           ' Save Moment'
+    +         '</button>'
+    +       '</div>'
+    +     '</div>'
+    +   '</div>'
+    + '</div>'
+
+    // ── Episodes & Shows ──
+    + '<div id="cs-dv-tab-content-episodes" style="display:none;overflow-y:auto;max-height:calc(100vh - 320px)">'
+    +   '<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    +     '<th style="text-align:left;'  + TH + '">Show / Episode</th>'
+    +     '<th style="text-align:left;'  + TH + '">Channel</th>'
+    +     '<th style="text-align:right;' + TH + '">Match</th>'
+    +   '</tr></thead><tbody id="tx-eps-body"></tbody></table>'
+    + '</div>'
+
+    : '';
+
   panel.innerHTML =
 
     // ── Mockup / Process toggle (same position as other panels) ──
@@ -1447,6 +1507,9 @@ function csShowDetailView(panelKey, item) {
 
     // Tab nav (taxonomy only)
     + txTabNav
+
+    // Open metadata content wrapper (taxonomy only)
+    + metaOpen
 
     // Settings row
     + '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">'
@@ -1505,6 +1568,10 @@ function csShowDetailView(panelKey, item) {
     +   '</button>'
     + '</div>'
 
+    // Close metadata wrapper + add other tab contents (taxonomy only)
+    + metaClose
+    + txExtraContent
+
     + '</div>' // close cs-card
     + '</div>' // close cs-dv-view-mockup
 
@@ -1527,9 +1594,14 @@ function csDvToggleView(view) {
 
 function csDvTab(tab) {
   ['metadata', 'moments', 'taxonomies', 'episodes'].forEach(function(t) {
-    var btn = document.getElementById('cs-dv-tab-' + t);
-    if (btn) btn.className = 'cs-dv-tab' + (t === tab ? ' cs-dv-tab--act' : '');
+    var btn     = document.getElementById('cs-dv-tab-' + t);
+    var content = document.getElementById('cs-dv-tab-content-' + t);
+    if (btn)     btn.className = 'cs-dv-tab' + (t === tab ? ' cs-dv-tab--act' : '');
+    if (content) content.style.display = t === tab ? '' : 'none';
   });
+  if (tab === 'moments')    { txCustomSelections = []; txRenderCategories(); }
+  if (tab === 'taxonomies') { txCustomActiveTab = 'emotion'; txCustomCurrentPage = 1; txCustomRenderTable(); txRenderChips(); }
+  if (tab === 'episodes')   txRenderEpisodes();
 }
 
 function csDvUpdateTitle() {
