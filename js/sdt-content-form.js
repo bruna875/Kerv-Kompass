@@ -1420,7 +1420,7 @@ function csShowDetailView(panelKey, item) {
     : '';
 
   // Tab content wrappers (taxonomy only) — wrap metadata, build the other three
-  var metaOpen  = panelKey === 'taxonomy' ? '<div id="cs-dv-tab-content-metadata">' : '';
+  var metaOpen  = panelKey === 'taxonomy' ? '<div id="cs-dv-tab-content-metadata" style="display:flex;flex-direction:column;gap:14px">' : '';
   var metaClose = panelKey === 'taxonomy' ? '</div>' : '';
 
   var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)';
@@ -1581,6 +1581,8 @@ function csShowDetailView(panelKey, item) {
     + '</div>';
 
   csRenderProcess3();
+  // Ensure taxonomy-explorer styles are available when viewing tab 4 detail
+  if (panelKey === 'taxonomy' && typeof txInjectStyles === 'function') txInjectStyles();
 }
 
 function csDvToggleView(view) {
