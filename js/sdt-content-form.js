@@ -1916,6 +1916,7 @@ var csActiveTx2Filter  = 'all';
 var csSelectedTx2Id    = 1;
 var csTx2TaxStep       = 'upload'; // 'upload' | 'progress' | 'results'
 var csTx2TaxInputType  = 'video';  // 'video' | 'doc' | 'text'
+var csTx2TaxFileName   = '';       // display name shown in results header
 
 function csTx2View(view) {
   ['mockup','process'].forEach(function(v) {
@@ -2070,6 +2071,17 @@ function csTx2TaxAnalyze() {
                : csTx2TaxInputType === 'doc'   ? 'document'
                : 'text input';
 
+  // Capture display name from the actual input
+  if (csTx2TaxInputType === 'text') {
+    var ta = document.getElementById('tx2-text-input');
+    var raw = ta ? ta.value.trim() : '';
+    csTx2TaxFileName = raw.length ? (raw.slice(0, 42) + (raw.length > 42 ? '…' : '')) : 'Free text input';
+  } else {
+    var fi = document.getElementById('tx2-file-input-' + csTx2TaxInputType);
+    csTx2TaxFileName = (fi && fi.files && fi.files[0]) ? fi.files[0].name
+      : (csTx2TaxInputType === 'video' ? 'video-file.mp4' : 'document.pdf');
+  }
+
   var progressSteps = [
     'Extracting content…',
     'Detecting scenes & objects…',
@@ -2121,13 +2133,23 @@ function csTx2TaxShowResults() {
   var ca = document.getElementById('tx2-content-area');
   if (!ca) return;
   var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)';
+  var fileIcon = csTx2TaxInputType === 'video'
+    ? '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
+    : csTx2TaxInputType === 'doc'
+    ? '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    : '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+
   ca.innerHTML =
-    // Back button
-    '<div style="margin-bottom:16px">'
+    // Back button row + filename badge
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
     + '<button class="cs-dv-back" onclick="csTx2TaxShowUpload()">'
     +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     +   ' BACK TO UPLOAD'
     + '</button>'
+    + '<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;max-width:240px;overflow:hidden">'
+    +   '<span style="color:var(--faint);flex-shrink:0">' + fileIcon + '</span>'
+    +   '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + csTx2TaxFileName + '</span>'
+    + '</div>'
     + '</div>'
 
     // Sub-tab nav
@@ -2320,7 +2342,7 @@ function sdtInit() {
   csActiveFilter3   = 'all'; csSelectedId3   = 3;
   csActiveTxFilter  = 'all'; csSelectedTxId  = 1;
   csActiveTx2Filter = 'all'; csSelectedTx2Id = 1;
-  csTx2TaxStep = 'upload'; csTx2TaxInputType = 'video';
+  csTx2TaxStep = 'upload'; csTx2TaxInputType = 'video'; csTx2TaxFileName = '';
   sdtInjectStyles();
   csRender();    csRenderProcess();
   csRender2();   csRenderProcess2();
