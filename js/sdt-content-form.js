@@ -209,110 +209,94 @@ var csSelectedId    = 3;
 var csActiveFilter2 = 'all';
 var csSelectedId2   = 3;
 
-// ── Request New Content Modal ─────────────────────────────────────────────
+// ── Request New Content Modal (3-step) ────────────────────────────────────
+var csCurrentStep = 1;
+
 function csOpenModal() {
   if (document.getElementById('cs-modal')) return;
+  csCurrentStep = 1;
   var modal = document.createElement('div');
   modal.id = 'cs-modal';
   modal.className = 'cs-modal-overlay';
-  modal.innerHTML = `
-    <div class="cs-modal" onclick="event.stopPropagation()">
+  modal.innerHTML =
+    '<div class="cs-modal" onclick="event.stopPropagation()">'
 
-      <!-- Header -->
-      <div class="cs-modal-header">
-        <div>
-          <div class="cs-modal-title">Request New Content</div>
-          <div class="cs-modal-sub">Fill in the details below to submit your request</div>
-        </div>
-        <button class="cs-modal-close" onclick="csCloseModal()">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        </button>
-      </div>
+    // Header
+    + '<div class="cs-modal-header">'
+    +   '<div><div class="cs-modal-title">Request New Content</div>'
+    +   '<div class="cs-modal-sub">Fill in the details below to submit your request</div></div>'
+    +   '<button class="cs-modal-close" onclick="csCloseModal()">'
+    +     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+    +   '</button>'
+    + '</div>'
 
-      <!-- Body -->
-      <div class="cs-modal-body">
+    // Stepper
+    + '<div class="cs-stepper">'
+    +   '<div class="cs-step cs-step--act" id="cs-step-ind-1"><div class="cs-step-circle"><span>1</span></div><div class="cs-step-label">Content</div></div>'
+    +   '<div class="cs-step-line"></div>'
+    +   '<div class="cs-step" id="cs-step-ind-2"><div class="cs-step-circle"><span>2</span></div><div class="cs-step-label">Ads</div></div>'
+    +   '<div class="cs-step-line"></div>'
+    +   '<div class="cs-step" id="cs-step-ind-3"><div class="cs-step-circle"><span>3</span></div><div class="cs-step-label">Delivery</div></div>'
+    + '</div>'
 
-        <!-- Requestor -->
-        <div class="cs-field">
-          <div class="cs-field-row">
-            <label class="cs-label">Requestor</label>
-            <span class="cs-field-note">Comes from the account</span>
-          </div>
-          <input class="cs-input cs-input--disabled" type="text" value="Marika Roque" disabled>
-        </div>
+    // ── Step 1 body ──
+    + '<div class="cs-modal-body" id="cs-step-body-1">'
 
-        <!-- Client Name -->
-        <div class="cs-field">
-          <label class="cs-label">Client Name</label>
-          <input class="cs-input" type="text" placeholder="e.g. Nike, Unilever…">
-        </div>
+    +   '<div class="cs-field"><div class="cs-field-row"><label class="cs-label">Requestor</label><span class="cs-field-note">Comes from the account</span></div>'
+    +   '<input class="cs-input cs-input--disabled" type="text" value="Marika Roque" disabled></div>'
 
-        <!-- Content Name -->
-        <div class="cs-field">
-          <label class="cs-label">Content Name</label>
-          <input class="cs-input" type="text" placeholder="e.g. Below Deck S5E3…">
-        </div>
+    +   '<div class="cs-field"><label class="cs-label">Client Name</label>'
+    +   '<input class="cs-input" type="text" placeholder="e.g. Nike, Unilever…"></div>'
 
-        <!-- Content Upload (mandatory) -->
-        <div class="cs-field">
-          <div class="cs-field-row">
-            <label class="cs-label">Content Upload <span class="cs-mandatory">*</span></label>
-          </div>
-          <div class="cs-ads-toggle" style="margin-bottom:8px">
-            <div class="cs-ads-btn cs-ads-btn--act" id="cs-content-link-btn" onclick="csContentTab('link')">Link</div>
-            <div class="cs-ads-btn" id="cs-content-upload-btn" onclick="csContentTab('upload')">Upload</div>
-          </div>
-          <div id="cs-content-link">
-            <input class="cs-input" id="cs-link-input" type="url" placeholder="https://…" style="width:100%;box-sizing:border-box">
-          </div>
-          <div id="cs-content-upload" style="display:none">
-            <label class="cs-upload-area" id="cs-upload-label">
-              <input type="file" accept="video/*" id="cs-file-input" style="display:none" onchange="csFileChosen(this)">
-              <div id="cs-upload-idle">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="color:var(--muted)"><path d="M12 16V8m0 0-3 3m3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.5"/></svg>
-                <div class="cs-upload-text">Click to select a video file</div>
-                <div class="cs-upload-hint">MP4, MOV, AVI, MKV…</div>
-              </div>
-              <div id="cs-upload-chosen" style="display:none">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="color:#2EAD4B;flex-shrink:0"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span id="cs-upload-filename" class="cs-upload-text" style="color:var(--text)"></span>
-                <span class="cs-upload-hint" id="cs-upload-filesize"></span>
-              </div>
-            </label>
-          </div>
-        </div>
+    +   '<div class="cs-field"><label class="cs-label">Content Name</label>'
+    +   '<input class="cs-input" type="text" placeholder="e.g. Below Deck S5E3…"></div>'
 
-        <!-- Ads Selection -->
-        <div class="cs-field">
-          <label class="cs-label">Ads Selection</label>
-          <div class="cs-ads-toggle">
-            <div class="cs-ads-btn cs-ads-btn--act" id="cs-ads-link-btn" onclick="csAdsTab('link')">Link</div>
-            <div class="cs-ads-btn" id="cs-ads-desc-btn" onclick="csAdsTab('desc')">Description</div>
-          </div>
-          <div id="cs-ads-link">
-            <input class="cs-input" type="url" placeholder="https://ad-url.com…" style="margin-top:8px;width:100%;box-sizing:border-box">
-          </div>
-          <div id="cs-ads-desc" style="display:none">
-            <textarea class="cs-textarea" placeholder="Describe the ad — product, audience, key messages…" style="margin-top:8px;width:100%;min-height:100px"></textarea>
-          </div>
-        </div>
+    +   '<div class="cs-field">'
+    +     '<div class="cs-field-row"><label class="cs-label">Content Upload <span class="cs-mandatory">*</span></label></div>'
+    +     '<div class="cs-ads-toggle" style="margin-bottom:8px">'
+    +       '<div class="cs-ads-btn cs-ads-btn--act" id="cs-content-upload-btn" onclick="csContentTab(\'upload\')">Upload</div>'
+    +       '<div class="cs-ads-btn" id="cs-content-link-btn" onclick="csContentTab(\'link\')">Link</div>'
+    +     '</div>'
+    +     '<div id="cs-content-upload">'
+    +       '<div class="cs-upload-area" id="cs-upload-label" onclick="csFakeUpload()">'
+    +         '<div id="cs-upload-idle" style="display:flex;flex-direction:column;align-items:center;gap:6px">'
+    +           '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="color:var(--muted)"><path d="M12 16V8m0 0-3 3m3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.5"/></svg>'
+    +           '<div class="cs-upload-text">Click to upload a video file</div>'
+    +           '<div class="cs-upload-hint">MP4, MOV, AVI, MKV…</div>'
+    +         '</div>'
+    +         '<div id="cs-upload-chosen" style="display:none;align-items:center;gap:8px;justify-content:center">'
+    +           '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="color:#2EAD4B;flex-shrink:0"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +           '<span id="cs-upload-filename" class="cs-upload-text" style="color:var(--text)"></span>'
+    +           '<span class="cs-upload-hint" id="cs-upload-filesize"></span>'
+    +         '</div>'
+    +       '</div>'
+    +     '</div>'
+    +     '<div id="cs-content-link" style="display:none">'
+    +       '<input class="cs-input" id="cs-link-input" type="url" placeholder="https://…" style="width:100%;box-sizing:border-box">'
+    +     '</div>'
+    +   '</div>'
 
-        <!-- Desired Delivery Date -->
-        <div class="cs-field">
-          <label class="cs-label">Desired Delivery Date</label>
-          <input class="cs-input" type="date">
-        </div>
+    + '</div>'
 
-      </div>
+    // ── Step 2 body (placeholder) ──
+    + '<div class="cs-modal-body" id="cs-step-body-2" style="display:none">'
+    +   '<div style="padding:40px 0;text-align:center;color:var(--muted);font-size:13px">Step 2 — Ads coming soon</div>'
+    + '</div>'
 
-      <!-- Footer -->
-      <div class="cs-modal-footer">
-        <button class="cs-btn-secondary" onclick="csCloseModal()">Cancel</button>
-        <button class="cs-btn-primary" onclick="csSubmitModal()">Submit Request</button>
-      </div>
+    // ── Step 3 body (placeholder) ──
+    + '<div class="cs-modal-body" id="cs-step-body-3" style="display:none">'
+    +   '<div style="padding:40px 0;text-align:center;color:var(--muted);font-size:13px">Step 3 — Delivery coming soon</div>'
+    + '</div>'
 
-    </div>
-  `;
+    // Footer
+    + '<div class="cs-modal-footer">'
+    +   '<button class="cs-btn-secondary" id="cs-modal-back-btn" style="display:none;margin-right:auto" onclick="csPrevStep()">← Back</button>'
+    +   '<button class="cs-btn-secondary" onclick="csCloseModal()">Cancel</button>'
+    +   '<button class="cs-btn-primary" id="cs-modal-next-btn" onclick="csNextStep()">Next</button>'
+    + '</div>'
+
+    + '</div>';
+
   modal.addEventListener('click', csCloseModal);
   document.body.appendChild(modal);
   setTimeout(function() { modal.classList.add('cs-modal-overlay--in'); }, 10);
@@ -325,26 +309,107 @@ function csCloseModal() {
   setTimeout(function() { modal.remove(); }, 200);
 }
 
+// ── Stepper navigation ────────────────────────────────────────────────────
+
+function csNextStep() {
+  if (csCurrentStep === 1) {
+    // Validate Content Upload
+    var uploadVisible = document.getElementById('cs-content-upload') &&
+                        document.getElementById('cs-content-upload').style.display !== 'none';
+    if (uploadVisible) {
+      var chosen = document.getElementById('cs-upload-chosen');
+      if (!chosen || chosen.style.display === 'none') {
+        var ul = document.getElementById('cs-upload-label');
+        if (ul) ul.classList.add('cs-upload-area--error');
+        return;
+      }
+    } else {
+      var link = document.getElementById('cs-link-input');
+      if (!link || !link.value.trim()) {
+        link.classList.add('cs-input--error');
+        link.focus();
+        return;
+      }
+    }
+    csCurrentStep = 2;
+    csUpdateModalStepper();
+  } else if (csCurrentStep === 2) {
+    csCurrentStep = 3;
+    csUpdateModalStepper();
+  } else if (csCurrentStep === 3) {
+    csCloseModal();
+    setTimeout(csOpenSuccessModal, 220);
+  }
+}
+
+function csPrevStep() {
+  if (csCurrentStep > 1) {
+    csCurrentStep--;
+    csUpdateModalStepper();
+  }
+}
+
+function csUpdateModalStepper() {
+  var checkSvg = '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  [1, 2, 3].forEach(function(n) {
+    // body panels
+    var body = document.getElementById('cs-step-body-' + n);
+    if (body) body.style.display = n === csCurrentStep ? '' : 'none';
+    // step indicators
+    var ind = document.getElementById('cs-step-ind-' + n);
+    if (!ind) return;
+    ind.className = 'cs-step'
+      + (n === csCurrentStep ? ' cs-step--act' : '')
+      + (n < csCurrentStep   ? ' cs-step--done' : '');
+    var circle = ind.querySelector('.cs-step-circle');
+    if (circle) circle.innerHTML = n < csCurrentStep ? checkSvg : '<span>' + n + '</span>';
+  });
+  var backBtn = document.getElementById('cs-modal-back-btn');
+  var nextBtn = document.getElementById('cs-modal-next-btn');
+  if (backBtn) backBtn.style.display = csCurrentStep > 1 ? '' : 'none';
+  if (nextBtn) nextBtn.textContent   = csCurrentStep === 3 ? 'Submit Request' : 'Next';
+}
+
+// ── Fake upload ───────────────────────────────────────────────────────────
+
+function csFakeUpload() {
+  var idle   = document.getElementById('cs-upload-idle');
+  var chosen = document.getElementById('cs-upload-chosen');
+  var label  = document.getElementById('cs-upload-label');
+  if (!idle || !chosen) return;
+  if (chosen.style.display !== 'none') return; // already uploaded
+
+  // Uploading state
+  idle.innerHTML =
+    '<div class="cs-upload-spinner"></div>'
+    + '<div class="cs-upload-text" style="color:var(--accent)">Uploading…</div>'
+    + '<div class="cs-upload-hint" id="cs-fake-pct">0%</div>';
+
+  var pct = 0;
+  var iv = setInterval(function() {
+    pct = Math.min(pct + Math.floor(Math.random() * 18 + 8), 100);
+    var el = document.getElementById('cs-fake-pct');
+    if (el) el.textContent = pct + '%';
+    if (pct >= 100) {
+      clearInterval(iv);
+      idle.style.display   = 'none';
+      chosen.style.display = 'flex';
+      document.getElementById('cs-upload-filename').textContent = 'sample_ad_creative.mp4';
+      document.getElementById('cs-upload-filesize').textContent = '47.3 MB';
+      if (label) label.classList.remove('cs-upload-area--error');
+    }
+  }, 130);
+}
+
+// ── Content / Ads tab toggles ─────────────────────────────────────────────
+
 function csContentTab(tab) {
   document.getElementById('cs-content-link').style.display   = tab === 'link'   ? '' : 'none';
   document.getElementById('cs-content-upload').style.display = tab === 'upload' ? '' : 'none';
   document.getElementById('cs-content-link-btn').className   = 'cs-ads-btn' + (tab === 'link'   ? ' cs-ads-btn--act' : '');
   document.getElementById('cs-content-upload-btn').className = 'cs-ads-btn' + (tab === 'upload' ? ' cs-ads-btn--act' : '');
-  // clear error state when switching
   var li = document.getElementById('cs-link-input');
   if (li) li.classList.remove('cs-input--error');
-  var ul = document.getElementById('cs-upload-label');
-  if (ul) ul.classList.remove('cs-upload-area--error');
-}
-
-function csFileChosen(input) {
-  var file = input.files[0];
-  if (!file) return;
-  document.getElementById('cs-upload-idle').style.display    = 'none';
-  document.getElementById('cs-upload-chosen').style.display  = 'flex';
-  document.getElementById('cs-upload-filename').textContent  = file.name;
-  var mb = (file.size / 1024 / 1024).toFixed(1);
-  document.getElementById('cs-upload-filesize').textContent  = mb + ' MB';
   var ul = document.getElementById('cs-upload-label');
   if (ul) ul.classList.remove('cs-upload-area--error');
 }
@@ -354,28 +419,6 @@ function csAdsTab(tab) {
   document.getElementById('cs-ads-desc').style.display    = tab === 'desc' ? '' : 'none';
   document.getElementById('cs-ads-link-btn').className = 'cs-ads-btn' + (tab === 'link' ? ' cs-ads-btn--act' : '');
   document.getElementById('cs-ads-desc-btn').className = 'cs-ads-btn' + (tab === 'desc' ? ' cs-ads-btn--act' : '');
-}
-
-function csSubmitModal() {
-  var uploadMode = document.getElementById('cs-content-upload') &&
-                   document.getElementById('cs-content-upload').style.display !== 'none';
-  if (uploadMode) {
-    var fi = document.getElementById('cs-file-input');
-    if (!fi || !fi.files.length) {
-      var ul = document.getElementById('cs-upload-label');
-      if (ul) ul.classList.add('cs-upload-area--error');
-      return;
-    }
-  } else {
-    var link = document.getElementById('cs-link-input');
-    if (!link || !link.value.trim()) {
-      link.classList.add('cs-input--error');
-      link.focus();
-      return;
-    }
-  }
-  csCloseModal();
-  setTimeout(csOpenSuccessModal, 220);
 }
 
 function csOpenSuccessModal() {
@@ -1202,6 +1245,75 @@ function sdtInjectStyles() {
       letter-spacing: .4px;
       text-transform: uppercase;
     }
+
+    /* Stepper */
+    .cs-stepper {
+      display: flex;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .cs-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .cs-step-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all .2s;
+    }
+    .cs-step-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .cs-step--act .cs-step-circle {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .cs-step--act .cs-step-label {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .cs-step--done .cs-step-circle {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .cs-step--done .cs-step-label {
+      color: var(--accent);
+    }
+    .cs-step-line {
+      flex: 1;
+      height: 1.5px;
+      background: var(--border);
+      margin: 0 8px;
+      margin-bottom: 18px;
+    }
+
+    /* Upload spinner */
+    .cs-upload-spinner {
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: cs-spin .7s linear infinite;
+    }
+    @keyframes cs-spin { to { transform: rotate(360deg); } }
   `;
   document.head.appendChild(s);
 }
