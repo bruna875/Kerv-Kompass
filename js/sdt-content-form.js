@@ -1134,35 +1134,32 @@ function csShowDetailView3(item) {
   if (!panel) return;
   csDetailPanels3 = { tax: true, prod: true, json: true };
 
-  var title = (item.title || 'New Content').toUpperCase();
-
   panel.innerHTML =
+    '<div class="cs-card" style="display:flex;flex-direction:column;gap:14px">'
 
     // ── Top bar ──
-    '<div class="cs-dv-topbar">'
-    + '<button class="cs-dv-back" onclick="csBackToGrid3()">'
-    +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-    +   ' BACK TO CONTENT SELECTION'
-    + '</button>'
-    + '<span class="cs-dv-title" id="cs-dv-title">VOD: EXACT PRODUCT MATCH – SYNC L BAR</span>'
-    + '<button class="cs-dv-collapse" onclick="this.textContent=this.textContent===\'▲\'?\'▼\':\'▲\'">'
-    +   '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 6l5-4 5 4M3 10l5 4 5-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-    + '</button>'
+    + '<div class="cs-dv-topbar">'
+    +   '<button class="cs-dv-back" onclick="csBackToGrid3()">'
+    +     '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +     ' BACK TO CONTENT SELECTION'
+    +   '</button>'
+    +   '<span class="cs-dv-title" id="cs-dv-title">VOD: EXACT PRODUCT MATCH – SYNC L BAR</span>'
+    +   '<button class="cs-dv-collapse">'
+    +     '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 6l5-4 5 4M3 10l5 4 5-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +   '</button>'
     + '</div>'
 
-    // ── Settings card ──
-    + '<div class="cs-dv-settings">'
-    +   '<div class="cs-field" style="min-width:180px">'
-    +     '<label class="cs-label">Tier Selection</label>'
-    +     '<select class="cs-filter-select" onchange="csDvUpdateTitle()" id="cs-dv-tier" style="min-width:180px;border-color:var(--border-md)">'
+    // ── Settings row (inline, no separate card) ──
+    + '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">'
+    +   '<div class="cs-field"><label class="cs-label">Tier Selection</label>'
+    +     '<select class="cs-filter-select" onchange="csDvUpdateTitle()" id="cs-dv-tier" style="min-width:170px;border-color:var(--border-md);background-image:url(\'data:image/svg+xml,%3Csvg width=\\'10\\' height=\\'6\\' viewBox=\\'0 0 10 6\\' fill=\\'none\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cpath d=\\'M1 1l4 4 4-4\\' stroke=\\'%236B7280\\' stroke-width=\\'1.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'/%3E%3C/svg%3E\')">'
     +       '<option>Exact Product Match</option>'
     +       '<option>Contextual Match</option>'
     +       '<option>Audience Match</option>'
     +     '</select>'
     +   '</div>'
-    +   '<div class="cs-field" style="min-width:160px">'
-    +     '<label class="cs-label">Ad Playback Mode</label>'
-    +     '<select class="cs-filter-select" onchange="csDvUpdateTitle()" id="cs-dv-mode" style="min-width:160px;border-color:var(--border-md)">'
+    +   '<div class="cs-field"><label class="cs-label">Ad Playback Mode</label>'
+    +     '<select class="cs-filter-select" onchange="csDvUpdateTitle()" id="cs-dv-mode" style="min-width:150px;border-color:var(--border-md);background-image:url(\'data:image/svg+xml,%3Csvg width=\\'10\\' height=\\'6\\' viewBox=\\'0 0 10 6\\' fill=\\'none\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cpath d=\\'M1 1l4 4 4-4\\' stroke=\\'%236B7280\\' stroke-width=\\'1.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'/%3E%3C/svg%3E\')">'
     +       '<option>Sync L Bar</option>'
     +       '<option>Pre-roll</option>'
     +       '<option>Mid-roll</option>'
@@ -1171,43 +1168,50 @@ function csShowDetailView3(item) {
     +   '</div>'
     + '</div>'
 
-    // ── Main content ──
-    + '<div class="cs-dv-main" id="cs-dv-main">'
+    // ── Main block: video + panels, flush, single border ──
+    + '<div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;height:420px">'
 
-    //  Video player
-    +   '<div class="cs-dv-video">'
-    +     '<div class="cs-dv-video-thumb">'
-    +       '<div class="cs-dv-video-inner">'
-    +         '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" style="color:rgba(255,255,255,.6)"><path d="M9 8.5l6 3.5-6 3.5V8.5z" fill="currentColor"/><rect x="2" y="4" width="20" height="16" rx="3" stroke="currentColor" stroke-width="1.2"/></svg>'
+    //  Video column (dark, 16:9 thumb at top)
+    +   '<div style="width:220px;flex-shrink:0;background:#0d1220;border-right:1px solid #1e2a3a;display:flex;flex-direction:column">'
+    +     '<div style="width:100%;position:relative;padding-top:56.25%;background:linear-gradient(160deg,#1a2035 0%,#0d1220 100%)">'
+    +       '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">'
+    +         '<div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center">'
+    +           '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="color:#fff;margin-left:2px"><path d="M4 3l9 5-9 5V3z" fill="currentColor"/></svg>'
+    +         '</div>'
     +       '</div>'
-    +       '<div class="cs-dv-video-bar">'
-    +         '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path d="M5 3l7 5-7 5V3z" fill="currentColor"/></svg>'
-    +         '<span style="font-size:10px;color:rgba(255,255,255,.7)">0:00 / 44:15</span>'
-    +         '<div style="flex:1;height:3px;background:rgba(255,255,255,.2);border-radius:2px;position:relative"><div style="width:2%;height:100%;background:var(--accent);border-radius:2px"></div></div>'
-    +         '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path d="M3 8h10M8 3v10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>'
-    +       '</div>'
+    +     '</div>'
+    +     '<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(0,0,0,.35);flex-shrink:0">'
+    +       '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="color:rgba(255,255,255,.6);flex-shrink:0"><path d="M4 3l9 5-9 5V3z" fill="currentColor"/></svg>'
+    +       '<span style="font-size:10px;color:rgba(255,255,255,.5)">0:00</span>'
+    +       '<div style="flex:1;height:2px;background:rgba(255,255,255,.15);border-radius:1px"><div style="width:1%;height:100%;background:var(--accent);border-radius:1px"></div></div>'
+    +       '<span style="font-size:10px;color:rgba(255,255,255,.5)">44:15</span>'
     +     '</div>'
     +   '</div>'
 
-    //  Scrollable panels
-    +   '<div class="cs-dv-panels" id="cs-dv-panels">'
+    //  Panels (each separated by border, no outer radius)
+    +   '<div style="display:flex;flex:1;overflow-x:auto;overflow-y:hidden" id="cs-dv-panels">'
     +     csDvTaxPanel() + csDvProdPanel() + csDvJsonPanel()
     +   '</div>'
 
     + '</div>'
 
-    // ── Bottom toggle bar ──
-    + '<div class="cs-dv-togglebar">'
+    // ── Toggle bar ──
+    + '<div style="display:flex;justify-content:center;gap:6px">'
     +   '<button class="cs-dv-tog cs-dv-tog--act" id="cs-dvtog-tax"  onclick="csDvToggle(\'tax\')">'
-    +     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>'
+    +     '<svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>'
+    +     '<span style="font-size:11px;font-weight:500;margin-left:5px">Taxonomies</span>'
     +   '</button>'
     +   '<button class="cs-dv-tog cs-dv-tog--act" id="cs-dvtog-prod" onclick="csDvToggle(\'prod\')">'
-    +     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h2l2 7h6l2-5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="13" r="1" fill="currentColor"/><circle cx="12" cy="13" r="1" fill="currentColor"/></svg>'
+    +     '<svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 3h2l2 7h6l2-5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="13" r="1" fill="currentColor"/><circle cx="12" cy="13" r="1" fill="currentColor"/></svg>'
+    +     '<span style="font-size:11px;font-weight:500;margin-left:5px">Products</span>'
     +   '</button>'
     +   '<button class="cs-dv-tog cs-dv-tog--act" id="cs-dvtog-json" onclick="csDvToggle(\'json\')">'
-    +     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 5c-1 0-2 .5-2 1.5v1c0 .8-.5 1.5-.5 1.5s.5.7.5 1.5v1C2 12.5 3 13 4 13M12 5c1 0 2 .5 2 1.5v1c0 .8.5 1.5.5 1.5s-.5.7-.5 1.5v1C14 12.5 13 13 12 13M9 4l-2 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+    +     '<svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M4 5c-1 0-2 .5-2 1.5v1c0 .8-.5 1.5-.5 1.5s.5.7.5 1.5v1C2 12.5 3 13 4 13M12 5c1 0 2 .5 2 1.5v1c0 .8.5 1.5.5 1.5s-.5.7-.5 1.5v1C14 12.5 13 13 12 13M9 4l-2 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+    +     '<span style="font-size:11px;font-weight:500;margin-left:5px">JSON</span>'
     +   '</button>'
-    + '</div>';
+    + '</div>'
+
+    + '</div>'; // close cs-card
 }
 
 function csDvUpdateTitle() {
@@ -1221,10 +1225,10 @@ function csDvTaxPanel() {
   return '<div class="cs-dv-panel" id="cs-dv-panel-tax">'
     + '<div class="cs-dv-panel-hd">'
     +   '<div style="display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg><span>Taxonomies</span></div>'
-    +   '<div style="display:flex;gap:6px"><button class="cs-dv-panel-ico">⤢</button><button class="cs-dv-panel-ico cs-dv-panel-ico--red" onclick="csDvToggle(\'tax\')">✕</button></div>'
+    +   '<div style="display:flex;gap:4px"><button class="cs-dv-panel-ico" title="Expand">⤢</button><button class="cs-dv-panel-ico cs-dv-panel-ico--red" onclick="csDvToggle(\'tax\')" title="Close">✕</button></div>'
     + '</div>'
     + '<div class="cs-dv-panel-sub">'
-    +   '<select class="cs-filter-select" style="width:100%;border-color:var(--border-md)"><option>IAB Taxonomy</option><option>Brand Safety</option><option>Custom Moments</option></select>'
+    +   '<select class="cs-filter-select" style="width:100%;border-color:var(--border-md);background-image:url(\'data:image/svg+xml,%3Csvg width=\\'10\\' height=\\'6\\' viewBox=\\'0 0 10 6\\' fill=\\'none\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cpath d=\\'M1 1l4 4 4-4\\' stroke=\\'%236B7280\\' stroke-width=\\'1.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'/%3E%3C/svg%3E\')"><option>IAB Taxonomy</option><option>Brand Safety</option><option>Custom Moments</option></select>'
     + '</div>'
     + '<div class="cs-dv-panel-body">'
     + CS_DETAIL_SCENES.map(function(sc) {
@@ -1244,7 +1248,7 @@ function csDvProdPanel() {
   return '<div class="cs-dv-panel" id="cs-dv-panel-prod">'
     + '<div class="cs-dv-panel-hd">'
     +   '<div style="display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 3h2l2 7h6l2-5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="13" r="1" fill="currentColor"/><circle cx="12" cy="13" r="1" fill="currentColor"/></svg><span>Products</span></div>'
-    +   '<div style="display:flex;gap:6px"><button class="cs-dv-panel-ico">⤢</button><button class="cs-dv-panel-ico cs-dv-panel-ico--red" onclick="csDvToggle(\'prod\')">✕</button></div>'
+    +   '<div style="display:flex;gap:4px"><button class="cs-dv-panel-ico" title="Expand">⤢</button><button class="cs-dv-panel-ico cs-dv-panel-ico--red" onclick="csDvToggle(\'prod\')" title="Close">✕</button></div>'
     + '</div>'
     + '<div class="cs-dv-panel-body" style="padding-top:4px">'
     + CS_DETAIL_PRODUCTS.map(function(p) {
@@ -1265,20 +1269,17 @@ function csDvProdPanel() {
 function csDvJsonPanel() {
   var html = CS_DETAIL_JSON
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    // keys
     .replace(/"([^"]+)":/g, '<span class="cs-dv-json-key">"$1"</span>:')
-    // string values
     .replace(/:\s*"([^"]+)"/g, ': <span class="cs-dv-json-str">"$1"</span>')
-    // numbers
     .replace(/:\s*(\d[\d.]*)/g, ': <span class="cs-dv-json-num">$1</span>');
 
-  return '<div class="cs-dv-panel cs-dv-panel--dark" id="cs-dv-panel-json">'
+  return '<div class="cs-dv-panel cs-dv-panel--dark cs-dv-panel--last" id="cs-dv-panel-json">'
     + '<div class="cs-dv-panel-hd cs-dv-panel-hd--dark">'
     +   '<div style="display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 5c-1 0-2 .5-2 1.5v1c0 .8-.5 1.5-.5 1.5s.5.7.5 1.5v1C2 12.5 3 13 4 13M12 5c1 0 2 .5 2 1.5v1c0 .8.5 1.5.5 1.5s-.5.7-.5 1.5v1C14 12.5 13 13 12 13M9 4l-2 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>{} JSON</span></div>'
-    +   '<div style="display:flex;gap:6px">'
-    +     '<button class="cs-dv-panel-ico cs-dv-panel-ico--dm">⤢</button>'
-    +     '<button class="cs-dv-panel-ico cs-dv-panel-ico--dm">⬇</button>'
-    +     '<button class="cs-dv-panel-ico cs-dv-panel-ico--dm" onclick="csDvToggle(\'json\')">✕</button>'
+    +   '<div style="display:flex;gap:4px">'
+    +     '<button class="cs-dv-panel-ico cs-dv-panel-ico--dm" title="Expand">⤢</button>'
+    +     '<button class="cs-dv-panel-ico cs-dv-panel-ico--dm" title="Download">⬇</button>'
+    +     '<button class="cs-dv-panel-ico cs-dv-panel-ico--dm" onclick="csDvToggle(\'json\')" title="Close">✕</button>'
     +   '</div>'
     + '</div>'
     + '<div class="cs-dv-panel-body cs-dv-panel-body--dark">'
@@ -1824,7 +1825,6 @@ function sdtInjectStyles() {
       gap: 14px;
       padding-bottom: 14px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 14px;
       flex-shrink: 0;
     }
     .cs-dv-back {
@@ -1833,126 +1833,77 @@ function sdtInjectStyles() {
       gap: 5px;
       background: none;
       border: none;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--accent);
       cursor: pointer;
       padding: 0;
       white-space: nowrap;
       font-family: inherit;
-      letter-spacing: .3px;
+      letter-spacing: .4px;
+      text-transform: uppercase;
     }
     .cs-dv-back:hover { opacity: .75; }
     .cs-dv-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--text);
-      letter-spacing: .2px;
+      letter-spacing: .3px;
       flex: 1;
+      text-transform: uppercase;
     }
     .cs-dv-collapse {
-      width: 28px; height: 28px;
+      width: 26px; height: 26px;
       background: none; border: 1px solid var(--border);
       border-radius: 6px; cursor: pointer; color: var(--muted);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0; transition: background .13s;
     }
     .cs-dv-collapse:hover { background: var(--bg); }
-    .cs-dv-settings {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 16px;
-      margin-bottom: 14px;
-      flex-shrink: 0;
-    }
-    .cs-dv-main {
-      display: flex;
-      gap: 10px;
-      flex: 1;
-      min-height: 0;
-      overflow: hidden;
-    }
-    .cs-dv-video {
-      width: 260px;
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    .cs-dv-video-thumb {
-      flex: 1;
-      background: linear-gradient(145deg, #1a1f2e 0%, #0d1220 50%, #1a2035 100%);
-      border-radius: 10px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-height: 180px;
-    }
-    .cs-dv-video-inner {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .cs-dv-video-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      background: rgba(0,0,0,.4);
-    }
-    .cs-dv-panels {
-      display: flex;
-      gap: 10px;
-      flex: 1;
-      overflow-x: auto;
-      min-width: 0;
-    }
-    .cs-dv-panels::-webkit-scrollbar { height: 5px; }
-    .cs-dv-panels::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 3px; }
+    /* panels strip — flush, no gaps, clipped by outer border-radius */
     .cs-dv-panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
       display: flex;
       flex-direction: column;
-      min-width: 260px;
       flex: 1;
+      min-width: 220px;
       overflow: hidden;
+      border-right: 1px solid var(--border);
     }
     .cs-dv-panel--dark {
       background: #0f1623;
-      border-color: #1e2a3a;
+      border-right-color: #1e2a3a;
     }
+    .cs-dv-panel--last { border-right: none; }
     .cs-dv-panel-hd {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 12px;
+      padding: 9px 12px;
       border-bottom: 1px solid var(--border);
       font-size: 12px;
       font-weight: 600;
       color: var(--text);
       flex-shrink: 0;
+      background: var(--surface);
     }
     .cs-dv-panel-hd--dark {
-      border-color: #1e2a3a;
+      border-bottom-color: #1e2a3a;
       color: #e2e8f0;
+      background: #0f1623;
     }
     .cs-dv-panel-sub {
-      padding: 10px 12px 6px;
+      padding: 8px 12px;
       flex-shrink: 0;
       border-bottom: 1px solid var(--border);
+      background: var(--surface);
     }
     .cs-dv-panel-body {
       flex: 1;
       overflow-y: auto;
-      padding: 8px 0;
+      padding: 4px 0;
+      background: var(--surface);
     }
-    .cs-dv-panel-body::-webkit-scrollbar { width: 4px; }
+    .cs-dv-panel-body::-webkit-scrollbar { width: 3px; }
     .cs-dv-panel-body::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 2px; }
     .cs-dv-panel-body--dark {
       padding: 12px;
@@ -1960,16 +1911,16 @@ function sdtInjectStyles() {
     }
     .cs-dv-panel-ico {
       background: none; border: none; cursor: pointer;
-      color: var(--accent); font-size: 13px; padding: 2px 4px;
-      border-radius: 4px; line-height: 1;
+      color: var(--accent); font-size: 12px; padding: 2px 3px;
+      border-radius: 3px; line-height: 1;
       transition: background .12s;
     }
     .cs-dv-panel-ico:hover { background: rgba(237,0,94,.08); }
-    .cs-dv-panel-ico--dm { color: #94a3b8; }
-    .cs-dv-panel-ico--dm:hover { background: rgba(255,255,255,.07); }
+    .cs-dv-panel-ico--dm { color: #64748b; }
+    .cs-dv-panel-ico--dm:hover { background: rgba(255,255,255,.07); color: #94a3b8; }
     .cs-dv-panel-ico--red { color: var(--accent); }
     .cs-dv-scene {
-      padding: 10px 12px;
+      padding: 9px 12px;
       border-bottom: 1px solid var(--border);
     }
     .cs-dv-scene:last-child { border-bottom: none; }
@@ -1977,40 +1928,40 @@ function sdtInjectStyles() {
     .cs-dv-scene-tax  { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
     .cs-dv-scene-badge {
       display: inline-block;
-      background: rgba(237,0,94,.08);
+      background: rgba(237,0,94,.07);
       color: var(--accent);
-      border: 1px solid rgba(237,0,94,.18);
+      border: 1px solid rgba(237,0,94,.15);
       font-size: 11px; font-weight: 500;
       padding: 2px 8px; border-radius: 20px;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
-    .cs-dv-scene-meta { font-size: 11px; color: var(--muted); }
+    .cs-dv-scene-meta { font-size: 11px; color: var(--muted); line-height: 1.5; }
     .cs-dv-scene-meta--val { color: var(--text); font-weight: 500; }
     .cs-dv-product {
       display: flex;
       gap: 10px;
-      padding: 10px 12px;
+      padding: 9px 12px;
       border-bottom: 1px solid var(--border);
       align-items: flex-start;
     }
     .cs-dv-product:last-child { border-bottom: none; }
     .cs-dv-prod-img {
-      width: 48px; height: 48px;
+      width: 44px; height: 44px;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 6px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 22px; flex-shrink: 0;
+      font-size: 20px; flex-shrink: 0;
     }
     .cs-dv-prod-info { flex: 1; min-width: 0; }
-    .cs-dv-prod-name  { font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.4; margin-bottom: 3px; }
+    .cs-dv-prod-name  { font-size: 11.5px; font-weight: 500; color: var(--text); line-height: 1.35; margin-bottom: 3px; }
     .cs-dv-prod-det   { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
     .cs-dv-prod-price { font-size: 12px; font-weight: 600; color: var(--text); }
     .cs-dv-prod-scene { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .cs-dv-json-pre {
       font-size: 11px;
       font-family: 'SF Mono', 'Fira Code', monospace;
-      line-height: 1.6;
+      line-height: 1.65;
       color: #94a3b8;
       white-space: pre-wrap;
       word-break: break-word;
@@ -2019,29 +1970,21 @@ function sdtInjectStyles() {
     .cs-dv-json-key { color: #7dd3fc; }
     .cs-dv-json-str { color: #f9a8d4; }
     .cs-dv-json-num { color: #86efac; }
-    .cs-dv-togglebar {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      padding: 12px 0 4px;
-      flex-shrink: 0;
-    }
+    /* Toggle buttons: rounded square, subtle bg, no border */
     .cs-dv-tog {
-      width: 38px; height: 38px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: var(--surface);
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: none;
+      background: none;
       color: var(--muted);
-      display: flex; align-items: center; justify-content: center;
       cursor: pointer;
-      transition: all .15s;
+      font-family: inherit;
+      transition: all .13s;
     }
-    .cs-dv-tog:hover { border-color: var(--accent); color: var(--accent); }
-    .cs-dv-tog--act {
-      background: rgba(237,0,94,.1);
-      border-color: rgba(237,0,94,.3);
-      color: var(--accent);
-    }
+    .cs-dv-tog:hover { background: var(--subtle); color: var(--accent); }
+    .cs-dv-tog--act  { background: var(--subtle); color: var(--accent); }
 
     /* Processing step */
     .cs-proc-preview {
