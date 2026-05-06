@@ -31,10 +31,18 @@ function renderSdtContentForm() {
         <div class="sdt-nav-sub">process</div>
       </div>
     </div>
+    <div style="height:1px;background:var(--border);margin:4px 6px"></div>
     <div class="sdt-nav-item" id="sdt-nav-taxonomy" onclick="sdtNav('taxonomy')">
       <div class="sdt-nav-num">4</div>
       <div>
-        <div class="sdt-nav-label">Taxonomy Explorer</div>
+        <div class="sdt-nav-label">Taxonomy Explorer v1</div>
+        <div class="sdt-nav-sub">integration</div>
+      </div>
+    </div>
+    <div class="sdt-nav-item" id="sdt-nav-taxonomy2" onclick="sdtNav('taxonomy2')">
+      <div class="sdt-nav-num">5</div>
+      <div>
+        <div class="sdt-nav-label">Taxonomy Explorer v2</div>
         <div class="sdt-nav-sub">integration</div>
       </div>
     </div>
@@ -132,7 +140,11 @@ function renderSdtContentForm() {
       <div class="sdt-panel-sub">Prototype coming soon.</div>
     </div>
     <div id="sdt-panel-taxonomy" style="display:none">
-      <div class="sdt-panel-title">Taxonomy Explorer integration</div>
+      <div class="sdt-panel-title">Taxonomy Explorer v1</div>
+      <div class="sdt-panel-sub">Prototype coming soon.</div>
+    </div>
+    <div id="sdt-panel-taxonomy2" style="display:none">
+      <div class="sdt-panel-title">Taxonomy Explorer v2</div>
       <div class="sdt-panel-sub">Prototype coming soon.</div>
     </div>
   </div>
@@ -635,7 +647,7 @@ function csRenderProcess2() {
 var sdtActive = 'manual';
 
 function sdtNav(id) {
-  ['manual','selfserve','realtime','taxonomy'].forEach(function(k) {
+  ['manual','selfserve','realtime','taxonomy','taxonomy2'].forEach(function(k) {
     var nav = document.getElementById('sdt-nav-' + k);
     var pan = document.getElementById('sdt-panel-' + k);
     if (nav) nav.className = 'sdt-nav-item' + (k === id ? ' sdt-nav-item--act' : '');
@@ -646,7 +658,7 @@ function sdtNav(id) {
 
 function sdtInit() {
   // Reset state to match the freshly-rendered HTML
-  sdtActive      = 'manual';
+  sdtActive = 'manual';
   csActiveFilter  = 'all';
   csSelectedId    = 3;
   csActiveFilter2 = 'all';
