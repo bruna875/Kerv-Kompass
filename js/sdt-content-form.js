@@ -234,7 +234,7 @@ function csOpenModal() {
     + '<div class="cs-stepper">'
     +   '<div class="cs-step cs-step--act" id="cs-step-ind-1"><div class="cs-step-circle"><span>1</span></div><div class="cs-step-label">Content</div></div>'
     +   '<div class="cs-step-line"></div>'
-    +   '<div class="cs-step" id="cs-step-ind-2"><div class="cs-step-circle"><span>2</span></div><div class="cs-step-label">Ads</div></div>'
+    +   '<div class="cs-step" id="cs-step-ind-2"><div class="cs-step-circle"><span>2</span></div><div class="cs-step-label">Processing</div></div>'
     +   '<div class="cs-step-line"></div>'
     +   '<div class="cs-step" id="cs-step-ind-3"><div class="cs-step-circle"><span>3</span></div><div class="cs-step-label">Delivery</div></div>'
     + '</div>'
@@ -278,9 +278,46 @@ function csOpenModal() {
 
     + '</div>'
 
-    // ── Step 2 body (placeholder) ──
-    + '<div class="cs-modal-body" id="cs-step-body-2" style="display:none">'
-    +   '<div style="padding:40px 0;text-align:center;color:var(--muted);font-size:13px">Step 2 — Ads coming soon</div>'
+    // ── Step 2 body — Processing ──
+    + '<div class="cs-modal-body" id="cs-step-body-2" style="display:none;gap:16px">'
+
+    // Video preview thumbnail
+    +   '<div class="cs-proc-preview">'
+    +     '<div class="cs-proc-thumb">'
+    +       '<div class="cs-proc-thumb-inner">'
+    +         '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" style="color:rgba(255,255,255,.55)"><rect x="2" y="4" width="20" height="16" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M9 8.5l6 3.5-6 3.5V8.5z" fill="currentColor"/><path d="M2 8h2M20 8h2M2 16h2M20 16h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+    +       '</div>'
+    +     '</div>'
+    +     '<div class="cs-proc-meta">'
+    +       '<div style="display:flex;align-items:center;gap:6px">'
+    +         '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="color:var(--muted);flex-shrink:0"><rect x="2" y="1" width="9" height="14" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 6h4M5 9h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M11 1v4h4" stroke="currentColor" stroke-width="1.2"/><path d="M11 1l4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +         '<span class="cs-proc-fname">sample_ad_creative.mp4</span>'
+    +       '</div>'
+    +       '<span class="cs-proc-fsize">47.3 MB &nbsp;·&nbsp; MP4 &nbsp;·&nbsp; HD 1080p</span>'
+    +     '</div>'
+    +   '</div>'
+
+    // Progress bar section
+    +   '<div class="cs-proc-bar-section">'
+    +     '<div class="cs-proc-bar-header">'
+    +       '<span class="cs-proc-status-label" id="cs-proc-status-text">Preparing analysis…</span>'
+    +       '<span class="cs-proc-pct-badge" id="cs-proc-pct">0%</span>'
+    +     '</div>'
+    +     '<div class="cs-proc-bar-track"><div class="cs-proc-bar-fill" id="cs-proc-bar" style="width:0%"></div></div>'
+    +   '</div>'
+
+    // Processing log
+    +   '<div class="cs-proc-log" id="cs-proc-log"></div>'
+
+    // Success message (hidden until done)
+    +   '<div id="cs-proc-success" style="display:none">'
+    +     '<div class="cs-proc-success-box">'
+    +       '<svg width="34" height="34" viewBox="0 0 34 34" fill="none"><circle cx="17" cy="17" r="16" fill="rgba(46,173,75,.12)" stroke="#2EAD4B" stroke-width="1.5"/><path d="M10 17l5 5 9-9" stroke="#2EAD4B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +       '<div class="cs-proc-success-title">Analysis Complete</div>'
+    +       '<div class="cs-proc-success-sub">Content successfully processed. All taxonomy signals have been extracted and catalogued. Click Next to configure delivery.</div>'
+    +     '</div>'
+    +   '</div>'
+
     + '</div>'
 
     // ── Step 3 body (placeholder) ──
@@ -333,6 +370,9 @@ function csNextStep() {
     }
     csCurrentStep = 2;
     csUpdateModalStepper();
+    // Start processing only if bar not already at 100%
+    var _pb = document.getElementById('cs-proc-bar');
+    if (!_pb || _pb.style.width !== '100%') setTimeout(csStartProcessing, 80);
   } else if (csCurrentStep === 2) {
     csCurrentStep = 3;
     csUpdateModalStepper();
@@ -347,6 +387,71 @@ function csPrevStep() {
     csCurrentStep--;
     csUpdateModalStepper();
   }
+}
+
+// ── Processing animation ──────────────────────────────────────────────────
+
+var PROC_STEPS = [
+  { at:  5, msg: 'Uploading content to analysis pipeline' },
+  { at: 15, msg: 'Extracting video metadata' },
+  { at: 28, msg: 'Detecting scene boundaries' },
+  { at: 42, msg: 'Running object recognition' },
+  { at: 54, msg: 'Analyzing sentiment & tone' },
+  { at: 66, msg: 'Mapping IAB content categories' },
+  { at: 78, msg: 'Applying brand safety classification' },
+  { at: 88, msg: 'Analyzing taxonomy signals' },
+  { at: 96, msg: 'Generating analysis report' }
+];
+
+function csStartProcessing() {
+  var backBtn = document.getElementById('cs-modal-back-btn');
+  var nextBtn = document.getElementById('cs-modal-next-btn');
+  if (backBtn) { backBtn.disabled = true; backBtn.style.opacity = '.35'; backBtn.style.pointerEvents = 'none'; }
+  if (nextBtn) { nextBtn.disabled = true; nextBtn.style.opacity = '.35'; nextBtn.style.pointerEvents = 'none'; }
+
+  var pct = 0;
+  var stepIdx = 0;
+
+  var iv = setInterval(function() {
+    pct = Math.min(pct + Math.floor(Math.random() * 3 + 1), 100);
+
+    var bar    = document.getElementById('cs-proc-bar');
+    var pctEl  = document.getElementById('cs-proc-pct');
+    var statEl = document.getElementById('cs-proc-status-text');
+    var logEl  = document.getElementById('cs-proc-log');
+
+    if (bar)   bar.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = pct + '%';
+
+    // Emit log lines at each milestone
+    while (stepIdx < PROC_STEPS.length && pct >= PROC_STEPS[stepIdx].at) {
+      if (statEl) statEl.textContent = PROC_STEPS[stepIdx].msg + '…';
+      if (logEl) {
+        var line = document.createElement('div');
+        line.className = 'cs-proc-log-line';
+        line.innerHTML =
+          '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0"><circle cx="6" cy="6" r="5.25" fill="rgba(46,173,75,.12)" stroke="#2EAD4B" stroke-width="1.2"/><path d="M3.5 6l1.8 1.8 3-3.3" stroke="#2EAD4B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+          + '<span>' + PROC_STEPS[stepIdx].msg + '</span>';
+        logEl.appendChild(line);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+      stepIdx++;
+    }
+
+    if (pct >= 100) {
+      clearInterval(iv);
+      if (statEl) statEl.textContent = 'Analysis complete';
+      if (pctEl)  pctEl.style.color = '#2EAD4B';
+      setTimeout(function() {
+        var succ = document.getElementById('cs-proc-success');
+        if (succ) { succ.style.display = ''; succ.classList.add('cs-proc-success--in'); }
+        var bb = document.getElementById('cs-modal-back-btn');
+        var nb = document.getElementById('cs-modal-next-btn');
+        if (bb) { bb.disabled = false; bb.style.opacity = ''; bb.style.pointerEvents = ''; }
+        if (nb) { nb.disabled = false; nb.style.opacity = ''; nb.style.pointerEvents = ''; }
+      }, 350);
+    }
+  }, 65);
 }
 
 function csUpdateModalStepper() {
@@ -1244,6 +1349,155 @@ function sdtInjectStyles() {
       padding: 2px 4px;
       letter-spacing: .4px;
       text-transform: uppercase;
+    }
+
+    /* Processing step */
+    .cs-proc-preview {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .cs-proc-thumb {
+      width: 80px;
+      height: 52px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #1a1f2e 0%, #0d1220 50%, #1a2035 100%);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .cs-proc-thumb::before,
+    .cs-proc-thumb::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 8px;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,.15) 0px,
+        rgba(255,255,255,.15) 5px,
+        transparent 5px,
+        transparent 9px
+      );
+    }
+    .cs-proc-thumb::before { left: 0; }
+    .cs-proc-thumb::after  { right: 0; }
+    .cs-proc-thumb-inner { position: relative; z-index: 1; }
+    .cs-proc-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .cs-proc-fname {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cs-proc-fsize {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .cs-proc-bar-section {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .cs-proc-bar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .cs-proc-status-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-style: italic;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cs-proc-pct-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      flex-shrink: 0;
+      transition: color .3s;
+      min-width: 32px;
+      text-align: right;
+    }
+    .cs-proc-bar-track {
+      height: 5px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .cs-proc-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width .1s linear;
+    }
+    .cs-proc-log {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 120px;
+      overflow-y: auto;
+      padding: 2px 0;
+    }
+    .cs-proc-log::-webkit-scrollbar { width: 3px; }
+    .cs-proc-log::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 2px; }
+    .cs-proc-log-line {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11.5px;
+      color: var(--muted);
+      animation: cs-log-in .2s ease;
+    }
+    @keyframes cs-log-in {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .cs-proc-success-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 20px 16px;
+      background: rgba(46,173,75,.06);
+      border: 1px solid rgba(46,173,75,.25);
+      border-radius: 10px;
+      text-align: center;
+      animation: cs-succ-in .35s ease;
+    }
+    @keyframes cs-succ-in {
+      from { opacity: 0; transform: scale(.97); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .cs-proc-success-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2EAD4B;
+    }
+    .cs-proc-success-sub {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 340px;
     }
 
     /* Stepper */
