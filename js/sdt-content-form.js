@@ -220,8 +220,46 @@ function renderSdtContentForm() {
 
     </div>
     <div id="sdt-panel-taxonomy2" style="display:none">
-      <div class="sdt-panel-title">Taxonomy Explorer v2</div>
-      <div class="sdt-panel-sub">Prototype coming soon.</div>
+
+      <!-- View toggle (sticky) -->
+      <div class="cs-toggle-sticky">
+        <div class="cs-view-toggle">
+          <div class="cs-view-btn cs-view-btn--act" id="cs-vbtn5-mockup" onclick="csTx2View('mockup')">Mockup</div>
+          <div class="cs-view-btn" id="cs-vbtn5-process" onclick="csTx2View('process')">Process</div>
+        </div>
+      </div>
+
+      <!-- Mockup view -->
+      <div id="cs-view5-mockup">
+      <div class="cs-card">
+        <div class="cs-title">Content Selection</div>
+
+        <div class="cs-toolbar">
+          <div class="cs-filter-wrap">
+            <div class="cs-filter-label">Category</div>
+            <select class="cs-filter-select" onchange="csTx2Filter(this.value)">
+              <option value="all">All</option>
+              <option value="comedy">Comedy</option>
+              <option value="drama">Drama</option>
+              <option value="reality">Reality</option>
+              <option value="documentary">Documentary</option>
+            </select>
+          </div>
+          <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            Request New Content
+          </button>
+        </div>
+
+        <div class="cs-grid" id="cs-grid5"></div>
+      </div>
+      </div><!-- end mockup view 5 -->
+
+      <!-- Process view -->
+      <div id="cs-view5-process" style="display:none">
+        <div id="cs-process-container5"></div>
+      </div>
+
     </div>
   </div>
 
@@ -1329,7 +1367,7 @@ function csBackToGrid() {
       + '<div class="cs-view-btn" id="cs-vbtn4-process" onclick="csTxView(\'process\')">Process</div>'
       + '</div></div>'
       + '<div id="cs-view4-mockup">'
-      + '<div class="cs-card"><div class="cs-title">Content Library</div>'
+      + '<div class="cs-card"><div class="cs-title">Content Selection</div>'
       + '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
       + '<select class="cs-filter-select" onchange="csTxFilter(this.value)">'
       + '<option value="all">All</option><option value="comedy">Comedy</option>'
@@ -1342,6 +1380,28 @@ function csBackToGrid() {
       + '<div id="cs-view4-process" style="display:none"><div id="cs-process-container4"></div></div>';
     csTxRender();
     csTxRenderProcess();
+  } else if (panelKey === 'taxonomy2') {
+    var panel = document.getElementById('sdt-panel-taxonomy2');
+    if (!panel) return;
+    panel.innerHTML =
+      '<div class="cs-toggle-sticky"><div class="cs-view-toggle">'
+      + '<div class="cs-view-btn cs-view-btn--act" id="cs-vbtn5-mockup" onclick="csTx2View(\'mockup\')">Mockup</div>'
+      + '<div class="cs-view-btn" id="cs-vbtn5-process" onclick="csTx2View(\'process\')">Process</div>'
+      + '</div></div>'
+      + '<div id="cs-view5-mockup">'
+      + '<div class="cs-card"><div class="cs-title">Content Selection</div>'
+      + '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
+      + '<select class="cs-filter-select" onchange="csTx2Filter(this.value)">'
+      + '<option value="all">All</option><option value="comedy">Comedy</option>'
+      + '<option value="drama">Drama</option><option value="reality">Reality</option>'
+      + '<option value="documentary">Documentary</option></select></div>'
+      + '<button class="cs-request-btn" onclick="csOpenModalTaxonomy()">'
+      + '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+      + ' Request New Content</button></div>'
+      + '<div class="cs-grid" id="cs-grid5"></div></div></div>'
+      + '<div id="cs-view5-process" style="display:none"><div id="cs-process-container5"></div></div>';
+    csTx2Render();
+    csTx2RenderProcess();
   } else {
     csBackToGrid3();
   }
@@ -1400,17 +1460,18 @@ var CS_DETAIL_JSON = `{
 }`;
 
 function csShowDetailView(panelKey, item) {
-  var panelId = panelKey === 'manual'   ? 'sdt-panel-manual'
-              : panelKey === 'selfserve' ? 'sdt-panel-selfserve'
-              : panelKey === 'taxonomy'  ? 'sdt-panel-taxonomy'
+  var panelId = panelKey === 'manual'    ? 'sdt-panel-manual'
+              : panelKey === 'selfserve'  ? 'sdt-panel-selfserve'
+              : panelKey === 'taxonomy'   ? 'sdt-panel-taxonomy'
+              : panelKey === 'taxonomy2'  ? 'sdt-panel-taxonomy2'
               : 'sdt-panel-realtime';
   var panel = document.getElementById(panelId);
   if (!panel) return;
   csDetailViewPanel = panelKey;
   csDetailPanels3 = { tax: true, prod: true, json: true };
 
-  // Tab nav — only for Taxonomy Explorer v1
-  var txTabNav = panelKey === 'taxonomy'
+  // Tab nav — only for Taxonomy Explorer v1 & v2
+  var txTabNav = (panelKey === 'taxonomy' || panelKey === 'taxonomy2')
     ? '<div class="cs-dv-tabnav">'
     +   '<button class="cs-dv-tab cs-dv-tab--act" id="cs-dv-tab-metadata"   onclick="csDvTab(\'metadata\')">Metadata</button>'
     +   '<button class="cs-dv-tab" id="cs-dv-tab-moments"                   onclick="csDvTab(\'moments\')">Moments</button>'
@@ -1420,11 +1481,12 @@ function csShowDetailView(panelKey, item) {
     : '';
 
   // Tab content wrappers (taxonomy only) — wrap metadata, build the other three
-  var metaOpen  = panelKey === 'taxonomy' ? '<div id="cs-dv-tab-content-metadata" style="display:flex;flex-direction:column;gap:14px">' : '';
-  var metaClose = panelKey === 'taxonomy' ? '</div>' : '';
+  var isTaxPanel = panelKey === 'taxonomy' || panelKey === 'taxonomy2';
+  var metaOpen  = isTaxPanel ? '<div id="cs-dv-tab-content-metadata" style="display:flex;flex-direction:column;gap:14px">' : '';
+  var metaClose = isTaxPanel ? '</div>' : '';
 
   var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)';
-  var txExtraContent = panelKey === 'taxonomy'
+  var txExtraContent = isTaxPanel
 
     // ── Moments ──
     ? '<div id="cs-dv-tab-content-moments" style="display:none;overflow-y:auto;max-height:calc(100vh - 320px)">'
@@ -1582,7 +1644,7 @@ function csShowDetailView(panelKey, item) {
 
   csRenderProcess3();
   // Ensure taxonomy-explorer styles are available when viewing tab 4 detail
-  if (panelKey === 'taxonomy' && typeof txInjectStyles === 'function') txInjectStyles();
+  if ((panelKey === 'taxonomy' || panelKey === 'taxonomy2') && typeof txInjectStyles === 'function') txInjectStyles();
 }
 
 function csDvToggleView(view) {
@@ -1891,6 +1953,114 @@ function csTxRenderProcess() {
   container.innerHTML = legendHtml + rowHtml;
 }
 
+// ── Panel 5 (Taxonomy Explorer v2) helpers ───────────────────────────────
+
+var csActiveTx2Filter = 'all';
+var csSelectedTx2Id   = 1;
+
+function csTx2View(view) {
+  ['mockup','process'].forEach(function(v) {
+    var btn   = document.getElementById('cs-vbtn5-' + v);
+    var panel = document.getElementById('cs-view5-' + v);
+    if (btn)   btn.className       = 'cs-view-btn' + (v === view ? ' cs-view-btn--act' : '');
+    if (panel) panel.style.display = v === view ? '' : 'none';
+  });
+}
+
+function csTx2Filter(val) {
+  csActiveTx2Filter = val;
+  csTx2Render();
+}
+
+function csTx2Select(id) {
+  if (id <= 3) {
+    var it = CS_SHOWS.filter(function(s) { return s.id === id; })[0];
+    if (it) { csShowDetailView('taxonomy2', it); return; }
+  }
+  csSelectedTx2Id = id;
+  csTx2Render();
+}
+
+function csTx2Render() {
+  var grid = document.getElementById('cs-grid5');
+  if (!grid) return;
+  var shows = CS_SHOWS.filter(function(s) {
+    return csActiveTx2Filter === 'all' || s.category === csActiveTx2Filter;
+  });
+  grid.innerHTML = shows.map(function(s) {
+    var sel   = s.id === csSelectedTx2Id;
+    var badge = s.badge ? '<div class="cs-badge">' + s.badge + '</div>' : '';
+    return '<div class="cs-thumb' + (sel ? ' cs-thumb--sel' : '') + '" onclick="csTx2Select(' + s.id + ')">'
+      + '<div class="cs-poster" style="background:' + s.grad + '">'
+      + '<span class="cs-poster-initials">' + s.initials + '</span>'
+      + badge
+      + '</div>'
+      + '<div class="cs-thumb-title">' + s.title + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function csTx2RenderProcess() {
+  var container = document.getElementById('cs-process-container5');
+  if (!container) return;
+
+  var legendHtml = '<div class="wf-legend-sticky">'
+    + '<div class="wf-legend">'
+    + Object.values(WF_ACTORS).map(function(a) {
+        var members = a.label === 'Sales' ? ' — Marika, Ryan…'
+          : a.label === 'Product / Tech' ? ' — Bruna, Grant, Ben'
+          : '';
+        return '<div class="wf-legend-item">'
+          + '<span class="wf-legend-dot" style="background:' + a.color + '"></span>'
+          + '<span class="wf-legend-name" style="color:' + a.color + ';font-weight:500">' + a.label + '</span>'
+          + (members ? '<span class="wf-legend-members">' + members + '</span>' : '')
+          + '</div>';
+      }).join('')
+    + '</div>'
+    + '</div>';
+
+  function nodeHtml(step, i) {
+    var actors = step.actors.map(function(k) { return WF_ACTORS[k]; });
+    var barBg;
+    if (actors.length === 1) {
+      barBg = actors[0].color;
+    } else {
+      var pct = 100 / actors.length;
+      var stops = actors.map(function(a, j) {
+        return a.color + ' ' + (j * pct) + '%, ' + a.color + ' ' + ((j + 1) * pct) + '%';
+      }).join(', ');
+      barBg = 'linear-gradient(90deg,' + stops + ')';
+    }
+    var pillsHtml = actors.map(function(a) {
+      return '<span class="wf-pill" style="color:' + a.color + ';background:' + a.bg + '">' + a.label + '</span>';
+    }).join('');
+    return '<div class="wf-node">'
+      + '<div class="wf-node-bar" style="background:' + barBg + '"></div>'
+      + '<div class="wf-node-body">'
+      + '<div class="wf-node-num">Step ' + (i + 1) + '</div>'
+      + '<div class="wf-node-title">' + step.title + '</div>'
+      + '<div class="wf-node-desc">' + step.desc + '</div>'
+      + '<div class="wf-node-pills">' + pillsHtml + '</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  var arrowRight = '<div class="wf-arrow-h">'
+    + '<svg width="20" height="12" viewBox="0 0 20 12" fill="none">'
+    + '<path d="M0 6h16M11 1l5 5-5 5" stroke="#D0CFC9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '</svg></div>';
+
+  var rowHtml = '<div class="wf-scroll-outer">'
+    + '<div class="wf-row-h">'
+    + WF_STEPS.map(function(s, i) {
+        return nodeHtml(s, i) + (i < WF_STEPS.length - 1 ? arrowRight : '');
+      }).join('')
+    + '</div>'
+    + '</div>';
+
+  container.innerHTML = legendHtml + rowHtml;
+}
+
 // ── Navigation ────────────────────────────────────────────────────────────
 var sdtActive = 'manual';
 
@@ -1910,12 +2080,14 @@ function sdtInit() {
   csActiveFilter    = 'all'; csSelectedId    = 3;
   csActiveFilter2   = 'all'; csSelectedId2   = 3;
   csActiveFilter3   = 'all'; csSelectedId3   = 3;
-  csActiveTxFilter = 'all'; csSelectedTxId = 1;
+  csActiveTxFilter  = 'all'; csSelectedTxId  = 1;
+  csActiveTx2Filter = 'all'; csSelectedTx2Id = 1;
   sdtInjectStyles();
-  csRender();   csRenderProcess();
-  csRender2();  csRenderProcess2();
-  csRender3();  csRenderProcess3();
-  csTxRender(); csTxRenderProcess();
+  csRender();    csRenderProcess();
+  csRender2();   csRenderProcess2();
+  csRender3();   csRenderProcess3();
+  csTxRender();  csTxRenderProcess();
+  csTx2Render(); csTx2RenderProcess();
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────
