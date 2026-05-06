@@ -1135,9 +1135,20 @@ function csShowDetailView3(item) {
   csDetailPanels3 = { tax: true, prod: true, json: true };
 
   panel.innerHTML =
-    '<div class="cs-card" style="display:flex;flex-direction:column;gap:14px">'
 
-    // ── Top bar ──
+    // ── Mockup / Process toggle (same position as other panels) ──
+    '<div class="cs-toggle-sticky">'
+    + '<div class="cs-view-toggle">'
+    +   '<div class="cs-view-btn cs-view-btn--act" id="cs-dv-vbtn-mockup" onclick="csDvToggleView(\'mockup\')">Mockup</div>'
+    +   '<div class="cs-view-btn" id="cs-dv-vbtn-process" onclick="csDvToggleView(\'process\')">Process</div>'
+    + '</div>'
+    + '</div>'
+
+    // ── Mockup view ──
+    + '<div id="cs-dv-view-mockup">'
+    + '<div class="cs-card" style="display:flex;flex-direction:column;gap:14px">'
+
+    // Top bar
     + '<div class="cs-dv-topbar">'
     +   '<button class="cs-dv-back" onclick="csBackToGrid3()">'
     +     '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -1149,69 +1160,83 @@ function csShowDetailView3(item) {
     +   '</button>'
     + '</div>'
 
-    // ── Settings row (inline, no separate card) ──
+    // Settings row
     + '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">'
     +   '<div class="cs-field"><label class="cs-label">Tier Selection</label>'
     +     '<select class="cs-dv-select" onchange="csDvUpdateTitle()" id="cs-dv-tier" style="min-width:170px">'
-    +       '<option>Exact Product Match</option>'
-    +       '<option>Contextual Match</option>'
-    +       '<option>Audience Match</option>'
-    +     '</select>'
-    +   '</div>'
+    +       '<option>Exact Product Match</option><option>Contextual Match</option><option>Audience Match</option>'
+    +     '</select></div>'
     +   '<div class="cs-field"><label class="cs-label">Ad Playback Mode</label>'
     +     '<select class="cs-dv-select" onchange="csDvUpdateTitle()" id="cs-dv-mode" style="min-width:150px">'
-    +       '<option>Sync L Bar</option>'
-    +       '<option>Pre-roll</option>'
-    +       '<option>Mid-roll</option>'
-    +       '<option>Overlay</option>'
-    +     '</select>'
-    +   '</div>'
+    +       '<option>Sync L Bar</option><option>Pre-roll</option><option>Mid-roll</option><option>Overlay</option>'
+    +     '</select></div>'
     + '</div>'
 
-    // ── Main block: video + panels, flush, single border ──
-    + '<div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;height:420px">'
+    // Main block
+    + '<div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;height:400px">'
 
-    //  Video column (dark, 16:9 thumb at top)
-    +   '<div style="width:220px;flex-shrink:0;background:#0d1220;border-right:1px solid #1e2a3a;display:flex;flex-direction:column">'
-    +     '<div style="width:100%;position:relative;padding-top:56.25%;background:linear-gradient(160deg,#1a2035 0%,#0d1220 100%)">'
-    +       '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">'
-    +         '<div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center">'
-    +           '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="color:#fff;margin-left:2px"><path d="M4 3l9 5-9 5V3z" fill="currentColor"/></svg>'
+    //   Video column: white bg, 16:9 placeholder at top only
+    +   '<div style="width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column">'
+    //     16:9 thumbnail with warm placeholder gradient + play button
+    +     '<div style="width:100%;position:relative;padding-top:56.25%;overflow:hidden;flex-shrink:0">'
+    +       '<div style="position:absolute;inset:0;background:linear-gradient(145deg,#7B5E4A 0%,#4A3226 35%,#8B6E52 65%,#3E2A1E 100%)">'
+    +         '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">'
+    +           '<div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center">'
+    +             '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="color:#fff;margin-left:2px"><path d="M4 3l9 5-9 5V3z" fill="currentColor"/></svg>'
+    +           '</div>'
     +         '</div>'
+    //         film-strip holes
+    +         '<div style="position:absolute;top:0;bottom:0;left:0;width:7px;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.3) 0px,rgba(0,0,0,.3) 5px,transparent 5px,transparent 9px)"></div>'
+    +         '<div style="position:absolute;top:0;bottom:0;right:0;width:7px;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.3) 0px,rgba(0,0,0,.3) 5px,transparent 5px,transparent 9px)"></div>'
     +       '</div>'
-    +     '</div>'
-    +     '<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(0,0,0,.35);flex-shrink:0">'
-    +       '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="color:rgba(255,255,255,.6);flex-shrink:0"><path d="M4 3l9 5-9 5V3z" fill="currentColor"/></svg>'
-    +       '<span style="font-size:10px;color:rgba(255,255,255,.5)">0:00</span>'
-    +       '<div style="flex:1;height:2px;background:rgba(255,255,255,.15);border-radius:1px"><div style="width:1%;height:100%;background:var(--accent);border-radius:1px"></div></div>'
-    +       '<span style="font-size:10px;color:rgba(255,255,255,.5)">44:15</span>'
+    //       controls bar (sits below the 16:9 box, still dark)
+    +       '<div style="position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;gap:5px;padding:5px 7px;background:rgba(0,0,0,.45)">'
+    +         '<svg width="10" height="10" viewBox="0 0 16 16" fill="none" style="color:rgba(255,255,255,.7);flex-shrink:0"><path d="M4 3l9 5-9 5V3z" fill="currentColor"/></svg>'
+    +         '<span style="font-size:9px;color:rgba(255,255,255,.55)">0:00</span>'
+    +         '<div style="flex:1;height:2px;background:rgba(255,255,255,.18);border-radius:1px"><div style="width:1%;height:100%;background:var(--accent);border-radius:1px"></div></div>'
+    +         '<span style="font-size:9px;color:rgba(255,255,255,.55)">44:15</span>'
+    +       '</div>'
     +     '</div>'
     +   '</div>'
 
-    //  Panels (each separated by border, no outer radius)
+    //   Panels
     +   '<div style="display:flex;flex:1;overflow-x:auto;overflow-y:hidden" id="cs-dv-panels">'
     +     csDvTaxPanel() + csDvProdPanel() + csDvJsonPanel()
     +   '</div>'
 
     + '</div>'
 
-    // ── Toggle bar ──
+    // Panel toggle bar (icons only)
     + '<div style="display:flex;justify-content:center;gap:6px">'
     +   '<button class="cs-dv-tog cs-dv-tog--act" id="cs-dvtog-tax"  onclick="csDvToggle(\'tax\')">'
     +     '<svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>'
-    +     '<span style="font-size:11px;font-weight:500;margin-left:5px">Taxonomies</span>'
     +   '</button>'
     +   '<button class="cs-dv-tog cs-dv-tog--act" id="cs-dvtog-prod" onclick="csDvToggle(\'prod\')">'
     +     '<svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 3h2l2 7h6l2-5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="13" r="1" fill="currentColor"/><circle cx="12" cy="13" r="1" fill="currentColor"/></svg>'
-    +     '<span style="font-size:11px;font-weight:500;margin-left:5px">Products</span>'
     +   '</button>'
     +   '<button class="cs-dv-tog cs-dv-tog--act" id="cs-dvtog-json" onclick="csDvToggle(\'json\')">'
     +     '<svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M4 5c-1 0-2 .5-2 1.5v1c0 .8-.5 1.5-.5 1.5s.5.7.5 1.5v1C2 12.5 3 13 4 13M12 5c1 0 2 .5 2 1.5v1c0 .8.5 1.5.5 1.5s-.5.7-.5 1.5v1C14 12.5 13 13 12 13M9 4l-2 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
-    +     '<span style="font-size:11px;font-weight:500;margin-left:5px">JSON</span>'
     +   '</button>'
     + '</div>'
 
-    + '</div>'; // close cs-card
+    + '</div>' // close cs-card
+    + '</div>' // close cs-dv-view-mockup
+
+    // ── Process view ──
+    + '<div id="cs-dv-view-process" style="display:none">'
+    +   '<div id="cs-process-container3"></div>'
+    + '</div>';
+
+  csRenderProcess3();
+}
+
+function csDvToggleView(view) {
+  ['mockup', 'process'].forEach(function(v) {
+    var btn = document.getElementById('cs-dv-vbtn-' + v);
+    var pnl = document.getElementById('cs-dv-view-' + v);
+    if (btn) btn.className = 'cs-view-btn' + (v === view ? ' cs-view-btn--act' : '');
+    if (pnl) pnl.style.display = v === view ? '' : 'none';
+  });
 }
 
 function csDvUpdateTitle() {
