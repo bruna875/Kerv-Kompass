@@ -1500,7 +1500,12 @@ function csShowDetailView(panelKey, item) {
 
     // ── Mockup view wrapper (tax2: no wrapper; others: wrapped for toggle) ──
     + (isTax2 ? '' : '<div id="cs-dv-view-mockup">')
-    + '<div class="cs-card" style="display:flex;flex-direction:column;gap:14px">'
+    // tax2: plain div — no card border/padding (dashboard shell already provides the container)
+    // others: full cs-card with border, bg and padding
+    + (isTax2
+        ? '<div style="display:flex;flex-direction:column;gap:14px">'
+        : '<div class="cs-card" style="display:flex;flex-direction:column;gap:14px">'
+      )
 
     // Top bar
     + '<div class="cs-dv-topbar">'
@@ -1533,10 +1538,10 @@ function csShowDetailView(panelKey, item) {
     + '</div>'
 
     // Main block — height fills viewport
-    + '<div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;height:calc(100vh - 380px);min-height:240px">'
+    + '<div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;height:calc(100vh - ' + (isTax2 ? '320' : '380') + 'px);min-height:240px">'
 
-    //   Video column: white bg, 16:9 photo at top
-    +   '<div style="width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column">'
+    //   Video column: white bg, 16:9 photo at top (narrower in tax2 to fit without scroll)
+    +   '<div style="width:' + (isTax2 ? '180' : '220') + 'px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column">'
     //     16:9 box with real photo + overlay
     +     '<div style="width:100%;position:relative;padding-top:56.25%;overflow:hidden;flex-shrink:0">'
     +       '<img src="https://picsum.photos/seed/homeremodel/440/248" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block" alt="">'
@@ -2265,6 +2270,9 @@ function sdtInjectStyles() {
       color: var(--text);
       box-shadow: 0 1px 3px rgba(0,0,0,.07);
     }
+
+    /* Taxonomy v2 detail view: panels shrink to fit, no horizontal scroll */
+    #tx2-content-area .cs-dv-panel { min-width: 0; }
 
     /* Taxonomies sub-nav: override tabs → buttons (detail view + sidebar Taxonomy Explorer view) */
     #cs-dv-tab-content-taxonomies .tx-ctabs-nav,
