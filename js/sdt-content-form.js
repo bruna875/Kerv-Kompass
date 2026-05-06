@@ -1046,8 +1046,253 @@ function csFilter3(val) {
 }
 
 function csSelect3(id) {
+  var newItem = csNewItems3.filter(function(i) { return i.id === id; })[0];
+  if (newItem) { csShowDetailView3(newItem); return; }
   csSelectedId3 = id;
   csRender3();
+}
+
+function csBackToGrid3() {
+  var panel = document.getElementById('sdt-panel-realtime');
+  if (!panel) return;
+  // Restore the toggle + views
+  panel.innerHTML =
+    '<div class="cs-toggle-sticky">'
+    + '<div class="cs-view-toggle">'
+    +   '<div class="cs-view-btn cs-view-btn--act" id="cs-vbtn3-mockup" onclick="csView3(\'mockup\')">Mockup</div>'
+    +   '<div class="cs-view-btn" id="cs-vbtn3-process" onclick="csView3(\'process\')">Process</div>'
+    + '</div></div>'
+    + '<div id="cs-view3-mockup">'
+    +   '<div class="cs-card"><div class="cs-title">Content Selection</div>'
+    +   '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
+    +   '<select class="cs-filter-select" onchange="csFilter3(this.value)">'
+    +   '<option value="all">All</option><option value="comedy">Comedy</option>'
+    +   '<option value="drama">Drama</option><option value="reality">Reality</option>'
+    +   '<option value="documentary">Documentary</option></select></div>'
+    +   '<button class="cs-request-btn" onclick="csOpenModalRealtime()">'
+    +   '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+    +   ' Request New Content</button></div>'
+    +   '<div class="cs-grid" id="cs-grid3"></div></div></div>'
+    + '<div id="cs-view3-process" style="display:none"><div id="cs-process-container3"></div></div>';
+  csRender3();
+  csRenderProcess3();
+}
+
+// ── Detail view (NEW item) ────────────────────────────────────────────────
+
+var csDetailPanels3 = { tax: true, prod: true, json: true };
+
+var CS_DETAIL_SCENES = [
+  { scene: 2,  tax: 'IAB Taxonomy', badge: 'Real Estate Buying and Selling (0.80)', extra: 'Music Emotion:', extra2: 'Dreamy (0.95)' },
+  { scene: 5,  tax: 'IAB Taxonomy', badge: 'Real Estate (0.85)',                   extra: 'Considered: Travel<br>Music Emotion:', extra2: 'Dreamy (0.99)' },
+  { scene: 7,  tax: 'IAB Taxonomy', badge: 'Remodeling &amp; Construction (0.78)',  extra: 'Music Emotion:', extra2: 'Energizing, pump-up (0.90)' },
+  { scene: 8,  tax: 'IAB Taxonomy', badge: 'Home &amp; Garden (0.82)',              extra: 'Music Emotion:', extra2: 'Happy (0.88)' },
+  { scene: 11, tax: 'IAB Taxonomy', badge: 'DIY &amp; Home Improvement (0.91)',     extra: 'Music Emotion:', extra2: 'Motivating (0.92)' },
+];
+
+var CS_DETAIL_PRODUCTS = [
+  { name: '8 ft. Fiberglass Step Ladder (12 ft. Reach Height) with 250 lb. Load Capacity Type I Duty Rating', detected: 'Ladder (90% confidence)', price: '$169.00', scene: 'Scene 7 – 00:30', emoji: '🪜' },
+  { name: 'Adjustable Electricians Work Waist Tool Belt',                                                      detected: 'Belt (80% confidence)',   price: '$114.00', scene: 'Scene 7 – 00:30', emoji: '🔧' },
+  { name: '5 ft. Yellow Fiberglass Step Ladder with 375 lb. Load Capacity Type IAA Duty Rating',               detected: 'Ladder (90% confidence)', price: '$89.00',  scene: 'Scene 9 – 01:14', emoji: '🪜' },
+  { name: 'Professional 25 ft. Power Drill Driver Kit with Carrying Case',                                     detected: 'Tool (75% confidence)',    price: '$234.00', scene: 'Scene 11 – 02:03', emoji: '🔩' },
+];
+
+var CS_DETAIL_JSON = `{
+  "video_id": "DHYH1_111H_RIDO111H_CL",
+  "duration_in_seconds": 2655.061333,
+  "aspect_ratio": "16:9",
+  "video_metadata": {
+    "garm_category": [
+      {
+        "id": "G7",
+        "name": "Obscenity & Profanity",
+        "risk_level": "Medium",
+        "confidence": 0.85,
+        "count": 1,
+        "screen_time": 4.796,
+        "screen_time_percentage": 0.0
+      },
+      {
+        "id": "G14",
+        "name": "Violence",
+        "risk_level": "Medium",
+        "confidence": 0.8,
+        "count": 1,
+        "screen_time": 1.668,
+        "screen_time_percentage": 0.0
+      }
+    ],
+    "iab_category": [
+      { "id": "IAB1", "name": "Arts & Entertainment", "confidence": 0.92 },
+      { "id": "IAB10", "name": "Home & Garden",        "confidence": 0.88 }
+    ]
+  }
+}`;
+
+function csShowDetailView3(item) {
+  var panel = document.getElementById('sdt-panel-realtime');
+  if (!panel) return;
+  csDetailPanels3 = { tax: true, prod: true, json: true };
+
+  var title = (item.title || 'New Content').toUpperCase();
+
+  panel.innerHTML =
+
+    // ── Top bar ──
+    '<div class="cs-dv-topbar">'
+    + '<button class="cs-dv-back" onclick="csBackToGrid3()">'
+    +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +   ' BACK TO CONTENT SELECTION'
+    + '</button>'
+    + '<span class="cs-dv-title" id="cs-dv-title">VOD: EXACT PRODUCT MATCH – SYNC L BAR</span>'
+    + '<button class="cs-dv-collapse" onclick="this.textContent=this.textContent===\'▲\'?\'▼\':\'▲\'">'
+    +   '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 6l5-4 5 4M3 10l5 4 5-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    + '</button>'
+    + '</div>'
+
+    // ── Settings card ──
+    + '<div class="cs-dv-settings">'
+    +   '<div class="cs-field" style="min-width:180px">'
+    +     '<label class="cs-label">Tier Selection</label>'
+    +     '<select class="cs-filter-select" onchange="csDvUpdateTitle()" id="cs-dv-tier" style="min-width:180px;border-color:var(--border-md)">'
+    +       '<option>Exact Product Match</option>'
+    +       '<option>Contextual Match</option>'
+    +       '<option>Audience Match</option>'
+    +     '</select>'
+    +   '</div>'
+    +   '<div class="cs-field" style="min-width:160px">'
+    +     '<label class="cs-label">Ad Playback Mode</label>'
+    +     '<select class="cs-filter-select" onchange="csDvUpdateTitle()" id="cs-dv-mode" style="min-width:160px;border-color:var(--border-md)">'
+    +       '<option>Sync L Bar</option>'
+    +       '<option>Pre-roll</option>'
+    +       '<option>Mid-roll</option>'
+    +       '<option>Overlay</option>'
+    +     '</select>'
+    +   '</div>'
+    + '</div>'
+
+    // ── Main content ──
+    + '<div class="cs-dv-main" id="cs-dv-main">'
+
+    //  Video player
+    +   '<div class="cs-dv-video">'
+    +     '<div class="cs-dv-video-thumb">'
+    +       '<div class="cs-dv-video-inner">'
+    +         '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" style="color:rgba(255,255,255,.6)"><path d="M9 8.5l6 3.5-6 3.5V8.5z" fill="currentColor"/><rect x="2" y="4" width="20" height="16" rx="3" stroke="currentColor" stroke-width="1.2"/></svg>'
+    +       '</div>'
+    +       '<div class="cs-dv-video-bar">'
+    +         '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path d="M5 3l7 5-7 5V3z" fill="currentColor"/></svg>'
+    +         '<span style="font-size:10px;color:rgba(255,255,255,.7)">0:00 / 44:15</span>'
+    +         '<div style="flex:1;height:3px;background:rgba(255,255,255,.2);border-radius:2px;position:relative"><div style="width:2%;height:100%;background:var(--accent);border-radius:2px"></div></div>'
+    +         '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path d="M3 8h10M8 3v10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>'
+    +       '</div>'
+    +     '</div>'
+    +   '</div>'
+
+    //  Scrollable panels
+    +   '<div class="cs-dv-panels" id="cs-dv-panels">'
+    +     csDvTaxPanel() + csDvProdPanel() + csDvJsonPanel()
+    +   '</div>'
+
+    + '</div>'
+
+    // ── Bottom toggle bar ──
+    + '<div class="cs-dv-togglebar">'
+    +   '<button class="cs-dv-tog cs-dv-tog--act" id="cs-dvtog-tax"  onclick="csDvToggle(\'tax\')">'
+    +     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>'
+    +   '</button>'
+    +   '<button class="cs-dv-tog cs-dv-tog--act" id="cs-dvtog-prod" onclick="csDvToggle(\'prod\')">'
+    +     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h2l2 7h6l2-5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="13" r="1" fill="currentColor"/><circle cx="12" cy="13" r="1" fill="currentColor"/></svg>'
+    +   '</button>'
+    +   '<button class="cs-dv-tog cs-dv-tog--act" id="cs-dvtog-json" onclick="csDvToggle(\'json\')">'
+    +     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 5c-1 0-2 .5-2 1.5v1c0 .8-.5 1.5-.5 1.5s.5.7.5 1.5v1C2 12.5 3 13 4 13M12 5c1 0 2 .5 2 1.5v1c0 .8.5 1.5.5 1.5s-.5.7-.5 1.5v1C14 12.5 13 13 12 13M9 4l-2 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+    +   '</button>'
+    + '</div>';
+}
+
+function csDvUpdateTitle() {
+  var tier = document.getElementById('cs-dv-tier');
+  var mode = document.getElementById('cs-dv-mode');
+  var el   = document.getElementById('cs-dv-title');
+  if (el && tier && mode) el.textContent = 'VOD: ' + tier.value.toUpperCase() + ' – ' + mode.value.toUpperCase();
+}
+
+function csDvTaxPanel() {
+  return '<div class="cs-dv-panel" id="cs-dv-panel-tax">'
+    + '<div class="cs-dv-panel-hd">'
+    +   '<div style="display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg><span>Taxonomies</span></div>'
+    +   '<div style="display:flex;gap:6px"><button class="cs-dv-panel-ico">⤢</button><button class="cs-dv-panel-ico cs-dv-panel-ico--red" onclick="csDvToggle(\'tax\')">✕</button></div>'
+    + '</div>'
+    + '<div class="cs-dv-panel-sub">'
+    +   '<select class="cs-filter-select" style="width:100%;border-color:var(--border-md)"><option>IAB Taxonomy</option><option>Brand Safety</option><option>Custom Moments</option></select>'
+    + '</div>'
+    + '<div class="cs-dv-panel-body">'
+    + CS_DETAIL_SCENES.map(function(sc) {
+        return '<div class="cs-dv-scene">'
+          + '<div class="cs-dv-scene-num">Scene ' + sc.scene + '</div>'
+          + '<div class="cs-dv-scene-tax">' + sc.tax + '</div>'
+          + '<div class="cs-dv-scene-badge">' + sc.badge + '</div>'
+          + '<div class="cs-dv-scene-meta">' + sc.extra + '</div>'
+          + '<div class="cs-dv-scene-meta cs-dv-scene-meta--val">' + sc.extra2 + '</div>'
+          + '</div>';
+      }).join('')
+    + '</div>'
+    + '</div>';
+}
+
+function csDvProdPanel() {
+  return '<div class="cs-dv-panel" id="cs-dv-panel-prod">'
+    + '<div class="cs-dv-panel-hd">'
+    +   '<div style="display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 3h2l2 7h6l2-5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="13" r="1" fill="currentColor"/><circle cx="12" cy="13" r="1" fill="currentColor"/></svg><span>Products</span></div>'
+    +   '<div style="display:flex;gap:6px"><button class="cs-dv-panel-ico">⤢</button><button class="cs-dv-panel-ico cs-dv-panel-ico--red" onclick="csDvToggle(\'prod\')">✕</button></div>'
+    + '</div>'
+    + '<div class="cs-dv-panel-body" style="padding-top:4px">'
+    + CS_DETAIL_PRODUCTS.map(function(p) {
+        return '<div class="cs-dv-product">'
+          + '<div class="cs-dv-prod-img">' + p.emoji + '</div>'
+          + '<div class="cs-dv-prod-info">'
+          +   '<div class="cs-dv-prod-name">' + p.name + '</div>'
+          +   '<div class="cs-dv-prod-det">Detected: ' + p.detected + '</div>'
+          +   '<div class="cs-dv-prod-price">' + p.price + '</div>'
+          +   '<div class="cs-dv-prod-scene">' + p.scene + '</div>'
+          + '</div>'
+          + '</div>';
+      }).join('')
+    + '</div>'
+    + '</div>';
+}
+
+function csDvJsonPanel() {
+  var html = CS_DETAIL_JSON
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    // keys
+    .replace(/"([^"]+)":/g, '<span class="cs-dv-json-key">"$1"</span>:')
+    // string values
+    .replace(/:\s*"([^"]+)"/g, ': <span class="cs-dv-json-str">"$1"</span>')
+    // numbers
+    .replace(/:\s*(\d[\d.]*)/g, ': <span class="cs-dv-json-num">$1</span>');
+
+  return '<div class="cs-dv-panel cs-dv-panel--dark" id="cs-dv-panel-json">'
+    + '<div class="cs-dv-panel-hd cs-dv-panel-hd--dark">'
+    +   '<div style="display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 5c-1 0-2 .5-2 1.5v1c0 .8-.5 1.5-.5 1.5s.5.7.5 1.5v1C2 12.5 3 13 4 13M12 5c1 0 2 .5 2 1.5v1c0 .8.5 1.5.5 1.5s-.5.7-.5 1.5v1C14 12.5 13 13 12 13M9 4l-2 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>{} JSON</span></div>'
+    +   '<div style="display:flex;gap:6px">'
+    +     '<button class="cs-dv-panel-ico cs-dv-panel-ico--dm">⤢</button>'
+    +     '<button class="cs-dv-panel-ico cs-dv-panel-ico--dm">⬇</button>'
+    +     '<button class="cs-dv-panel-ico cs-dv-panel-ico--dm" onclick="csDvToggle(\'json\')">✕</button>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="cs-dv-panel-body cs-dv-panel-body--dark">'
+    +   '<pre class="cs-dv-json-pre">' + html + '</pre>'
+    + '</div>'
+    + '</div>';
+}
+
+function csDvToggle(key) {
+  csDetailPanels3[key] = !csDetailPanels3[key];
+  var panel = document.getElementById('cs-dv-panel-' + key);
+  var tog   = document.getElementById('cs-dvtog-' + key);
+  if (panel) panel.style.display = csDetailPanels3[key] ? '' : 'none';
+  if (tog)   tog.classList.toggle('cs-dv-tog--act', csDetailPanels3[key]);
 }
 
 function csRender3() {
@@ -1570,6 +1815,232 @@ function sdtInjectStyles() {
     @keyframes cs-badge-pop {
       from { transform: scale(.7); opacity: 0; }
       to   { transform: scale(1);  opacity: 1; }
+    }
+
+    /* ── Detail View ─────────────────────────────── */
+    .cs-dv-topbar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+      flex-shrink: 0;
+    }
+    .cs-dv-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 0;
+      white-space: nowrap;
+      font-family: inherit;
+      letter-spacing: .3px;
+    }
+    .cs-dv-back:hover { opacity: .75; }
+    .cs-dv-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: .2px;
+      flex: 1;
+    }
+    .cs-dv-collapse {
+      width: 28px; height: 28px;
+      background: none; border: 1px solid var(--border);
+      border-radius: 6px; cursor: pointer; color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background .13s;
+    }
+    .cs-dv-collapse:hover { background: var(--bg); }
+    .cs-dv-settings {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      flex-shrink: 0;
+    }
+    .cs-dv-main {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .cs-dv-video {
+      width: 260px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .cs-dv-video-thumb {
+      flex: 1;
+      background: linear-gradient(145deg, #1a1f2e 0%, #0d1220 50%, #1a2035 100%);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 180px;
+    }
+    .cs-dv-video-inner {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cs-dv-video-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: rgba(0,0,0,.4);
+    }
+    .cs-dv-panels {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+      overflow-x: auto;
+      min-width: 0;
+    }
+    .cs-dv-panels::-webkit-scrollbar { height: 5px; }
+    .cs-dv-panels::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 3px; }
+    .cs-dv-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      min-width: 260px;
+      flex: 1;
+      overflow: hidden;
+    }
+    .cs-dv-panel--dark {
+      background: #0f1623;
+      border-color: #1e2a3a;
+    }
+    .cs-dv-panel-hd {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      flex-shrink: 0;
+    }
+    .cs-dv-panel-hd--dark {
+      border-color: #1e2a3a;
+      color: #e2e8f0;
+    }
+    .cs-dv-panel-sub {
+      padding: 10px 12px 6px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .cs-dv-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+    .cs-dv-panel-body::-webkit-scrollbar { width: 4px; }
+    .cs-dv-panel-body::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 2px; }
+    .cs-dv-panel-body--dark {
+      padding: 12px;
+      background: #0f1623;
+    }
+    .cs-dv-panel-ico {
+      background: none; border: none; cursor: pointer;
+      color: var(--accent); font-size: 13px; padding: 2px 4px;
+      border-radius: 4px; line-height: 1;
+      transition: background .12s;
+    }
+    .cs-dv-panel-ico:hover { background: rgba(237,0,94,.08); }
+    .cs-dv-panel-ico--dm { color: #94a3b8; }
+    .cs-dv-panel-ico--dm:hover { background: rgba(255,255,255,.07); }
+    .cs-dv-panel-ico--red { color: var(--accent); }
+    .cs-dv-scene {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .cs-dv-scene:last-child { border-bottom: none; }
+    .cs-dv-scene-num  { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 2px; }
+    .cs-dv-scene-tax  { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+    .cs-dv-scene-badge {
+      display: inline-block;
+      background: rgba(237,0,94,.08);
+      color: var(--accent);
+      border: 1px solid rgba(237,0,94,.18);
+      font-size: 11px; font-weight: 500;
+      padding: 2px 8px; border-radius: 20px;
+      margin-bottom: 6px;
+    }
+    .cs-dv-scene-meta { font-size: 11px; color: var(--muted); }
+    .cs-dv-scene-meta--val { color: var(--text); font-weight: 500; }
+    .cs-dv-product {
+      display: flex;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+    .cs-dv-product:last-child { border-bottom: none; }
+    .cs-dv-prod-img {
+      width: 48px; height: 48px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .cs-dv-prod-info { flex: 1; min-width: 0; }
+    .cs-dv-prod-name  { font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.4; margin-bottom: 3px; }
+    .cs-dv-prod-det   { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+    .cs-dv-prod-price { font-size: 12px; font-weight: 600; color: var(--text); }
+    .cs-dv-prod-scene { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .cs-dv-json-pre {
+      font-size: 11px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      line-height: 1.6;
+      color: #94a3b8;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 0;
+    }
+    .cs-dv-json-key { color: #7dd3fc; }
+    .cs-dv-json-str { color: #f9a8d4; }
+    .cs-dv-json-num { color: #86efac; }
+    .cs-dv-togglebar {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 0 4px;
+      flex-shrink: 0;
+    }
+    .cs-dv-tog {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .cs-dv-tog:hover { border-color: var(--accent); color: var(--accent); }
+    .cs-dv-tog--act {
+      background: rgba(237,0,94,.1);
+      border-color: rgba(237,0,94,.3);
+      color: var(--accent);
     }
 
     /* Processing step */
