@@ -190,7 +190,7 @@ function renderSdtContentForm() {
       <!-- Mockup view -->
       <div id="cs-view4-mockup">
       <div class="cs-card">
-        <div class="cs-title">Content Library</div>
+        <div class="cs-title">Content Selection</div>
 
         <div class="cs-toolbar">
           <div class="cs-filter-wrap">
@@ -203,15 +203,10 @@ function renderSdtContentForm() {
               <option value="documentary">Documentary</option>
             </select>
           </div>
-          <div class="cs-filter-wrap">
-            <div class="cs-filter-label">Taxonomy</div>
-            <select class="cs-filter-select" onchange="csTxFilterTax(this.value)" id="cs-tx-tax-filter">
-              <option value="all">All</option>
-              <option value="iab">IAB Content</option>
-              <option value="garm">GARM Brand Safety</option>
-              <option value="custom">Custom Moments</option>
-            </select>
-          </div>
+          <button class="cs-request-btn" onclick="csOpenModalRealtime()">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            Request New Content
+          </button>
         </div>
 
         <div class="cs-grid" id="cs-grid4"></div>
@@ -1185,11 +1180,9 @@ function csBackToGrid() {
       + '<option value="all">All</option><option value="comedy">Comedy</option>'
       + '<option value="drama">Drama</option><option value="reality">Reality</option>'
       + '<option value="documentary">Documentary</option></select></div>'
-      + '<div class="cs-filter-wrap"><div class="cs-filter-label">Taxonomy</div>'
-      + '<select class="cs-filter-select" onchange="csTxFilterTax(this.value)" id="cs-tx-tax-filter">'
-      + '<option value="all">All</option><option value="iab">IAB Content</option>'
-      + '<option value="garm">GARM Brand Safety</option><option value="custom">Custom Moments</option></select></div>'
-      + '</div>'
+      + '<button class="cs-request-btn" onclick="csOpenModalRealtime()">'
+      + '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+      + ' Request New Content</button></div>'
       + '<div class="cs-grid" id="cs-grid4"></div></div></div>'
       + '<div id="cs-view4-process" style="display:none"><div id="cs-process-container4"></div></div>';
     csTxRender();
@@ -1542,23 +1535,8 @@ function csRenderProcess3() {
 
 // ── Panel 4 (Taxonomy Explorer v1) helpers ───────────────────────────────
 
-var csActiveTxFilter    = 'all';
-var csActiveTxTaxFilter = 'all';
-var csSelectedTxId      = 1;
-
-// Taxonomy-specific data: each show has a dominant taxonomy label shown in the grid
-var CS_TX_SHOWS = [
-  { id:1,  title:'Parks and Recreation',    category:'comedy',    grad:'linear-gradient(145deg,#D4820A,#A05E08)', initials:'PR', taxLabel:'Comedy • IAB1-7',    taxType:'iab'    },
-  { id:2,  title:'Yellowstone',             category:'drama',     grad:'linear-gradient(145deg,#4A3820,#2E2210)', initials:'YS', taxLabel:'Drama • GARM-G2',    taxType:'garm'   },
-  { id:3,  title:'Below Deck',              category:'reality',   grad:'linear-gradient(145deg,#1A6FC4,#0D4A8A)', initials:'BD', taxLabel:'Reality • IAB20-3',  taxType:'iab',   badge:'Peacock Original' },
-  { id:4,  title:'Everybody Loves Raymond', category:'comedy',    grad:'linear-gradient(145deg,#C44B1A,#8A2E0D)', initials:'EL', taxLabel:'Comedy • IAB1-7',    taxType:'iab'    },
-  { id:5,  title:'ted',                     category:'comedy',    grad:'linear-gradient(145deg,#2E8B57,#1A5C38)', initials:'te', taxLabel:'Custom • Humor',      taxType:'custom' },
-  { id:6,  title:'Wolf Like Me',            category:'drama',     grad:'linear-gradient(145deg,#5A3080,#3A1A5A)', initials:'WL', taxLabel:'Drama • GARM-G3',    taxType:'garm'   },
-  { id:7,  title:'A.P. Bio',               category:'comedy',    grad:'linear-gradient(145deg,#1A6FC4,#0D4080)', initials:'AP', taxLabel:'Comedy • IAB1-7',    taxType:'iab'    },
-  { id:8,  title:'Below Deck',              category:'reality',   grad:'linear-gradient(145deg,#1A6FC4,#0D4A8A)', initials:'BD', taxLabel:'Reality • IAB20-3',  taxType:'iab',   badge:'Peacock Original' },
-  { id:9,  title:'Show Title',              category:'drama',     grad:'linear-gradient(145deg,#4A5568,#2D3748)', initials:'ST', taxLabel:'Drama • GARM-G2',    taxType:'garm'   },
-  { id:10, title:'Show Title',             category:'comedy',    grad:'linear-gradient(145deg,#1A6FC4,#0D4080)', initials:'ST', taxLabel:'Comedy • IAB1-7',    taxType:'iab'    },
-];
+var csActiveTxFilter = 'all';
+var csSelectedTxId   = 1;
 
 function csTxView(view) {
   ['mockup','process'].forEach(function(v) {
@@ -1574,14 +1552,9 @@ function csTxFilter(val) {
   csTxRender();
 }
 
-function csTxFilterTax(val) {
-  csActiveTxTaxFilter = val;
-  csTxRender();
-}
-
 function csTxSelect(id) {
   if (id <= 3) {
-    var it = CS_TX_SHOWS.filter(function(s) { return s.id === id; })[0];
+    var it = CS_SHOWS.filter(function(s) { return s.id === id; })[0];
     if (it) { csShowDetailView('taxonomy', it); return; }
   }
   csSelectedTxId = id;
@@ -1591,10 +1564,8 @@ function csTxSelect(id) {
 function csTxRender() {
   var grid = document.getElementById('cs-grid4');
   if (!grid) return;
-  var shows = CS_TX_SHOWS.filter(function(s) {
-    var catOk = csActiveTxFilter === 'all' || s.category === csActiveTxFilter;
-    var taxOk = csActiveTxTaxFilter === 'all' || s.taxType === csActiveTxTaxFilter;
-    return catOk && taxOk;
+  var shows = CS_SHOWS.filter(function(s) {
+    return csActiveTxFilter === 'all' || s.category === csActiveTxFilter;
   });
   grid.innerHTML = shows.map(function(s) {
     var sel   = s.id === csSelectedTxId;
@@ -1605,7 +1576,6 @@ function csTxRender() {
       + badge
       + '</div>'
       + '<div class="cs-thumb-title">' + s.title + '</div>'
-      + '<div class="cs-thumb-tax">' + s.taxLabel + '</div>'
       + '</div>';
   }).join('');
 }
@@ -1690,7 +1660,7 @@ function sdtInit() {
   csActiveFilter    = 'all'; csSelectedId    = 3;
   csActiveFilter2   = 'all'; csSelectedId2   = 3;
   csActiveFilter3   = 'all'; csSelectedId3   = 3;
-  csActiveTxFilter  = 'all'; csActiveTxTaxFilter = 'all'; csSelectedTxId = 1;
+  csActiveTxFilter = 'all'; csSelectedTxId = 1;
   sdtInjectStyles();
   csRender();   csRenderProcess();
   csRender2();  csRenderProcess2();
@@ -1815,16 +1785,6 @@ function sdtInjectStyles() {
       background: var(--bg);
       color: var(--text);
       box-shadow: 0 1px 3px rgba(0,0,0,.07);
-    }
-
-    /* Taxonomy label under thumbnail */
-    .cs-thumb-tax {
-      font-size: 10px;
-      color: var(--muted);
-      margin-top: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     /* Modal */
