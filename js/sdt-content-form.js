@@ -1172,29 +1172,27 @@ function csShowDetailView3(item) {
     +     '</select></div>'
     + '</div>'
 
-    // Main block
-    + '<div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;height:400px">'
+    // Main block — height fills viewport
+    + '<div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;height:calc(100vh - 380px);min-height:240px">'
 
-    //   Video column: white bg, 16:9 placeholder at top only
+    //   Video column: white bg, 16:9 photo at top
     +   '<div style="width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column">'
-    //     16:9 thumbnail with warm placeholder gradient + play button
+    //     16:9 box with real photo + overlay
     +     '<div style="width:100%;position:relative;padding-top:56.25%;overflow:hidden;flex-shrink:0">'
-    +       '<div style="position:absolute;inset:0;background:linear-gradient(145deg,#7B5E4A 0%,#4A3226 35%,#8B6E52 65%,#3E2A1E 100%)">'
+    +       '<img src="https://picsum.photos/seed/homeremodel/440/248" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block" alt="">'
+    //       dark gradient overlay (bottom) + play button
+    +       '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55) 0%,transparent 50%)">'
     +         '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">'
-    +           '<div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center">'
+    +           '<div style="width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center">'
     +             '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="color:#fff;margin-left:2px"><path d="M4 3l9 5-9 5V3z" fill="currentColor"/></svg>'
     +           '</div>'
     +         '</div>'
-    //         film-strip holes
-    +         '<div style="position:absolute;top:0;bottom:0;left:0;width:7px;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.3) 0px,rgba(0,0,0,.3) 5px,transparent 5px,transparent 9px)"></div>'
-    +         '<div style="position:absolute;top:0;bottom:0;right:0;width:7px;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.3) 0px,rgba(0,0,0,.3) 5px,transparent 5px,transparent 9px)"></div>'
-    +       '</div>'
-    //       controls bar (sits below the 16:9 box, still dark)
-    +       '<div style="position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;gap:5px;padding:5px 7px;background:rgba(0,0,0,.45)">'
-    +         '<svg width="10" height="10" viewBox="0 0 16 16" fill="none" style="color:rgba(255,255,255,.7);flex-shrink:0"><path d="M4 3l9 5-9 5V3z" fill="currentColor"/></svg>'
-    +         '<span style="font-size:9px;color:rgba(255,255,255,.55)">0:00</span>'
-    +         '<div style="flex:1;height:2px;background:rgba(255,255,255,.18);border-radius:1px"><div style="width:1%;height:100%;background:var(--accent);border-radius:1px"></div></div>'
-    +         '<span style="font-size:9px;color:rgba(255,255,255,.55)">44:15</span>'
+    +         '<div style="position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;gap:5px;padding:5px 7px">'
+    +           '<svg width="10" height="10" viewBox="0 0 16 16" fill="none" style="color:rgba(255,255,255,.85);flex-shrink:0"><path d="M4 3l9 5-9 5V3z" fill="currentColor"/></svg>'
+    +           '<span style="font-size:9px;color:rgba(255,255,255,.7)">0:00</span>'
+    +           '<div style="flex:1;height:2px;background:rgba(255,255,255,.25);border-radius:1px"><div style="width:1%;height:100%;background:var(--accent);border-radius:1px"></div></div>'
+    +           '<span style="font-size:9px;color:rgba(255,255,255,.7)">44:15</span>'
+    +         '</div>'
     +       '</div>'
     +     '</div>'
     +   '</div>'
