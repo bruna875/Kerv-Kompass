@@ -411,23 +411,23 @@ function txModalTab(tab) {
   var body = document.getElementById('tx-modal-body');
   if (!body) return;
   body.innerHTML =
-    '<table style="width:100%;border-collapse:collapse">'
+    '<div style="overflow-y:auto;max-height:340px">'
+    + '<table style="width:100%;border-collapse:collapse">'
     + '<thead><tr>'
     + '<th class="tx-th" style="width:32px">#</th>'
     + '<th class="tx-th">Taxonomy</th>'
-    + '<th class="tx-th">Category</th>'
-    + '<th class="tx-th" style="text-align:right">Score</th>'
+    + '<th class="tx-th" style="text-align:right;white-space:nowrap">Score</th>'
     + '</tr></thead>'
     + '<tbody>'
     + sorted.map(function(r, i) {
         return '<tr style="border-bottom:1px solid var(--border)">'
           + '<td style="padding:10px 12px;font-size:10px;font-weight:600;color:var(--faint)">#' + (i+1) + '</td>'
-          + '<td style="padding:10px 12px;font-size:11px;color:var(--faint)">' + r.taxonomy + '</td>'
-          + '<td style="padding:10px 12px;font-size:13px;color:var(--text);font-weight:500">' + r.category + '</td>'
+          + '<td style="padding:10px 12px;font-size:13px;color:var(--text)">' + r.taxonomy + '</td>'
           + '<td style="padding:10px 12px">' + txScoreBar(r.score) + '</td>'
           + '</tr>';
       }).join('')
-    + '</tbody></table>';
+    + '</tbody></table>'
+    + '</div>';
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────
