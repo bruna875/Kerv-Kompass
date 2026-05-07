@@ -2455,15 +2455,20 @@ function csTx2TaxShowResults() {
     : '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 
   ca.innerHTML =
-    // Back button row + filename badge
+    // Back button row + video thumbnail
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
     + '<button class="cs-dv-back" onclick="csTx2TaxShowUpload()">'
     +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     +   ' BACK TO UPLOAD'
     + '</button>'
-    + '<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;max-width:240px;overflow:hidden">'
-    +   '<span style="color:var(--faint);flex-shrink:0">' + fileIcon + '</span>'
-    +   '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + csTx2TaxFileName + '</span>'
+    + '<div style="position:relative;width:128px;height:72px;border-radius:8px;overflow:hidden;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15)">'
+    +   '<img src="https://picsum.photos/seed/kervscene3/640/360" style="width:100%;height:100%;object-fit:cover;display:block">'
+    +   '<div style="position:absolute;inset:0;background:rgba(0,0,0,.32);display:flex;align-items:center;justify-content:center">'
+    +     '<div style="width:30px;height:30px;background:rgba(255,255,255,.92);border-radius:50%;display:flex;align-items:center;justify-content:center">'
+    +       '<svg width="11" height="13" viewBox="0 0 11 13" fill="none"><path d="M1 1.5l9 5-9 5V1.5z" fill="#111" stroke="#111" stroke-width=".5" stroke-linejoin="round"/></svg>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div style="position:absolute;bottom:0;left:0;right:0;padding:4px 7px;background:linear-gradient(to top,rgba(0,0,0,.6),transparent);font-size:9px;color:rgba(255,255,255,.8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + csTx2TaxFileName + '</div>'
     + '</div>'
     + '</div>'
 

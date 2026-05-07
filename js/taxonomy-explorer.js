@@ -302,7 +302,7 @@ function txShowResults() {
 }
 
 function txScoreColor(s) {
-  return s >= 90 ? '#2EAD4B' : s >= 75 ? 'var(--accent)' : s >= 60 ? '#E5A100' : 'var(--faint)';
+  return s >= 90 ? '#2EAD4B' : s >= 75 ? '#E5A100' : s >= 60 ? 'var(--accent)' : 'var(--faint)';
 }
 
 function txScoreBar(s) {
