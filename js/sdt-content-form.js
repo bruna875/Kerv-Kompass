@@ -2340,7 +2340,7 @@ function csTx2TaxAnalyze() {
   ];
 
   ca.innerHTML =
-    '<div style="max-width:520px">'
+    '<div style="max-width:520px;margin:0 auto">'
 
     // 16:9 player
     + '<div style="position:relative;width:100%;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#111;margin-bottom:14px">'
