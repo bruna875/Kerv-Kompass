@@ -46,11 +46,27 @@
     </div>
     <span class="sa-title">Sales Demo Tool</span>
   </div>
-  <div class="ptitle" style="margin-bottom:20px">Content Library</div>
+  <div class="ptitle" style="margin-bottom:8px">Content Library</div>
 
-  <div id="sdt-panel-taxonomy2">
-    <div class="cs-card" style="padding:24px">
-      <div id="tx2-content-area"></div>
+  <div id="sdt-panel-taxonomy">
+    <div class="cs-card">
+      <div class="cs-toolbar">
+        <div class="cs-filter-wrap">
+          <div class="cs-filter-label">Category</div>
+          <select class="cs-filter-select" onchange="csTxFilter(this.value)">
+            <option value="all">All</option>
+            <option value="comedy">Comedy</option>
+            <option value="drama">Drama</option>
+            <option value="reality">Reality</option>
+            <option value="documentary">Documentary</option>
+          </select>
+        </div>
+        <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Request New Content
+        </button>
+      </div>
+      <div class="cs-grid" id="cs-grid4"></div>
     </div>
   </div>
 </div>
@@ -61,24 +77,17 @@
 <script src="/js/taxonomy-explorer.js"></script>
 <script src="/js/sdt-content-form.js"></script>
 <script>
-  // Stub app.js globals
-  var activeId    = 'taxonomy-v1'; // not 'taxonomy-showcase' so back button shows in V2
+  // Stub app.js globals used by sdt-content-form.js
+  var activeId    = 'taxonomy-v1';
   var initiatives = [];
   var collapsed   = false;
 
-  // Rename "Start Analysis" → "Scan New Content" every time the upload view renders
-  var _origUpload = csTx2TaxShowUpload;
-  csTx2TaxShowUpload = function() {
-    _origUpload.apply(this, arguments);
-    var btn = document.querySelector('button[onclick="csTx2TaxAnalyze()"]');
-    if (btn) btn.textContent = 'Scan New Content';
-  };
-
   window.addEventListener('load', function() {
-    csTx2TaxStep = 'upload'; csTx2TaxInputType = 'video'; csTx2TaxFileName = '';
+    csActiveTxFilter = 'all';
+    csSelectedTxId   = 1;
     sdtInjectStyles();
-    csTx2TaxShowUpload();
-    csTx2RenderProcess();
+    csTxRender();
+    csTxRenderProcess();
   });
 </script>
 
