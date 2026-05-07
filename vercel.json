@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/taxonomy-v1/standalone", "destination": "/taxonomy-standalone.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
