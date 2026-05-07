@@ -2206,23 +2206,19 @@ function csTx2TaxShowUpload() {
     +     '<div style="font-size:12px;color:var(--muted)">Choose an input type</div>'
     +   '</div>'
 
-    // Option selector — horizontal segmented toggle
+    // Option selector — horizontal segmented toggle (Video / Brief)
     +   '<div style="display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:16px">'
     +     '<div class="tx2-seg tx2-seg--act" id="tx2-opt-video" onclick="csTx2TaxSelectInput(\'video\')">'
     +       '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
     +       '<span>Video</span>'
     +     '</div>'
-    +     '<div class="tx2-seg" id="tx2-opt-doc" onclick="csTx2TaxSelectInput(\'doc\')">'
-    +       '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
-    +       '<span>Doc / PDF</span>'
-    +     '</div>'
-    +     '<div class="tx2-seg" id="tx2-opt-text" onclick="csTx2TaxSelectInput(\'text\')">'
-    +       '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="26" cy="26" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M29 29l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
-    +       '<span>Free Text</span>'
+    +     '<div class="tx2-seg" id="tx2-opt-brief" onclick="csTx2TaxSelectInput(\'brief\')">'
+    +       '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+    +       '<span>Brief</span>'
     +     '</div>'
     +   '</div>'
 
-    // Input area
+    // Input area (video upload by default; brief shows sub-toggle)
     +   '<div id="tx2-input-area" style="margin-bottom:16px">' + inputArea('video') + '</div>'
 
     +   '<button class="cs-btn-primary" style="width:100%;height:38px;font-size:13px" onclick="csTx2TaxAnalyze()">Start Analysis</button>'
@@ -2264,38 +2260,60 @@ function csTx2LibLoad(idx) {
 }
 
 function csTx2TaxSelectInput(type) {
-  csTx2TaxInputType = type;
-  ['video', 'doc', 'text'].forEach(function(t) {
+  // type is 'video' or 'brief'
+  ['video', 'brief'].forEach(function(t) {
     var el = document.getElementById('tx2-opt-' + t);
     if (el) el.className = 'tx2-seg' + (t === type ? ' tx2-seg--act' : '');
   });
   var area = document.getElementById('tx2-input-area');
   if (!area) return;
 
-  var uploadZone = function(t) {
-    return '<div class="tx2-upload-zone" onclick="document.getElementById(\'tx2-file-input-' + t + '\').click()">'
-      + '<input type="file" id="tx2-file-input-' + t + '" style="display:none"'
-      + (t === 'video' ? ' accept="video/*"' : ' accept=".pdf,.doc,.docx"') + '>'
-      + '<svg width="28" height="28" viewBox="0 0 32 32" fill="none" style="color:var(--faint)">'
-      + (t === 'video'
-          ? '<rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>'
-          : '<path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.6"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>')
-      + '</svg>'
-      + '<div style="font-size:13px;font-weight:500;color:var(--text);margin-top:6px">'
-      + (t === 'video' ? 'Drop video file here' : 'Drop PDF or document here')
-      + '</div>'
-      + '<div style="font-size:11px;color:var(--faint);margin-top:2px">'
-      + (t === 'video' ? 'MP4, MOV, AVI — up to 2 GB' : 'PDF, DOCX, TXT — up to 50 MB')
-      + '</div>'
-      + ''
+  if (type === 'video') {
+    csTx2TaxInputType = 'video';
+    area.innerHTML =
+      '<div class="tx2-upload-zone" onclick="document.getElementById(\'tx2-file-input-video\').click()">'
+      + '<input type="file" id="tx2-file-input-video" style="display:none" accept="video/*">'
+      + '<svg width="28" height="28" viewBox="0 0 32 32" fill="none" style="color:var(--faint)"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>'
+      + '<div style="font-size:13px;font-weight:500;color:var(--text);margin-top:6px">Drop video file here</div>'
+      + '<div style="font-size:11px;color:var(--faint);margin-top:2px">MP4, MOV, AVI — up to 2 GB</div>'
       + '</div>';
-  };
-
-  if (type === 'text') {
-    area.innerHTML = '<textarea class="cs-textarea" id="tx2-text-input" placeholder="Paste or type your text here. The AI will analyse topics, sentiments, moments and taxonomy classifications…" style="width:100%;box-sizing:border-box;min-height:160px;resize:vertical"></textarea>';
   } else {
-    area.innerHTML = uploadZone(type);
+    // Brief: default to free text input, with sub-toggle
+    csTx2TaxInputType = 'text';
+    area.innerHTML = csTx2BriefHtml('text');
   }
+}
+
+function csTx2BriefHtml(subtype) {
+  var textArea = '<textarea class="cs-textarea" id="tx2-text-input"'
+    + ' placeholder="Paste or type your brief here. The AI will analyse topics, sentiments, moments and taxonomy classifications…"'
+    + ' style="width:100%;box-sizing:border-box;min-height:180px;resize:vertical"></textarea>';
+
+  var docZone =
+    '<div class="tx2-upload-zone" onclick="document.getElementById(\'tx2-file-input-doc\').click()">'
+    + '<input type="file" id="tx2-file-input-doc" style="display:none" accept=".pdf,.doc,.docx">'
+    + '<svg width="28" height="28" viewBox="0 0 32 32" fill="none" style="color:var(--faint)"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.6"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>'
+    + '<div style="font-size:13px;font-weight:500;color:var(--text);margin-top:6px">Drop PDF or document here</div>'
+    + '<div style="font-size:11px;color:var(--faint);margin-top:2px">PDF, DOCX, TXT — up to 50 MB</div>'
+    + '</div>';
+
+  return '<div style="display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px;margin-bottom:12px">'
+    + '<div class="tx2-seg' + (subtype === 'text' ? ' tx2-seg--act' : '') + '" id="tx2-brief-text" onclick="csTx2TaxSelectBrief(\'text\')" style="font-size:11px">'
+    +   '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+    +   '<span>Free input</span>'
+    + '</div>'
+    + '<div class="tx2-seg' + (subtype === 'doc' ? ' tx2-seg--act' : '') + '" id="tx2-brief-doc" onclick="csTx2TaxSelectBrief(\'doc\')" style="font-size:11px">'
+    +   '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.6"/><path d="M20 4v6h6" stroke="currentColor" stroke-width="1.4"/></svg>'
+    +   '<span>Doc / PDF</span>'
+    + '</div>'
+    + '</div>'
+    + '<div id="tx2-brief-input">' + (subtype === 'text' ? textArea : docZone) + '</div>';
+}
+
+function csTx2TaxSelectBrief(subtype) {
+  csTx2TaxInputType = subtype === 'doc' ? 'doc' : 'text';
+  var area = document.getElementById('tx2-input-area');
+  if (area) area.innerHTML = csTx2BriefHtml(subtype);
 }
 
 function csTx2TaxAnalyze() {
