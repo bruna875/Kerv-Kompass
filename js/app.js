@@ -16,7 +16,7 @@ var PAGES = {
 // ── Nav ──
 
 // Sections collapsed by default (by section label)
-var navCollapsed = { 'Product': true, 'Work in Progress': true };
+var navCollapsed = { 'Roadmap': true, 'Work in Progress': true };
 
 function toggleNavSection(section) {
   navCollapsed[section] = !navCollapsed[section];

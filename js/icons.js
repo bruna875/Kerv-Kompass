@@ -11,7 +11,7 @@ var ico = {
 
 var NAV_CONFIG = [
   {
-    section: 'Product',
+    section: 'Roadmap',
     items: [
       { id: 'roadmap',      label: 'Product Roadmap',      icon: ico.roadmap },
       { id: 'teamcapacity', label: 'Team Capacity',        icon: ico.capacity }
