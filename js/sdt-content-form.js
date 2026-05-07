@@ -400,6 +400,41 @@ function renderTaxonomyV2() {
 
 // ── Taxonomy Explorer ───────────────────────────────────────────
 
+// ── Live Prototype: Metadata Analysis ────────────────────────────────────
+
+function renderMetadataAnalysis() {
+  setTimeout(function() {
+    csActiveTx2Filter = 'all'; csSelectedTx2Id = 1;
+    sdtInjectStyles();
+    csTx2Render();
+  }, 0);
+  return `
+<div class="ptitle">Metadata Analysis</div>
+<div class="psub" style="margin-bottom:20px">Browse and analyse content metadata</div>
+<div id="sdt-panel-taxonomy2">
+  <div class="cs-card">
+    <div class="cs-title" style="margin-bottom:16px">Content Selection</div>
+    <div class="cs-toolbar">
+      <div class="cs-filter-wrap">
+        <div class="cs-filter-label">Category</div>
+        <select class="cs-filter-select" onchange="csTx2Filter(this.value)">
+          <option value="all">All</option>
+          <option value="comedy">Comedy</option>
+          <option value="drama">Drama</option>
+          <option value="reality">Reality</option>
+          <option value="documentary">Documentary</option>
+        </select>
+      </div>
+      <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        Request New Content
+      </button>
+    </div>
+    <div class="cs-grid" id="cs-grid5"></div>
+  </div>
+</div>`;
+}
+
 function renderTaxonomyShowcase() {
   setTimeout(function() {
     csTx2TaxStep = 'upload'; csTx2TaxInputType = 'video'; csTx2TaxFileName = '';
