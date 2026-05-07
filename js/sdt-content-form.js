@@ -387,7 +387,7 @@ function renderTaxonomyV2() {
           </div>
           <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            Request New Content
+            Add New Content
           </button>
         </div>
         <div class="cs-grid" id="cs-grid5"></div>
@@ -427,7 +427,7 @@ function renderMetadataAnalysis() {
       </div>
       <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        Request New Content
+        Add New Content
       </button>
     </div>
     <div class="cs-grid" id="cs-grid5"></div>
@@ -1574,7 +1574,7 @@ function csBackToGrid() {
           + '<option value="documentary">Documentary</option></select></div>'
           + '<button class="cs-request-btn" onclick="csOpenModalTaxonomy()">'
           + '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
-          + ' Request New Content</button></div>'
+          + ' Add New Content</button></div>'
           + '<div class="cs-grid" id="cs-grid5"></div>'
           + '</div>';
         csTx2Render();
