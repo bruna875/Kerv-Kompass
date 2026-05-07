@@ -2361,6 +2361,12 @@ function csTx2TaxAnalyze() {
   ca.innerHTML =
     '<div style="max-width:520px;margin:0 auto">'
 
+    // Title
+    + '<div style="margin-bottom:14px">'
+    +   '<div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.6px;color:var(--faint);margin-bottom:3px">Scanning video</div>'
+    +   '<div style="font-size:15px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + csTx2TaxFileName + '</div>'
+    + '</div>'
+
     // 16:9 player
     + '<div style="position:relative;width:100%;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#111;margin-bottom:14px">'
     +   '<img id="tx2-prog-frame" src="' + frames[0] + '" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .5s">'
