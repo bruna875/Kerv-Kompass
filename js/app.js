@@ -15,17 +15,33 @@ var PAGES = {
 
 // ── Nav ──
 
+// Sections collapsed by default (by section label)
+var navCollapsed = { 'Product': true, 'Work in Progress': true };
+
+function toggleNavSection(section) {
+  navCollapsed[section] = !navCollapsed[section];
+  buildNav();
+}
+
 function buildNav() {
   document.getElementById('nav').innerHTML = NAV_CONFIG.map(function(sec) {
-    return '<div><div class="seclabel">' + sec.section + '</div>'
-      + sec.items.map(function(item) {
-        var act = item.id === activeId;
-        return '<div class="nitem' + (act ? ' act' : '') + '" data-page="' + item.id + '" data-label="' + item.label + '">'
-          + (act ? '<div class="nbar"></div>' : '')
-          + '<div class="nico">' + item.icon + '</div>'
-          + '<span class="nlabel">' + item.label + '</span>'
-          + '</div>';
-      }).join('') + '</div>';
+    var col = !!navCollapsed[sec.section];
+    var chevron = col
+      ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      : '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 6.5l3-3 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    var header = '<div class="seclabel seclabel--toggle" onclick="toggleNavSection(\'' + sec.section.replace(/'/g, "\\'") + '\')">'
+      + '<span>' + sec.section + '</span>'
+      + '<span class="seclabel-chevron">' + chevron + '</span>'
+      + '</div>';
+    var items = col ? '' : sec.items.map(function(item) {
+      var act = item.id === activeId;
+      return '<div class="nitem' + (act ? ' act' : '') + '" data-page="' + item.id + '" data-label="' + item.label + '">'
+        + (act ? '<div class="nbar"></div>' : '')
+        + '<div class="nico">' + item.icon + '</div>'
+        + '<span class="nlabel">' + item.label + '</span>'
+        + '</div>';
+    }).join('');
+    return '<div>' + header + items + '</div>';
   }).join('');
 }
 
