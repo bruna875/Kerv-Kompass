@@ -2323,47 +2323,103 @@ function csTx2TaxAnalyze() {
   }
 
   var progressSteps = [
-    'Extracting content…',
+    'Analyzing metadata…',
     'Detecting scenes & objects…',
     'Classifying moments…',
     'Building taxonomy map…',
     'Matching episodes & shows…'
   ];
 
+  // Video frames (different Picsum images per scene)
+  var frames = [
+    'https://picsum.photos/seed/kervscene1/640/360',
+    'https://picsum.photos/seed/kervscene2/640/360',
+    'https://picsum.photos/seed/kervscene3/640/360',
+    'https://picsum.photos/seed/kervscene4/640/360',
+    'https://picsum.photos/seed/kervscene5/640/360',
+  ];
+
   ca.innerHTML =
-      '<div class="tx2-progress-wrap">'
-    + '  <div class="tx2-progress-icon">'
-    +    '<svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="var(--border-md)" stroke-width="2"/><circle cx="16" cy="16" r="14" stroke="var(--accent)" stroke-width="2" stroke-dasharray="88" stroke-dashoffset="88" id="tx2-prog-circle" style="transform-origin:center;transform:rotate(-90deg);transition:stroke-dashoffset .15s"/></svg>'
-    + '  </div>'
-    + '  <div class="tx2-progress-title">Analysing ' + typeLabel + '</div>'
-    + '  <div class="tx2-progress-step" id="tx2-progress-label">' + progressSteps[0] + '</div>'
-    + '  <div class="tx2-progress-track">'
-    + '    <div class="tx2-progress-fill" id="tx2-progress-bar" style="width:0%"></div>'
-    + '  </div>'
-    + '  <div class="tx2-progress-pct" id="tx2-progress-pct">0%</div>'
+    '<div style="max-width:520px">'
+
+    // 16:9 player
+    + '<div style="position:relative;width:100%;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#111;margin-bottom:14px">'
+    +   '<img id="tx2-prog-frame" src="' + frames[0] + '" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .5s">'
+    // scan line
+    +   '<div id="tx2-scan-line" style="position:absolute;left:0;right:0;height:2px;top:0%;background:rgba(237,0,94,.7);box-shadow:0 0 10px 2px rgba(237,0,94,.35);transition:none"></div>'
+    // bottom gradient + timecode
+    +   '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 55%);pointer-events:none">'
+    +     '<div style="position:absolute;bottom:10px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between">'
+    +       '<span id="tx2-prog-timecode" style="font-size:10px;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums;letter-spacing:.5px">00:00:00</span>'
+    +       '<span id="tx2-prog-scene"    style="font-size:10px;color:rgba(255,255,255,.5)">Scene 1 / 5</span>'
+    +     '</div>'
+    +   '</div>'
+    + '</div>'
+
+    // Status label
+    + '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;min-height:18px" id="tx2-progress-label">' + progressSteps[0] + '</div>'
+
+    // Progress bar
+    + '<div class="tx2-progress-track" style="margin-bottom:7px">'
+    +   '<div class="tx2-progress-fill" id="tx2-progress-bar" style="width:0%"></div>'
+    + '</div>'
+
+    // Percentage
+    + '<div style="font-size:11px;color:var(--faint);text-align:right" id="tx2-progress-pct">0%</div>'
+
     + '</div>';
 
-  var pct = 0;
-  var stepIdx = 0;
+  var pct      = 0;
+  var stepIdx  = 0;
+  var scanPct  = 0;
+  var frameIdx = 0;
+
   var interval = setInterval(function() {
-    pct = Math.min(pct + 1.6, 100);
-    var bar     = document.getElementById('tx2-progress-bar');
-    var circle  = document.getElementById('tx2-prog-circle');
-    var label   = document.getElementById('tx2-progress-label');
-    var pctEl   = document.getElementById('tx2-progress-pct');
-    if (bar)    bar.style.width = pct + '%';
-    if (pctEl)  pctEl.textContent = Math.round(pct) + '%';
-    if (circle) circle.style.strokeDashoffset = 88 - (pct / 100 * 88);
+    pct     = Math.min(pct + 0.45, 100);
+    scanPct = (scanPct + 3) % 100;
+
+    var bar      = document.getElementById('tx2-progress-bar');
+    var label    = document.getElementById('tx2-progress-label');
+    var pctEl    = document.getElementById('tx2-progress-pct');
+    var scanLine = document.getElementById('tx2-scan-line');
+    var timecode = document.getElementById('tx2-prog-timecode');
+    var sceneLbl = document.getElementById('tx2-prog-scene');
+    var frameEl  = document.getElementById('tx2-prog-frame');
+
+    if (bar)      bar.style.width = pct + '%';
+    if (pctEl)    pctEl.textContent = Math.round(pct) + '%';
+    if (scanLine) scanLine.style.top = scanPct + '%';
+
+    // Timecode: simulate 44m15s video
+    var totalSec = Math.round((pct / 100) * 2655);
+    var hh = String(Math.floor(totalSec / 3600)).padStart(2, '0');
+    var mm = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+    var ss = String(totalSec % 60).padStart(2, '0');
+    if (timecode) timecode.textContent = hh + ':' + mm + ':' + ss;
+
+    // Switch frame & step at 20% intervals
     var newStep = Math.min(Math.floor(pct / 20), progressSteps.length - 1);
     if (newStep !== stepIdx) {
       stepIdx = newStep;
       if (label) label.textContent = progressSteps[stepIdx];
+      // Crossfade to next frame
+      var newFrameIdx = Math.min(newStep, frames.length - 1);
+      if (frameEl && newFrameIdx !== frameIdx) {
+        frameIdx = newFrameIdx;
+        frameEl.style.opacity = '0';
+        setTimeout(function() {
+          if (frameEl) { frameEl.src = frames[frameIdx]; frameEl.style.opacity = '1'; }
+        }, 250);
+      }
+      if (sceneLbl) sceneLbl.textContent = 'Scene ' + (newStep + 1) + ' / 5';
     }
+
     if (pct >= 100) {
       clearInterval(interval);
-      setTimeout(csTx2TaxShowResults, 500);
+      if (scanLine) scanLine.style.display = 'none';
+      setTimeout(csTx2TaxShowResults, 600);
     }
-  }, 25); // ~1.6s total
+  }, 40); // ~9s total
 }
 
 // ── Taxonomy Explorer: Results step (Moments / Taxonomies / Episodes) ─────────
