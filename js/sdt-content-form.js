@@ -2284,36 +2284,23 @@ function csTx2TaxSelectInput(type) {
   }
 }
 
-function csTx2BriefHtml(subtype) {
-  var textArea = '<textarea class="cs-textarea" id="tx2-text-input"'
+function csTx2BriefHtml() {
+  return '<div style="position:relative">'
+    + '<textarea class="cs-textarea" id="tx2-text-input"'
     + ' placeholder="Paste or type your brief here. The AI will analyse topics, sentiments, moments and taxonomy classifications…"'
-    + ' style="width:100%;box-sizing:border-box;min-height:180px;resize:vertical"></textarea>';
-
-  var docZone =
-    '<div class="tx2-upload-zone" onclick="document.getElementById(\'tx2-file-input-doc\').click()">'
-    + '<input type="file" id="tx2-file-input-doc" style="display:none" accept=".pdf,.doc,.docx">'
-    + '<svg width="28" height="28" viewBox="0 0 32 32" fill="none" style="color:var(--faint)"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.6"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>'
-    + '<div style="font-size:13px;font-weight:500;color:var(--text);margin-top:6px">Drop PDF or document here</div>'
-    + '<div style="font-size:11px;color:var(--faint);margin-top:2px">PDF, DOCX, TXT — up to 50 MB</div>'
+    + ' style="width:100%;box-sizing:border-box;min-height:180px;resize:vertical;padding-bottom:40px"></textarea>'
+    + '<div style="position:absolute;bottom:10px;left:10px;right:10px;display:flex;align-items:center;gap:8px;pointer-events:none">'
+    +   '<div id="tx2-brief-file-label" style="font-size:11px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></div>'
+    +   '<label for="tx2-file-input-doc" title="Upload Doc / PDF"'
+    +     ' style="pointer-events:all;cursor:pointer;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--muted);flex-shrink:0;transition:color .13s,border-color .13s"'
+    +     ' onmouseenter="this.style.color=\'var(--accent)\';this.style.borderColor=\'var(--accent)\'"'
+    +     ' onmouseleave="this.style.color=\'var(--muted)\';this.style.borderColor=\'var(--border)\'">'
+    +     '<svg width="14" height="14" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +   '</label>'
+    +   '<input type="file" id="tx2-file-input-doc" style="display:none" accept=".pdf,.doc,.docx"'
+    +     ' onchange="var n=this.files[0]?this.files[0].name:\'\';document.getElementById(\'tx2-brief-file-label\').textContent=n;csTx2TaxInputType=n?\'doc\':\'text\'">'
+    + '</div>'
     + '</div>';
-
-  return '<div style="display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px;margin-bottom:12px">'
-    + '<div class="tx2-seg' + (subtype === 'text' ? ' tx2-seg--act' : '') + '" id="tx2-brief-text" onclick="csTx2TaxSelectBrief(\'text\')" style="font-size:11px">'
-    +   '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
-    +   '<span>Free input</span>'
-    + '</div>'
-    + '<div class="tx2-seg' + (subtype === 'doc' ? ' tx2-seg--act' : '') + '" id="tx2-brief-doc" onclick="csTx2TaxSelectBrief(\'doc\')" style="font-size:11px">'
-    +   '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.6"/><path d="M20 4v6h6" stroke="currentColor" stroke-width="1.4"/></svg>'
-    +   '<span>Doc / PDF</span>'
-    + '</div>'
-    + '</div>'
-    + '<div id="tx2-brief-input">' + (subtype === 'text' ? textArea : docZone) + '</div>';
-}
-
-function csTx2TaxSelectBrief(subtype) {
-  csTx2TaxInputType = subtype === 'doc' ? 'doc' : 'text';
-  var area = document.getElementById('tx2-input-area');
-  if (area) area.innerHTML = csTx2BriefHtml(subtype);
 }
 
 function csTx2TaxAnalyze() {
