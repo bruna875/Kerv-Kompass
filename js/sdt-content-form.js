@@ -408,6 +408,7 @@ function renderTaxonomyShowcase() {
     csTx2RenderProcess();
   }, 0);
   return `
+<div class="ptitle">Taxonomy Explorer Showcase</div>
 <div id="sdt-panel-taxonomy2">
   <div class="cs-card" style="padding:20px">
     <div id="tx2-content-area"></div>
