@@ -398,7 +398,7 @@ function renderTaxonomyV2() {
 </div>`;
 }
 
-// ── Taxonomy Explorer Showcase ───────────────────────────────────────────
+// ── Taxonomy Explorer ───────────────────────────────────────────
 
 function renderTaxonomyShowcase() {
   setTimeout(function() {
@@ -408,7 +408,7 @@ function renderTaxonomyShowcase() {
     csTx2RenderProcess();
   }, 0);
   return `
-<div class="ptitle">Taxonomy Explorer Showcase</div>
+<div class="ptitle">Taxonomy Explorer</div>
 <div class="psub" style="margin-bottom:24px">Upload a video or brief and let KervSDT analyse moments, metadata and taxonomy classifications</div>
 <div id="sdt-panel-taxonomy2">
   <div class="cs-card" style="padding:32px">
@@ -2163,7 +2163,7 @@ function csTx2TaxShowUpload() {
   // Restore breadcrumb if coming back from results on Showcase
   if (typeof activeId !== 'undefined' && activeId === 'taxonomy-showcase') {
     var pgname = document.getElementById('pgname');
-    if (pgname) pgname.textContent = 'Taxonomy Explorer Showcase';
+    if (pgname) pgname.textContent = 'Taxonomy Explorer';
   }
 
   function inputArea(type) {
@@ -2471,7 +2471,7 @@ function csTx2TaxShowResults() {
   if (isShowcase) {
     var pgname = document.getElementById('pgname');
     if (pgname) pgname.innerHTML =
-      '<span style="font-weight:400;opacity:.55;cursor:pointer" onclick="csTx2TaxShowUpload()">Taxonomy Explorer Showcase</span>'
+      '<span style="font-weight:400;opacity:.55;cursor:pointer" onclick="csTx2TaxShowUpload()">Taxonomy Explorer</span>'
       + ' &nbsp;/&nbsp; Analysis';
   }
 

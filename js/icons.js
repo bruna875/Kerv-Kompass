@@ -27,7 +27,7 @@ var NAV_CONFIG = [
   {
     section: 'Live Prototypes',
     items: [
-      { id: 'taxonomy-showcase', label: 'Taxonomy Explorer Showcase', icon: ico.showcase }
+      { id: 'taxonomy-showcase', label: 'Taxonomy Explorer', icon: ico.showcase }
     ]
   }
 ];
