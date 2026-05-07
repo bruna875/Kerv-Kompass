@@ -398,6 +398,66 @@ function renderTaxonomyV2() {
 </div>`;
 }
 
+// ── Taxonomy Explorer Showcase ───────────────────────────────────────────
+
+function renderTaxonomyShowcase() {
+  setTimeout(function() {
+    csActiveTx2Filter = 'all'; csSelectedTx2Id = 1;
+    csTx2TaxStep = 'upload'; csTx2TaxInputType = 'video'; csTx2TaxFileName = '';
+    sdtInjectStyles();
+    csTx2Render();
+    csTx2RenderProcess();
+  }, 0);
+  return `
+<div class="ptitle">Taxonomy Explorer Showcase</div>
+<div class="psub" style="margin-bottom:20px">KervSDT integrated dashboard</div>
+
+<div id="sdt-panel-taxonomy2">
+  <div class="cs-card" style="padding:0;display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- Dashboard topbar -->
+    <div class="tx2-topbar">
+      <div class="tx2-topbar-brand">
+        <div class="tx2-logo-mark">K</div>
+        <span class="tx2-topbar-title">KervSDT</span>
+      </div>
+      <div class="tx2-topbar-actions">
+        <button class="tx2-icon-btn" title="Notifications">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5h15L16 11V8a6 6 0 00-6-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M8.5 16.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="tx2-notif-dot"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Content area — full width, no inner sidebar -->
+    <div id="tx2-content-area" style="flex:1;min-width:0;padding:20px">
+      <div class="cs-title" style="margin-bottom:16px">Content Selection</div>
+      <div class="cs-toolbar">
+        <div class="cs-filter-wrap">
+          <div class="cs-filter-label">Category</div>
+          <select class="cs-filter-select" onchange="csTx2Filter(this.value)">
+            <option value="all">All</option>
+            <option value="comedy">Comedy</option>
+            <option value="drama">Drama</option>
+            <option value="reality">Reality</option>
+            <option value="documentary">Documentary</option>
+          </select>
+        </div>
+        <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Request New Content
+        </button>
+      </div>
+      <div class="cs-grid" id="cs-grid5"></div>
+    </div>
+
+  </div>
+</div>`;
+}
+
 // ── Content Selection data ────────────────────────────────────────────────
 var CS_SHOWS = [
   { id:1,  title:'Parks and Recreation',    category:'comedy',    grad:'linear-gradient(145deg,#D4820A,#A05E08)', initials:'PR' },
