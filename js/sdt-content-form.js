@@ -917,6 +917,11 @@ function csOpenModalTaxonomy() {
 
   modal.addEventListener('click', csCloseModal);
   document.body.appendChild(modal);
+  // Hide Enable Features on Metadata Analysis page
+  if (typeof activeId !== 'undefined' && activeId === 'metadata-analysis') {
+    var featField = modal.querySelector('.cs-features-grid');
+    if (featField && featField.parentElement) featField.parentElement.style.display = 'none';
+  }
   setTimeout(function() { modal.classList.add('cs-modal-overlay--in'); }, 10);
 }
 
