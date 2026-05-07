@@ -1859,10 +1859,8 @@ function csShowDetailView(panelKey, item) {
   // Inject into the correct target
   renderTarget.innerHTML = detailCard;
 
-  // Metadata Analysis page: hide back button, update breadcrumb
+  // Metadata Analysis page: update breadcrumb
   if (typeof activeId !== 'undefined' && activeId === 'metadata-analysis') {
-    var backBtn = renderTarget.querySelector('.cs-dv-back');
-    if (backBtn) backBtn.style.display = 'none';
     var pgname = document.getElementById('pgname');
     if (pgname) pgname.innerHTML =
       '<span style="font-weight:400;opacity:.55;cursor:pointer" onclick="csBackToGrid()">Metadata Analysis</span>'
