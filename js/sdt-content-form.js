@@ -1561,12 +1561,29 @@ function csBackToGrid() {
     csTxRender();
     csTxRenderProcess();
   } else if (panelKey === 'taxonomy2') {
-    // Dashboard shell stays — restore content area and sidebar to "Metadata Analysis"
-    csTx2NavTab('metadata');
-    // Restore breadcrumb if on Metadata Analysis page
     if (typeof activeId !== 'undefined' && activeId === 'metadata-analysis') {
+      // Metadata Analysis page: re-render the plain grid (no dashboard shell)
+      var panel2 = document.getElementById('sdt-panel-taxonomy2');
+      if (panel2) {
+        panel2.innerHTML =
+          '<div class="cs-card">'
+          + '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
+          + '<select class="cs-filter-select" onchange="csTx2Filter(this.value)">'
+          + '<option value="all">All</option><option value="comedy">Comedy</option>'
+          + '<option value="drama">Drama</option><option value="reality">Reality</option>'
+          + '<option value="documentary">Documentary</option></select></div>'
+          + '<button class="cs-request-btn" onclick="csOpenModalTaxonomy()">'
+          + '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+          + ' Request New Content</button></div>'
+          + '<div class="cs-grid" id="cs-grid5"></div>'
+          + '</div>';
+        csTx2Render();
+      }
       var pgname = document.getElementById('pgname');
       if (pgname) pgname.textContent = 'Metadata Analysis';
+    } else {
+      // Dashboard shell stays — restore content area to "Metadata Analysis" tab
+      csTx2NavTab('metadata');
     }
   } else {
     csBackToGrid3();
