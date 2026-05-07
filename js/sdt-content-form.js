@@ -2476,22 +2476,34 @@ function csTx2TaxShowResults() {
   }
 
   ca.innerHTML =
-    // Back button row (hidden on Showcase) + video thumbnail
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
-    + (isShowcase ? '<div></div>' :
-        '<button class="cs-dv-back" onclick="csTx2TaxShowUpload()">'
+    // Back button row (hidden on Showcase)
+    (isShowcase ? '' :
+      '<div style="margin-bottom:16px">'
+      + '<button class="cs-dv-back" onclick="csTx2TaxShowUpload()">'
       +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
       +   ' BACK TO UPLOAD'
-      + '</button>')
-    + '<div style="position:relative;width:128px;height:72px;border-radius:8px;overflow:hidden;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15)">'
-    +   '<img src="https://picsum.photos/seed/kervscene3/640/360" style="width:100%;height:100%;object-fit:cover;display:block">'
-    +   '<div style="position:absolute;inset:0;background:rgba(0,0,0,.32);display:flex;align-items:center;justify-content:center">'
-    +     '<div style="width:30px;height:30px;background:rgba(255,255,255,.92);border-radius:50%;display:flex;align-items:center;justify-content:center">'
-    +       '<svg width="11" height="13" viewBox="0 0 11 13" fill="none"><path d="M1 1.5l9 5-9 5V1.5z" fill="#111" stroke="#111" stroke-width=".5" stroke-linejoin="round"/></svg>'
+      + '</button>'
+      + '</div>')
+
+    // File summary card: thumbnail left + metadata right
+    + '<div style="display:flex;align-items:center;gap:14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:20px">'
+    +   '<div style="position:relative;width:112px;height:63px;border-radius:6px;overflow:hidden;flex-shrink:0">'
+    +     '<img src="https://picsum.photos/seed/kervscene3/640/360" style="width:100%;height:100%;object-fit:cover;display:block">'
+    +     '<div style="position:absolute;inset:0;background:rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center">'
+    +       '<div style="width:24px;height:24px;background:rgba(255,255,255,.9);border-radius:50%;display:flex;align-items:center;justify-content:center">'
+    +         '<svg width="9" height="11" viewBox="0 0 11 13" fill="none"><path d="M1 1.5l9 5-9 5V1.5z" fill="#111" stroke="#111" stroke-width=".5" stroke-linejoin="round"/></svg>'
+    +       '</div>'
     +     '</div>'
     +   '</div>'
-    +   '<div style="position:absolute;bottom:0;left:0;right:0;padding:4px 7px;background:linear-gradient(to top,rgba(0,0,0,.6),transparent);font-size:9px;color:rgba(255,255,255,.8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + csTx2TaxFileName + '</div>'
-    + '</div>'
+    +   '<div style="min-width:0;flex:1">'
+    +     '<div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px">' + csTx2TaxFileName + '</div>'
+    +     '<div style="display:flex;align-items:center;gap:10px">'
+    +       '<span style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px">' + fileIcon + ' ' + (csTx2TaxInputType === 'video' ? 'Video' : csTx2TaxInputType === 'doc' ? 'Document' : 'Text') + '</span>'
+    +       '<span style="font-size:11px;color:var(--faint)">·</span>'
+    +       '<span style="font-size:11px;color:var(--muted)">10 moments &nbsp;·&nbsp; 28 taxonomies</span>'
+    +     '</div>'
+    +   '</div>'
+    +   '<span style="font-size:10px;font-weight:600;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:3px 9px;flex-shrink:0">Completed</span>'
     + '</div>'
 
     // Sub-tab nav
