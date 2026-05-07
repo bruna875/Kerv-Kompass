@@ -1666,8 +1666,8 @@ function csShowDetailView(panelKey, item) {
 
   // Build the shared detail view card HTML
   var detailCard =
-    // ── Mockup / Process toggle — hidden for taxonomy2 (dashboard mode) ──
-    (isTax2 ? '' :
+    // ── Mockup / Process toggle — hidden for taxonomy and taxonomy2 ──
+    (isTax2 || isTaxPanel ? '' :
       '<div class="cs-toggle-sticky">'
       + '<div class="cs-view-toggle">'
       +   '<div class="cs-view-btn cs-view-btn--act" id="cs-dv-vbtn-mockup" onclick="csDvToggleView(\'mockup\')">Mockup</div>'
@@ -1676,8 +1676,8 @@ function csShowDetailView(panelKey, item) {
       + '</div>'
     )
 
-    // ── Mockup view wrapper (tax2: no wrapper; others: wrapped for toggle) ──
-    + (isTax2 ? '' : '<div id="cs-dv-view-mockup">')
+    // ── Mockup view wrapper (tax/tax2: no wrapper; others: wrapped for toggle) ──
+    + (isTax2 || isTaxPanel ? '' : '<div id="cs-dv-view-mockup">')
     // tax2: plain div — no card border/padding (dashboard shell already provides the container)
     // others: full cs-card with border, bg and padding
     + (isTax2
@@ -1765,10 +1765,10 @@ function csShowDetailView(panelKey, item) {
     + txExtraContent
 
     + '</div>' // close cs-card
-    + (isTax2 ? '' : '</div>') // close cs-dv-view-mockup (non-tax2 only)
+    + (isTax2 || isTaxPanel ? '' : '</div>') // close cs-dv-view-mockup
 
-    // ── Process view — non-tax2 only ──
-    + (isTax2 ? '' :
+    // ── Process view — not shown for taxonomy or taxonomy2 ──
+    + (isTax2 || isTaxPanel ? '' :
         '<div id="cs-dv-view-process" style="display:none">'
         + '<div id="cs-process-container3"></div>'
         + '</div>'
