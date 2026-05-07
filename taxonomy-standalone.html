@@ -82,6 +82,14 @@
   var initiatives = [];
   var collapsed   = false;
 
+  // Remove "Content Selection" title when going back to grid (standalone only)
+  var _origBackToGrid = csBackToGrid;
+  csBackToGrid = function() {
+    _origBackToGrid.apply(this, arguments);
+    var title = document.querySelector('#sdt-panel-taxonomy .cs-title');
+    if (title) title.remove();
+  };
+
   window.addEventListener('load', function() {
     csActiveTxFilter = 'all';
     csSelectedTxId   = 1;
