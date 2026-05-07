@@ -1494,12 +1494,7 @@ function csBackToGrid() {
     var panel = document.getElementById('sdt-panel-taxonomy');
     if (!panel) return;
     panel.innerHTML =
-      '<div class="cs-toggle-sticky"><div class="cs-view-toggle">'
-      + '<div class="cs-view-btn cs-view-btn--act" id="cs-vbtn4-mockup" onclick="csTxView(\'mockup\')">Mockup</div>'
-      + '<div class="cs-view-btn" id="cs-vbtn4-process" onclick="csTxView(\'process\')">Process</div>'
-      + '</div></div>'
-      + '<div id="cs-view4-mockup">'
-      + '<div class="cs-card"><div class="cs-title">Content Selection</div>'
+      '<div class="cs-card"><div class="cs-title">Content Selection</div>'
       + '<div class="cs-toolbar"><div class="cs-filter-wrap"><div class="cs-filter-label">Category</div>'
       + '<select class="cs-filter-select" onchange="csTxFilter(this.value)">'
       + '<option value="all">All</option><option value="comedy">Comedy</option>'
@@ -1508,8 +1503,7 @@ function csBackToGrid() {
       + '<button class="cs-request-btn" onclick="csOpenModalTaxonomy()">'
       + '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
       + ' Request New Content</button></div>'
-      + '<div class="cs-grid" id="cs-grid4"></div></div></div>'
-      + '<div id="cs-view4-process" style="display:none"><div id="cs-process-container4"></div></div>';
+      + '<div class="cs-grid" id="cs-grid4"></div></div>';
     csTxRender();
     csTxRenderProcess();
   } else if (panelKey === 'taxonomy2') {
