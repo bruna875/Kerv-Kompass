@@ -16,10 +16,9 @@ var NAV_CONFIG = [
     ]
   },
   {
-    section: 'Prototypes',
+    section: 'Work in Progress',
     items: [
-      { id: 'sdt-content-form',  label: 'SDT - New Content Form', icon: ico.sdtform  },
-      { id: 'taxonomy-explorer', label: 'Taxonomy Explorer',       icon: ico.taxonomy }
+      { id: 'sdt-content-form', label: 'SDT - New Content Form', icon: ico.sdtform }
     ]
   },
   {
