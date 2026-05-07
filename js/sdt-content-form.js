@@ -2160,6 +2160,12 @@ function csTx2TaxShowUpload() {
   var ca = document.getElementById('tx2-content-area');
   if (!ca) return;
 
+  // Restore breadcrumb if coming back from results on Showcase
+  if (typeof activeId !== 'undefined' && activeId === 'taxonomy-showcase') {
+    var pgname = document.getElementById('pgname');
+    if (pgname) pgname.textContent = 'Taxonomy Explorer Showcase';
+  }
+
   function inputArea(type) {
     var uploadZone =
         '<div class="tx2-upload-zone" onclick="document.getElementById(\'tx2-file-input-' + type + '\').click()">'
@@ -2453,6 +2459,7 @@ function csTx2TaxShowResults() {
   csTx2TaxStep = 'results';
   var ca = document.getElementById('tx2-content-area');
   if (!ca) return;
+  var isShowcase = typeof activeId !== 'undefined' && activeId === 'taxonomy-showcase';
   var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)';
   var fileIcon = csTx2TaxInputType === 'video'
     ? '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
@@ -2460,13 +2467,22 @@ function csTx2TaxShowResults() {
     ? '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
     : '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 
+  // Update breadcrumb for Showcase: show clickable page name + / Analysis
+  if (isShowcase) {
+    var pgname = document.getElementById('pgname');
+    if (pgname) pgname.innerHTML =
+      '<span style="font-weight:400;opacity:.55;cursor:pointer" onclick="csTx2TaxShowUpload()">Taxonomy Explorer Showcase</span>'
+      + ' &nbsp;/&nbsp; Analysis';
+  }
+
   ca.innerHTML =
-    // Back button row + video thumbnail
+    // Back button row (hidden on Showcase) + video thumbnail
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
-    + '<button class="cs-dv-back" onclick="csTx2TaxShowUpload()">'
-    +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-    +   ' BACK TO UPLOAD'
-    + '</button>'
+    + (isShowcase ? '<div></div>' :
+        '<button class="cs-dv-back" onclick="csTx2TaxShowUpload()">'
+      +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      +   ' BACK TO UPLOAD'
+      + '</button>')
     + '<div style="position:relative;width:128px;height:72px;border-radius:8px;overflow:hidden;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15)">'
     +   '<img src="https://picsum.photos/seed/kervscene3/640/360" style="width:100%;height:100%;object-fit:cover;display:block">'
     +   '<div style="position:absolute;inset:0;background:rgba(0,0,0,.32);display:flex;align-items:center;justify-content:center">'
