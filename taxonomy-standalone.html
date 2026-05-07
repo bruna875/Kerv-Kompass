@@ -46,7 +46,29 @@
     </div>
     <span class="sa-title">Sales Demo Tool</span>
   </div>
-  <div id="content"></div>
+  <div class="ptitle" style="margin-bottom:8px">Content Library</div>
+
+  <div id="sdt-panel-taxonomy">
+    <div class="cs-card">
+      <div class="cs-toolbar">
+        <div class="cs-filter-wrap">
+          <div class="cs-filter-label">Category</div>
+          <select class="cs-filter-select" onchange="csTxFilter(this.value)">
+            <option value="all">All</option>
+            <option value="comedy">Comedy</option>
+            <option value="drama">Drama</option>
+            <option value="reality">Reality</option>
+            <option value="documentary">Documentary</option>
+          </select>
+        </div>
+        <button class="cs-request-btn" onclick="csOpenModalTaxonomy()">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Request New Content
+        </button>
+      </div>
+      <div class="cs-grid" id="cs-grid4"></div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -61,7 +83,11 @@
   var collapsed   = false;
 
   window.addEventListener('load', function() {
-    document.getElementById('content').innerHTML = renderTaxonomyV1();
+    csActiveTxFilter = 'all';
+    csSelectedTxId   = 1;
+    sdtInjectStyles();
+    csTxRender();
+    csTxRenderProcess();
   });
 </script>
 
