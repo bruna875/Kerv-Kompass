@@ -2285,21 +2285,20 @@ function csTx2TaxSelectInput(type) {
 }
 
 function csTx2BriefHtml() {
-  return '<div style="position:relative">'
-    + '<textarea class="cs-textarea" id="tx2-text-input"'
+  return '<div style="border:1px solid var(--border-md);border-radius:8px;overflow:hidden;background:var(--surface)">'
+    + '<textarea id="tx2-text-input"'
     + ' placeholder="Paste or type your brief here. The AI will analyse topics, sentiments, moments and taxonomy classifications…"'
-    + ' style="width:100%;box-sizing:border-box;min-height:180px;resize:vertical;padding-bottom:40px"></textarea>'
-    + '<div style="position:absolute;bottom:10px;left:10px;right:10px;display:flex;align-items:center;gap:8px;pointer-events:none">'
-    +   '<div id="tx2-brief-file-label" style="font-size:11px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"></div>'
-    +   '<label for="tx2-file-input-doc" title="Upload Doc / PDF"'
-    +     ' style="pointer-events:all;cursor:pointer;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--muted);flex-shrink:0;transition:color .13s,border-color .13s"'
-    +     ' onmouseenter="this.style.color=\'var(--accent)\';this.style.borderColor=\'var(--accent)\'"'
-    +     ' onmouseleave="this.style.color=\'var(--muted)\';this.style.borderColor=\'var(--border)\'">'
-    +     '<svg width="14" height="14" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
-    +   '</label>'
-    +   '<input type="file" id="tx2-file-input-doc" style="display:none" accept=".pdf,.doc,.docx"'
-    +     ' onchange="var n=this.files[0]?this.files[0].name:\'\';document.getElementById(\'tx2-brief-file-label\').textContent=n;csTx2TaxInputType=n?\'doc\':\'text\'">'
-    + '</div>'
+    + ' style="width:100%;box-sizing:border-box;min-height:160px;resize:none;border:none;outline:none;padding:10px 12px;font-size:13px;font-family:inherit;color:var(--text);background:transparent;display:block"></textarea>'
+    + '<div style="height:1px;background:var(--border)"></div>'
+    + '<label for="tx2-file-input-doc" id="tx2-brief-upload-label"'
+    +   ' style="display:flex;align-items:center;gap:7px;padding:8px 12px;cursor:pointer;color:var(--muted);font-size:12px;transition:background .13s,color .13s;border-radius:0 0 8px 8px"'
+    +   ' onmouseenter="this.style.background=\'var(--bg)\';this.style.color=\'var(--text)\'"'
+    +   ' onmouseleave="this.style.background=\'\';this.style.color=\'var(--muted)\'">'
+    +   '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +   '<span id="tx2-brief-file-label">Upload Doc or PDF</span>'
+    + '</label>'
+    + '<input type="file" id="tx2-file-input-doc" style="display:none" accept=".pdf,.doc,.docx"'
+    +   ' onchange="var n=this.files[0]?this.files[0].name:\'\';document.getElementById(\'tx2-brief-file-label\').textContent=n||\'Upload Doc or PDF\';csTx2TaxInputType=n?\'doc\':\'text\'">'
     + '</div>';
 }
 
