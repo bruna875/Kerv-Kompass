@@ -11,10 +11,10 @@ var ico = {
 
 var NAV_CONFIG = [
   {
-    section: 'Roadmap',
+    section: 'Live Prototypes',
     items: [
-      { id: 'roadmap',      label: 'Product Roadmap',      icon: ico.roadmap },
-      { id: 'teamcapacity', label: 'Team Capacity',        icon: ico.capacity }
+      { id: 'metadata-analysis', label: 'Metadata Analysis',  icon: ico.metadata },
+      { id: 'taxonomy-showcase', label: 'Taxonomy Explorer',  icon: ico.showcase }
     ]
   },
   {
@@ -26,10 +26,10 @@ var NAV_CONFIG = [
     ]
   },
   {
-    section: 'Live Prototypes',
+    section: 'Roadmap',
     items: [
-      { id: 'metadata-analysis', label: 'Metadata Analysis',  icon: ico.metadata },
-      { id: 'taxonomy-showcase', label: 'Taxonomy Explorer',  icon: ico.showcase }
+      { id: 'roadmap',      label: 'Product Roadmap',      icon: ico.roadmap },
+      { id: 'teamcapacity', label: 'Team Capacity',        icon: ico.capacity }
     ]
   }
 ];
