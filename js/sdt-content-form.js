@@ -1563,6 +1563,11 @@ function csBackToGrid() {
   } else if (panelKey === 'taxonomy2') {
     // Dashboard shell stays — restore content area and sidebar to "Metadata Analysis"
     csTx2NavTab('metadata');
+    // Restore breadcrumb if on Metadata Analysis page
+    if (typeof activeId !== 'undefined' && activeId === 'metadata-analysis') {
+      var pgname = document.getElementById('pgname');
+      if (pgname) pgname.textContent = 'Metadata Analysis';
+    }
   } else {
     csBackToGrid3();
   }
@@ -1853,6 +1858,16 @@ function csShowDetailView(panelKey, item) {
 
   // Inject into the correct target
   renderTarget.innerHTML = detailCard;
+
+  // Metadata Analysis page: hide back button, update breadcrumb
+  if (typeof activeId !== 'undefined' && activeId === 'metadata-analysis') {
+    var backBtn = renderTarget.querySelector('.cs-dv-back');
+    if (backBtn) backBtn.style.display = 'none';
+    var pgname = document.getElementById('pgname');
+    if (pgname) pgname.innerHTML =
+      '<span style="font-weight:400;opacity:.55;cursor:pointer" onclick="csBackToGrid()">Metadata Analysis</span>'
+      + ' &nbsp;/&nbsp; ' + (item ? item.title : '');
+  }
 
   if (!isTax2) csRenderProcess3();
   // Ensure taxonomy-explorer styles are available when viewing tab 4/5 detail
