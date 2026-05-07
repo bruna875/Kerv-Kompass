@@ -62,7 +62,7 @@ function setPage(id, label, noPush) {
 // ── URL routing helpers ──
 
 function pageFromPath() {
-  var path = location.pathname.replace(/^\//, '').replace(/\/$/, '') || 'roadmap';
+  var path = location.pathname.replace(/^\//, '').replace(/\/$/, '') || 'metadata-analysis';
   // find matching nav item
   var found = null;
   NAV_CONFIG.forEach(function(sec) {
@@ -70,6 +70,14 @@ function pageFromPath() {
       if (item.id === path) found = item;
     });
   });
+  // default fallback: Metadata Analysis
+  if (!found) {
+    NAV_CONFIG.forEach(function(sec) {
+      sec.items.forEach(function(item) {
+        if (item.id === 'metadata-analysis') found = item;
+      });
+    });
+  }
   return found || NAV_CONFIG[0].items[0];
 }
 
