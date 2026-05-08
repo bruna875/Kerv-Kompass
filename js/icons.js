@@ -21,8 +21,8 @@ var NAV_CONFIG = [
     section: 'Work in Progress',
     items: [
       { id: 'sdt-content-form', label: 'SDT - New Content Form',      icon: ico.sdtform },
-      { id: 'taxonomy-v1',      label: 'Taxonomy Explorer – v1',      icon: ico.taxonomy },
-      { id: 'taxonomy-v2',      label: 'Taxonomy Explorer – v2',      icon: ico.taxonomy }
+      { id: 'taxonomy-v1',      label: 'Layout Options – v1',      icon: ico.taxonomy },
+      { id: 'taxonomy-v2',      label: 'Layout Options – v2',      icon: ico.taxonomy }
     ]
   },
   {
