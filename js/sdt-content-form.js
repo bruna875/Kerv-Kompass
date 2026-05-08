@@ -2291,10 +2291,13 @@ function csTx2TaxShowUpload() {
   var ca = document.getElementById('tx2-content-area');
   if (!ca) return;
 
-  // Restore breadcrumb if coming back from results on Showcase
-  if (typeof activeId !== 'undefined' && activeId === 'taxonomy-showcase') {
+  // Restore breadcrumb if coming back from results
+  if (typeof activeId !== 'undefined') {
     var pgname = document.getElementById('pgname');
-    if (pgname) pgname.textContent = 'Taxonomy Explorer';
+    if (pgname) {
+      if (activeId === 'taxonomy-showcase')    pgname.textContent = 'Inventory Explorer (v1)';
+      if (activeId === 'inventory-explorer-v2') pgname.textContent = 'Inventory Explorer (v2)';
+    }
   }
 
   function inputArea(type) {
@@ -2584,13 +2587,119 @@ function csTx2TaxAnalyze() {
   }, 40); // ~9s total
 }
 
+// ── Inventory Explorer v2: matched programs data + helpers ────────────────────
+
+var INV_PROGRAMS = [
+  { id:1, title:'Parks and Recreation',  channel:'NBC',   match:96, scenes:['Community celebration – Ep.4x12','Harvest festival sequence – Ep.4x14'], impressions:'3.2M', moments:['Community','Joy','Outdoor'] },
+  { id:2, title:'MasterChef US',         channel:'Fox',   match:91, scenes:['Kitchen rivalry moment – Ep.6x08'],                                        impressions:'4.8M', moments:['Food & Cooking','Competition','Achievement'] },
+  { id:3, title:'The Good Place',        channel:'NBC',   match:88, scenes:['Warm group moment – Ep.2x06','Reunion scene – Ep.3x01'],                   impressions:'2.9M', moments:['Comedy','Warmth','Friendship'] },
+  { id:4, title:"America's Got Talent",  channel:'NBC',   match:84, scenes:['Emotional performance – S17 Finale'],                                      impressions:'7.1M', moments:['Entertainment','Emotion','Inspiration'] },
+  { id:5, title:'Modern Family',         channel:'ABC',   match:81, scenes:['Family gathering – Ep.5x09'],                                              impressions:'5.3M', moments:['Family','Comedy','Everyday Life'] },
+  { id:6, title:'The Tonight Show',      channel:'NBC',   match:77, scenes:['Monologue opening – Weekly slot'],                                         impressions:'3.6M', moments:['Comedy','Live','Entertainment'] },
+  { id:7, title:'Ellen DeGeneres Show',  channel:'CBS',   match:74, scenes:['Audience surprise segment'],                                               impressions:'2.8M', moments:['Joy','Lifestyle','Community'] },
+  { id:8, title:'Good Morning America',  channel:'ABC',   match:71, scenes:['Morning lifestyle segment – Daily'],                                       impressions:'4.1M', moments:['Lifestyle','Morning','Positive'] }
+];
+
+var invCurrentView = 'gallery';
+
+function invToggleView(mode) {
+  invCurrentView = mode;
+  var gBtn = document.getElementById('inv-view-gallery');
+  var tBtn = document.getElementById('inv-view-table');
+  if (gBtn) gBtn.className = 'inv-view-btn' + (mode === 'gallery' ? ' inv-view-btn--act' : '');
+  if (tBtn) tBtn.className = 'inv-view-btn' + (mode === 'table'   ? ' inv-view-btn--act' : '');
+  invRenderInventory();
+}
+
+function invScoreColor(s)  { return s >= 90 ? '#16a34a' : s >= 80 ? '#d97706' : s >= 70 ? 'var(--accent)' : 'var(--faint)'; }
+function invScoreBg(s)     { return s >= 90 ? '#f0fdf4' : s >= 80 ? '#fffbeb' : s >= 70 ? '#eff6ff' : '#f8f8f8'; }
+function invScoreBorder(s) { return s >= 90 ? '#bbf7d0' : s >= 80 ? '#fde68a' : s >= 70 ? '#bfdbfe' : '#e5e5e5'; }
+
+function invRenderInventory() {
+  var wrap = document.getElementById('inv-content-wrap');
+  if (!wrap) return;
+  var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border);text-align:left';
+  var TD = 'padding:10px 12px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border-md);vertical-align:middle';
+
+  if (invCurrentView === 'gallery') {
+    wrap.innerHTML =
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding-bottom:8px">'
+      + INV_PROGRAMS.map(function(p, i) {
+          var seed = 'tvshow' + (i + 1);
+          return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
+            + '<div style="position:relative;width:100%;padding-top:56.25%">'
+            +   '<img src="https://picsum.photos/seed/' + seed + '/640/360" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">'
+            +   '<div style="position:absolute;top:7px;left:7px;background:rgba(0,0,0,.62);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;color:#fff;letter-spacing:.3px">' + p.channel + '</div>'
+            +   '<div style="position:absolute;top:7px;right:7px;background:' + invScoreBg(p.match) + ';border:1px solid ' + invScoreBorder(p.match) + ';border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;color:' + invScoreColor(p.match) + '">' + p.match + '% match</div>'
+            + '</div>'
+            + '<div style="padding:11px 12px 13px">'
+            +   '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:9px;line-height:1.3">' + p.title + '</div>'
+            +   '<div style="margin-bottom:8px">'
+            +     '<div style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:3px">Suggested Scene</div>'
+            +     '<div style="font-size:11px;color:var(--muted);line-height:1.35">' + p.scenes[0] + '</div>'
+            +   '</div>'
+            +   '<div style="margin-bottom:10px">'
+            +     '<div style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:3px">Est. Impressions</div>'
+            +     '<div style="font-size:13px;font-weight:700;color:var(--text)">' + p.impressions + '</div>'
+            +   '</div>'
+            +   '<div style="display:flex;flex-wrap:wrap;gap:4px">'
+            +     p.moments.map(function(m) {
+                    return '<span style="font-size:10px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 7px;color:var(--muted)">' + m + '</span>';
+                  }).join('')
+            +   '</div>'
+            + '</div>'
+            + '</div>';
+        }).join('')
+      + '</div>';
+  } else {
+    wrap.innerHTML =
+      '<table style="width:100%;border-collapse:collapse">'
+      + '<thead><tr>'
+      +   '<th style="' + TH + '">Program</th>'
+      +   '<th style="' + TH + '">Channel</th>'
+      +   '<th style="' + TH + '">Match</th>'
+      +   '<th style="' + TH + '">Suggested Scene</th>'
+      +   '<th style="' + TH + '">Est. Impressions</th>'
+      +   '<th style="' + TH + '">Matched Moments</th>'
+      + '</tr></thead><tbody>'
+      + INV_PROGRAMS.map(function(p, i) {
+          var seed = 'tvshow' + (i + 1);
+          return '<tr>'
+            + '<td style="' + TD + '">'
+            +   '<div style="display:flex;align-items:center;gap:9px">'
+            +     '<div style="width:54px;height:30px;border-radius:4px;overflow:hidden;flex-shrink:0">'
+            +       '<img src="https://picsum.photos/seed/' + seed + '/640/360" style="width:100%;height:100%;object-fit:cover">'
+            +     '</div>'
+            +     '<span style="font-weight:500">' + p.title + '</span>'
+            +   '</div>'
+            + '</td>'
+            + '<td style="' + TD + ';color:var(--muted)">' + p.channel + '</td>'
+            + '<td style="' + TD + '">'
+            +   '<span style="font-size:11px;font-weight:700;color:' + invScoreColor(p.match) + ';background:' + invScoreBg(p.match) + ';border:1px solid ' + invScoreBorder(p.match) + ';border-radius:20px;padding:3px 9px">' + p.match + '%</span>'
+            + '</td>'
+            + '<td style="' + TD + ';color:var(--muted);font-size:11px">' + p.scenes[0] + '</td>'
+            + '<td style="' + TD + ';font-weight:600">' + p.impressions + '</td>'
+            + '<td style="' + TD + '">'
+            +   '<div style="display:flex;flex-wrap:wrap;gap:3px">'
+            +     p.moments.map(function(m) {
+                    return '<span style="font-size:10px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 7px;color:var(--muted)">' + m + '</span>';
+                  }).join('')
+            +   '</div>'
+            + '</td>'
+            + '</tr>';
+        }).join('')
+      + '</tbody></table>';
+  }
+}
+
 // ── Taxonomy Explorer: Results step (Moments / Taxonomies / Episodes) ─────────
 
 function csTx2TaxShowResults() {
   csTx2TaxStep = 'results';
   var ca = document.getElementById('tx2-content-area');
   if (!ca) return;
-  var isShowcase = typeof activeId !== 'undefined' && activeId === 'taxonomy-showcase';
+  var isShowcase    = typeof activeId !== 'undefined' && activeId === 'taxonomy-showcase';
+  var isInventoryV2 = typeof activeId !== 'undefined' && activeId === 'inventory-explorer-v2';
   var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)';
   var fileIcon = csTx2TaxInputType === 'video'
     ? '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
@@ -2598,11 +2707,17 @@ function csTx2TaxShowResults() {
     ? '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
     : '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 
-  // Update breadcrumb for Showcase: show clickable page name + / Analysis
+  // Update breadcrumb
   if (isShowcase) {
     var pgname = document.getElementById('pgname');
     if (pgname) pgname.innerHTML =
-      '<span style="font-weight:400;opacity:.55;cursor:pointer" onclick="csTx2TaxShowUpload()">Taxonomy Explorer</span>'
+      '<span style="font-weight:400;opacity:.55;cursor:pointer" onclick="csTx2TaxShowUpload()">Inventory Explorer (v1)</span>'
+      + ' &nbsp;/&nbsp; Analysis';
+  }
+  if (isInventoryV2) {
+    var pgname = document.getElementById('pgname');
+    if (pgname) pgname.innerHTML =
+      '<span style="font-weight:400;opacity:.55;cursor:pointer" onclick="csTx2TaxShowUpload()">Inventory Explorer (v2)</span>'
       + ' &nbsp;/&nbsp; Analysis';
   }
 
@@ -2635,12 +2750,15 @@ function csTx2TaxShowResults() {
 
     // divider + stats
     +   '<div style="border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px">'
-    +     '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:2px">Moments</div><div style="font-size:18px;font-weight:700;color:var(--text)">10</div></div>'
-    +     '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:2px">Taxonomies</div><div style="font-size:18px;font-weight:700;color:var(--text)">28</div></div>'
+    +     (isInventoryV2
+            ? '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:2px">Programs</div><div style="font-size:18px;font-weight:700;color:var(--text)">8</div></div>'
+            + '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:2px">Moments</div><div style="font-size:18px;font-weight:700;color:var(--text)">10</div></div>'
+            : '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:2px">Moments</div><div style="font-size:18px;font-weight:700;color:var(--text)">10</div></div>'
+            + '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:2px">Taxonomies</div><div style="font-size:18px;font-weight:700;color:var(--text)">28</div></div>')
     +   '</div>'
 
-    // back button (V2 only)
-    + (isShowcase ? '' :
+    // back button (Showcase / InventoryV2 only hidden)
+    + (isShowcase || isInventoryV2 ? '' :
         '<div style="margin-top:auto;padding-top:12px">'
       + '<button class="cs-dv-back" onclick="csTx2TaxShowUpload()" style="width:100%;justify-content:center">'
       +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -2654,14 +2772,35 @@ function csTx2TaxShowResults() {
     + '<div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden">'
 
     // Sub-tab nav
-    +   '<div class="cs-dv-tabnav" style="margin-bottom:16px;flex-shrink:0">'
-    +   '<button class="cs-dv-tab cs-dv-tab--act" id="tx2-sub-tab-moments"    onclick="csTx2SubTab(\'moments\')">Moments</button>'
-    +   '<button class="cs-dv-tab"                 id="tx2-sub-tab-taxonomies" onclick="csTx2SubTab(\'taxonomies\')">Taxonomies</button>'
-    +   '<button class="cs-dv-tab"                 id="tx2-sub-tab-episodes"   onclick="csTx2SubTab(\'episodes\')">Episodes &amp; Shows</button>'
+    +   '<div class="cs-dv-tabnav" style="margin-bottom:16px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between">'
+    +     '<div style="display:flex;gap:0">'
+    +       (isInventoryV2
+              ? '<button class="cs-dv-tab cs-dv-tab--act" id="tx2-sub-tab-inventory"  onclick="csTx2SubTab(\'inventory\')">Inventory</button>'
+              + '<button class="cs-dv-tab"                 id="tx2-sub-tab-moments"    onclick="csTx2SubTab(\'moments\')">Moments</button>'
+              + '<button class="cs-dv-tab"                 id="tx2-sub-tab-taxonomies" onclick="csTx2SubTab(\'taxonomies\')">Taxonomies</button>'
+              : '<button class="cs-dv-tab cs-dv-tab--act" id="tx2-sub-tab-moments"    onclick="csTx2SubTab(\'moments\')">Moments</button>'
+              + '<button class="cs-dv-tab"                 id="tx2-sub-tab-taxonomies" onclick="csTx2SubTab(\'taxonomies\')">Taxonomies</button>'
+              + '<button class="cs-dv-tab"                 id="tx2-sub-tab-episodes"   onclick="csTx2SubTab(\'episodes\')">Episodes &amp; Shows</button>')
+    +     '</div>'
+    +     (isInventoryV2
+            ? '<div style="display:flex;gap:4px">'
+            +   '<button id="inv-view-gallery" class="inv-view-btn inv-view-btn--act" onclick="invToggleView(\'gallery\')" title="Gallery view">'
+            +     '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/></svg>'
+            +   '</button>'
+            +   '<button id="inv-view-table"   class="inv-view-btn"                   onclick="invToggleView(\'table\')"   title="Table view">'
+            +     '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M1 3h12M1 7h12M1 11h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>'
+            +   '</button>'
+            + '</div>'
+            : '')
     +   '</div>'
 
+    // ── Inventory (v2 only) ──
+    +   (isInventoryV2
+          ? '<div id="tx2-sub-content-inventory" style="flex:1;overflow-y:auto;min-height:0"><div id="inv-content-wrap"></div></div>'
+          : '')
+
     // ── Moments ──
-    +   '<div id="tx2-sub-content-moments" style="flex:1;overflow-y:auto;min-height:0">'
+    +   '<div id="tx2-sub-content-moments" style="' + (isInventoryV2 ? 'display:none;' : '') + 'flex:1;overflow-y:auto;min-height:0">'
     +     '<table style="width:100%;border-collapse:collapse"><thead><tr>'
     +       '<th style="text-align:left;'  + TH + '">Category</th>'
     +       '<th style="text-align:right;' + TH + '">Score</th>'
@@ -2716,16 +2855,22 @@ function csTx2TaxShowResults() {
 
   if (typeof txInjectStyles === 'function') txInjectStyles();
   txCustomSelections = [];
-  txRenderCategories();
+  if (isInventoryV2) {
+    invCurrentView = 'gallery';
+    invRenderInventory();
+  } else {
+    txRenderCategories();
+  }
 }
 
 function csTx2SubTab(tab) {
-  ['moments', 'taxonomies', 'episodes'].forEach(function(t) {
+  ['inventory', 'moments', 'taxonomies', 'episodes'].forEach(function(t) {
     var btn = document.getElementById('tx2-sub-tab-' + t);
     var pnl = document.getElementById('tx2-sub-content-' + t);
     if (btn) btn.className = 'cs-dv-tab' + (t === tab ? ' cs-dv-tab--act' : '');
     if (pnl) pnl.style.display = t === tab ? '' : 'none';
   });
+  if (tab === 'inventory')  { invCurrentView = 'gallery'; invRenderInventory(); }
   if (tab === 'moments')    { txCustomSelections = []; txRenderCategories(); }
   if (tab === 'taxonomies') { txCustomActiveTab = 'emotion'; txCustomCurrentPage = 1; txCustomRenderTable(); txRenderChips(); }
   if (tab === 'episodes')   txRenderEpisodes();
@@ -3343,6 +3488,20 @@ function sdtInjectStyles() {
     }
     .cs-dv-tab:hover { color: var(--text); }
     .cs-dv-tab--act  { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Inventory view toggle buttons */
+    .inv-view-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--faint);
+      cursor: pointer;
+      transition: color .15s, border-color .15s, background .15s;
+    }
+    .inv-view-btn:hover { color: var(--muted); border-color: var(--border-md); }
+    .inv-view-btn--act  { color: var(--accent); border-color: var(--accent); background: var(--bg); }
 
     /* Enable Features checkboxes */
     .cs-features-grid {
