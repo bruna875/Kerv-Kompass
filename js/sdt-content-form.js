@@ -2590,14 +2590,14 @@ function csTx2TaxAnalyze() {
 // ── Inventory Explorer v2: matched programs data + helpers ────────────────────
 
 var INV_PROGRAMS = [
-  { id:1, title:'Parks and Recreation',  channel:'NBC',   match:96, scenes:['Community celebration – Ep.4x12','Harvest festival sequence – Ep.4x14'], impressions:'3.2M', moments:['Community','Joy','Outdoor'] },
-  { id:2, title:'MasterChef US',         channel:'Fox',   match:91, scenes:['Kitchen rivalry moment – Ep.6x08'],                                        impressions:'4.8M', moments:['Food & Cooking','Competition','Achievement'] },
-  { id:3, title:'The Good Place',        channel:'NBC',   match:88, scenes:['Warm group moment – Ep.2x06','Reunion scene – Ep.3x01'],                   impressions:'2.9M', moments:['Comedy','Warmth','Friendship'] },
-  { id:4, title:"America's Got Talent",  channel:'NBC',   match:84, scenes:['Emotional performance – S17 Finale'],                                      impressions:'7.1M', moments:['Entertainment','Emotion','Inspiration'] },
-  { id:5, title:'Modern Family',         channel:'ABC',   match:81, scenes:['Family gathering – Ep.5x09'],                                              impressions:'5.3M', moments:['Family','Comedy','Everyday Life'] },
-  { id:6, title:'The Tonight Show',      channel:'NBC',   match:77, scenes:['Monologue opening – Weekly slot'],                                         impressions:'3.6M', moments:['Comedy','Live','Entertainment'] },
-  { id:7, title:'Ellen DeGeneres Show',  channel:'CBS',   match:74, scenes:['Audience surprise segment'],                                               impressions:'2.8M', moments:['Joy','Lifestyle','Community'] },
-  { id:8, title:'Good Morning America',  channel:'ABC',   match:71, scenes:['Morning lifestyle segment – Daily'],                                       impressions:'4.1M', moments:['Lifestyle','Morning','Positive'] }
+  { id:1, title:'Parks and Recreation — Ep. 4x12',  channel:'NBC',   match:96, scenes:['Scene 3 (00:14 – 1:02)','Scene 7 (04:38 – 5:10)'], impressions:'3.2M', moments:['Community','Joy','Outdoor'] },
+  { id:2, title:'MasterChef US — Ep. 6x08',         channel:'Fox',   match:91, scenes:['Scene 5 (02:20 – 3:45)'],                          impressions:'4.8M', moments:['Food & Cooking','Competition','Achievement'] },
+  { id:3, title:'The Good Place — Ep. 2x06',        channel:'NBC',   match:88, scenes:['Scene 2 (00:30 – 1:18)','Scene 9 (18:44 – 19:20)'],impressions:'2.9M', moments:['Comedy','Warmth','Friendship'] },
+  { id:4, title:"America's Got Talent — S17 Finale", channel:'NBC',  match:84, scenes:['Scene 11 (38:05 – 39:30)'],                        impressions:'7.1M', moments:['Entertainment','Emotion','Inspiration'] },
+  { id:5, title:'Modern Family — Ep. 5x09',         channel:'ABC',   match:81, scenes:['Scene 4 (07:12 – 8:00)'],                          impressions:'5.3M', moments:['Family','Comedy','Everyday Life'] },
+  { id:6, title:'The Tonight Show — Ep. 312',       channel:'NBC',   match:77, scenes:['Scene 1 (00:00 – 1:30)'],                          impressions:'3.6M', moments:['Comedy','Live','Entertainment'] },
+  { id:7, title:'Ellen DeGeneres Show — Ep. 1847',  channel:'CBS',   match:74, scenes:['Scene 6 (14:22 – 15:05)'],                         impressions:'2.8M', moments:['Joy','Lifestyle','Community'] },
+  { id:8, title:'Good Morning America — 08 May',    channel:'ABC',   match:71, scenes:['Scene 2 (09:15 – 10:00)'],                         impressions:'4.1M', moments:['Lifestyle','Morning','Positive'] }
 ];
 
 var invCurrentView = 'gallery';
