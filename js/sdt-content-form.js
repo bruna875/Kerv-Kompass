@@ -2608,68 +2608,191 @@ var INV_PROGRAMS = [
     moments:[{label:'Morning Routine',score:82},{label:'Lifestyle',score:77},{label:'Positivity',score:73},{label:'News',score:68},{label:'Family',score:64},{label:'Health',score:59},{label:'Community',score:55}] }
 ];
 
-var invCurrentView    = 'gallery';
-var invSelected       = {};
-var invFilterChannel  = 'all';
-var invFilterCategory = 'all';
-var invFilterScore    = 0;
+var invCurrentView      = 'gallery';
+var invSelected         = {};
+var invFilterChannels   = [];
+var invFilterCategories = [];
+var invFilterScore      = 0;
+var invFilterPanelOpen  = false;
+var invAccordionOpen    = { channel: true, category: true, score: false };
 
 function invGetFiltered() {
   return INV_PROGRAMS.filter(function(p) {
-    if (invFilterChannel  !== 'all' && p.channel  !== invFilterChannel)  return false;
-    if (invFilterCategory !== 'all' && p.category !== invFilterCategory) return false;
+    if (invFilterChannels.length   > 0 && invFilterChannels.indexOf(p.channel)   < 0) return false;
+    if (invFilterCategories.length > 0 && invFilterCategories.indexOf(p.category) < 0) return false;
     if (p.match < invFilterScore) return false;
     return true;
   });
 }
 
-function invSetFilter(key, val) {
-  if (key === 'channel')  invFilterChannel  = val;
-  if (key === 'category') invFilterCategory = val;
-  if (key === 'score')    invFilterScore    = parseInt(val) || 0;
-  invRenderFilters();
+// ── Filter panel ──
+
+function invToggleFilterPanel() {
+  if (invFilterPanelOpen) { invCloseFilterPanel(); } else { invOpenFilterPanel(); }
+}
+
+function invOpenFilterPanel() {
+  invFilterPanelOpen = true;
+  var panel = document.getElementById('inv-filter-panel');
+  if (!panel) return;
+  invBuildFilterPanel();
+  panel.style.display = 'flex';
+  var btn = document.getElementById('inv-filter-btn');
+  setTimeout(function() {
+    document.addEventListener('click', function _outside(e) {
+      if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+        invCloseFilterPanel();
+        document.removeEventListener('click', _outside);
+      }
+    });
+  }, 0);
+}
+
+function invCloseFilterPanel() {
+  invFilterPanelOpen = false;
+  var panel = document.getElementById('inv-filter-panel');
+  if (panel) panel.style.display = 'none';
+}
+
+function invBuildFilterPanel() {
+  var panel = document.getElementById('inv-filter-panel');
+  if (!panel) return;
+  var channels   = INV_PROGRAMS.map(function(p){ return p.channel; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
+  var categories = INV_PROGRAMS.map(function(p){ return p.category; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
+  var totalActive = invFilterChannels.length + invFilterCategories.length + (invFilterScore > 0 ? 1 : 0);
+
+  function accSection(key, label, bodyHtml) {
+    var open = !!invAccordionOpen[key];
+    return '<div class="inv-fp-acc">'
+      + '<div class="inv-fp-acc-hdr" onclick="invToggleAccordion(\'' + key + '\')">'
+      +   '<span>' + label + '</span>'
+      +   '<svg class="inv-fp-chevron' + (open ? ' open' : '') + '" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      + '</div>'
+      + '<div id="inv-fp-body-' + key + '" style="' + (open ? '' : 'display:none') + '">'
+      +   bodyHtml
+      + '</div>'
+      + '</div>';
+  }
+
+  var channelBody =
+    '<input class="inv-fp-search" placeholder="Search…" oninput="invFpSearch(this,\'channel\')">'
+    + '<div id="inv-fp-opts-channel">'
+    + channels.map(function(c) {
+        return '<label class="inv-fp-opt"><input type="checkbox"' + (invFilterChannels.indexOf(c)>=0?' checked':'') + ' onchange="invToggleFilterCheckbox(\'channel\',\'' + c + '\',this.checked)"><span>' + c + '</span></label>';
+      }).join('')
+    + '</div>';
+
+  var categoryBody =
+    '<input class="inv-fp-search" placeholder="Search…" oninput="invFpSearch(this,\'category\')">'
+    + '<div id="inv-fp-opts-category">'
+    + categories.map(function(c) {
+        return '<label class="inv-fp-opt"><input type="checkbox"' + (invFilterCategories.indexOf(c)>=0?' checked':'') + ' onchange="invToggleFilterCheckbox(\'category\',\'' + c + '\',this.checked)"><span>' + c + '</span></label>';
+      }).join('')
+    + '</div>';
+
+  var scoreBody =
+    '<div style="padding:4px 0 10px">'
+    + '<div style="display:flex;justify-content:space-between;margin-bottom:10px">'
+    +   '<span style="font-size:11px;color:var(--muted)">Minimum match score</span>'
+    +   '<span id="inv-fp-score-val" style="font-size:11px;font-weight:600;color:var(--text)">' + (invFilterScore > 0 ? invFilterScore + '%' : '—') + '</span>'
+    + '</div>'
+    + '<input type="range" min="0" max="100" value="' + invFilterScore + '" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById(\'inv-fp-score-val\').textContent=this.value>0?this.value+\'%\':\'—\'" onchange="invToggleFilterCheckbox(\'score\',this.value,true)">'
+    + '<div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:10px;color:var(--faint)">0%</span><span style="font-size:10px;color:var(--faint)">100%</span></div>'
+    + '</div>';
+
+  panel.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0">'
+    +   '<span style="font-size:13px;font-weight:600;color:var(--text)">Filters</span>'
+    +   '<div style="display:flex;gap:10px;align-items:center">'
+    +     (totalActive > 0 ? '<span style="font-size:11px;color:var(--faint);cursor:pointer" onclick="invClearAllFilters()">Clear all</span>' : '')
+    +     '<button onclick="invCloseFilterPanel()" style="background:none;border:none;cursor:pointer;color:var(--faint);font-size:20px;line-height:1;padding:0 2px">×</button>'
+    +   '</div>'
+    + '</div>'
+    + '<div style="flex:1;overflow-y:auto;min-height:0">'
+    +   accSection('channel',  'Channel',  channelBody)
+    +   accSection('category', 'Category', categoryBody)
+    +   accSection('score',    'Min Score', scoreBody)
+    + '</div>';
+}
+
+function invToggleAccordion(key) {
+  invAccordionOpen[key] = !invAccordionOpen[key];
+  var body = document.getElementById('inv-fp-body-' + key);
+  if (body) {
+    body.style.display = invAccordionOpen[key] ? '' : 'none';
+    var hdr = body.previousElementSibling;
+    if (hdr) {
+      var chev = hdr.querySelector('.inv-fp-chevron');
+      if (chev) chev.classList.toggle('open', invAccordionOpen[key]);
+    }
+  }
+}
+
+function invFpSearch(input, type) {
+  var q = input.value.toLowerCase();
+  var opts = document.querySelectorAll('#inv-fp-opts-' + type + ' .inv-fp-opt');
+  opts.forEach(function(opt) {
+    var txt = opt.querySelector('span').textContent.toLowerCase();
+    opt.style.display = txt.indexOf(q) >= 0 ? '' : 'none';
+  });
+}
+
+function invToggleFilterCheckbox(type, val, checked) {
+  if (type === 'channel') {
+    if (checked && invFilterChannels.indexOf(val) < 0) invFilterChannels.push(val);
+    else if (!checked) invFilterChannels = invFilterChannels.filter(function(v){ return v !== val; });
+  } else if (type === 'category') {
+    if (checked && invFilterCategories.indexOf(val) < 0) invFilterCategories.push(val);
+    else if (!checked) invFilterCategories = invFilterCategories.filter(function(v){ return v !== val; });
+  } else if (type === 'score') {
+    invFilterScore = parseInt(val) || 0;
+  }
+  invUpdateFilterBar();
   invRenderInventory();
 }
 
-function invRemoveFilter(key) {
-  if (key === 'channel')  invFilterChannel  = 'all';
-  if (key === 'category') invFilterCategory = 'all';
-  if (key === 'score')    invFilterScore    = 0;
-  invRenderFilters();
+function invRemoveFilterChip(type, val) {
+  if (type === 'channel')  invFilterChannels   = invFilterChannels.filter(function(v){ return v !== val; });
+  if (type === 'category') invFilterCategories = invFilterCategories.filter(function(v){ return v !== val; });
+  if (type === 'score')    invFilterScore      = 0;
+  invUpdateFilterBar();
   invRenderInventory();
+  if (invFilterPanelOpen) invBuildFilterPanel();
+}
+
+function invClearAllFilters() {
+  invFilterChannels = []; invFilterCategories = []; invFilterScore = 0;
+  invUpdateFilterBar();
+  invRenderInventory();
+  if (invFilterPanelOpen) invBuildFilterPanel();
+}
+
+function invUpdateFilterBar() {
+  var totalActive = invFilterChannels.length + invFilterCategories.length + (invFilterScore > 0 ? 1 : 0);
+  var badge = document.getElementById('inv-filter-badge');
+  if (badge) { badge.textContent = totalActive; badge.style.display = totalActive > 0 ? 'flex' : 'none'; }
+  var chips = document.getElementById('inv-filter-chips');
+  if (!chips) return;
+  chips.innerHTML =
+    invFilterChannels.map(function(v) {
+      return '<span class="inv-chip">' + v + ' <span onclick="invRemoveFilterChip(\'channel\',\'' + v + '\')" style="cursor:pointer">×</span></span>';
+    }).join('')
+    + invFilterCategories.map(function(v) {
+      return '<span class="inv-chip">' + v + ' <span onclick="invRemoveFilterChip(\'category\',\'' + v + '\')" style="cursor:pointer">×</span></span>';
+    }).join('')
+    + (invFilterScore > 0 ? '<span class="inv-chip">≥' + invFilterScore + '% <span onclick="invRemoveFilterChip(\'score\',\'\')" style="cursor:pointer">×</span></span>' : '');
 }
 
 function invRenderFilters() {
   var wrap = document.getElementById('inv-filters-wrap');
   if (!wrap) return;
-  var channels   = INV_PROGRAMS.map(function(p){ return p.channel; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
-  var categories = INV_PROGRAMS.map(function(p){ return p.category; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
-  var chips = (invFilterChannel  !== 'all' ? '<span class="inv-chip">Channel: '  + invFilterChannel  + ' <span onclick="invRemoveFilter(\'channel\')"  style="cursor:pointer;margin-left:2px">×</span></span>' : '')
-            + (invFilterCategory !== 'all' ? '<span class="inv-chip">Category: ' + invFilterCategory + ' <span onclick="invRemoveFilter(\'category\')" style="cursor:pointer;margin-left:2px">×</span></span>' : '')
-            + (invFilterScore    > 0       ? '<span class="inv-chip">Score ≥ '   + invFilterScore    + '% <span onclick="invRemoveFilter(\'score\')"    style="cursor:pointer;margin-left:2px">×</span></span>' : '');
   wrap.innerHTML =
-    '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px">'
-    + '<div style="display:flex;align-items:center;gap:5px">'
-    +   '<span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Channel</span>'
-    +   '<select class="cs-dv-select" style="font-size:11px;padding:3px 8px" onchange="invSetFilter(\'channel\',this.value)">'
-    +     '<option value="all">All</option>'
-    +     channels.map(function(c){ return '<option value="' + c + '"' + (invFilterChannel===c?' selected':'') + '>' + c + '</option>'; }).join('')
-    +   '</select>'
-    + '</div>'
-    + '<div style="display:flex;align-items:center;gap:5px">'
-    +   '<span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Category</span>'
-    +   '<select class="cs-dv-select" style="font-size:11px;padding:3px 8px" onchange="invSetFilter(\'category\',this.value)">'
-    +     '<option value="all">All</option>'
-    +     categories.map(function(c){ return '<option value="' + c + '"' + (invFilterCategory===c?' selected':'') + '>' + c + '</option>'; }).join('')
-    +   '</select>'
-    + '</div>'
-    + '<div style="display:flex;align-items:center;gap:6px">'
-    +   '<span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Min Score</span>'
-    +   '<input type="range" min="0" max="100" value="' + invFilterScore + '" style="width:80px;accent-color:var(--accent)" oninput="this.nextElementSibling.textContent=this.value+\'%\'" onchange="invSetFilter(\'score\',this.value)">'
-    +   '<span style="font-size:11px;color:var(--muted);min-width:28px">' + (invFilterScore > 0 ? invFilterScore + '%' : '0%') + '</span>'
-    + '</div>'
-    + (chips ? '<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">' + chips + '</div>' : '')
-    + '</div>';
+    '<button id="inv-filter-btn" onclick="invToggleFilterPanel()" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--muted);cursor:pointer;font-size:12px;flex-shrink:0;position:relative">'
+    +   '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M1 3h12M3 7h8M5 11h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>'
+    +   'Filters'
+    +   '<span id="inv-filter-badge" style="display:none;position:absolute;top:-5px;right:-5px;width:16px;height:16px;background:var(--accent);color:#fff;border-radius:50%;font-size:9px;font-weight:700;align-items:center;justify-content:center">0</span>'
+    + '</button>'
+    + '<div id="inv-filter-chips" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center"></div>';
 }
 
 function invToggleView(mode) {
@@ -2976,8 +3099,9 @@ function csTx2TaxShowResults() {
 
     // ── Inventory (v2 only) ──
     +   (isInventoryV2
-          ? '<div id="tx2-sub-content-inventory" style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden">'
-          +   '<div id="inv-filters-wrap"></div>'
+          ? '<div id="tx2-sub-content-inventory" style="flex:1;min-height:0;display:flex;flex-direction:column;position:relative">'
+          +   '<div id="inv-filters-wrap" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px;flex-shrink:0"></div>'
+          +   '<div id="inv-filter-panel" style="display:none;position:absolute;top:46px;left:0;width:256px;z-index:200;background:var(--surface);border:1px solid var(--border-md);border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.13);padding:16px;flex-direction:column;max-height:calc(100% - 56px);overflow:hidden"></div>'
           +   '<div style="display:flex;gap:16px;flex:1;min-height:0;overflow:hidden">'
           +     '<div id="inv-content-wrap" style="flex:1;min-width:0;overflow-y:auto"></div>'
           +     '<div id="inv-media-plan" style="display:none;width:220px;flex-shrink:0;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;overflow:hidden"></div>'
@@ -3042,7 +3166,7 @@ function csTx2TaxShowResults() {
   if (typeof txInjectStyles === 'function') txInjectStyles();
   txCustomSelections = [];
   if (isInventoryV2) {
-    invCurrentView = 'gallery'; invSelected = {}; invFilterChannel = 'all'; invFilterCategory = 'all'; invFilterScore = 0;
+    invCurrentView = 'gallery'; invSelected = {}; invFilterChannels = []; invFilterCategories = []; invFilterScore = 0; invFilterPanelOpen = false;
     invRenderFilters(); invRenderInventory();
   } else {
     txRenderCategories();
@@ -3056,7 +3180,7 @@ function csTx2SubTab(tab) {
     if (btn) btn.className = 'cs-dv-tab' + (t === tab ? ' cs-dv-tab--act' : '');
     if (pnl) pnl.style.display = t === tab ? '' : 'none';
   });
-  if (tab === 'inventory')  { invCurrentView = 'gallery'; invSelected = {}; invFilterChannel = 'all'; invFilterCategory = 'all'; invFilterScore = 0; invRenderFilters(); invRenderInventory(); invRenderMediaPlan(); }
+  if (tab === 'inventory')  { invCurrentView = 'gallery'; invSelected = {}; invFilterChannels = []; invFilterCategories = []; invFilterScore = 0; invFilterPanelOpen = false; invRenderFilters(); invRenderInventory(); invRenderMediaPlan(); }
   if (tab === 'moments')    { txCustomSelections = []; txRenderCategories(); }
   if (tab === 'taxonomies') { txCustomActiveTab = 'emotion'; txCustomCurrentPage = 1; txCustomRenderTable(); txRenderChips(); }
   if (tab === 'episodes')   txRenderEpisodes();
@@ -3674,6 +3798,33 @@ function sdtInjectStyles() {
     }
     .cs-dv-tab:hover { color: var(--text); }
     .cs-dv-tab--act  { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Inventory filter panel */
+    .inv-fp-acc { border-bottom: 1px solid var(--border); }
+    .inv-fp-acc:last-child { border-bottom: none; }
+    .inv-fp-acc-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; cursor: pointer;
+      font-size: 12px; font-weight: 500; color: var(--text);
+      user-select: none;
+    }
+    .inv-fp-acc-hdr:hover { color: var(--accent); }
+    .inv-fp-chevron { transition: transform .18s; color: var(--faint); flex-shrink: 0; }
+    .inv-fp-chevron.open { transform: rotate(180deg); }
+    .inv-fp-search {
+      width: 100%; box-sizing: border-box;
+      padding: 6px 9px; margin-bottom: 8px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: var(--bg); color: var(--text); font-size: 11px;
+      outline: none; font-family: inherit;
+    }
+    .inv-fp-search:focus { border-color: var(--accent); }
+    .inv-fp-opt {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 0; cursor: pointer; font-size: 12px; color: var(--text);
+    }
+    .inv-fp-opt input[type=checkbox] { accent-color: var(--accent); cursor: pointer; flex-shrink:0; }
+    .inv-fp-opt:hover span { color: var(--accent); }
 
     /* Inventory cards */
     .inv-card {
