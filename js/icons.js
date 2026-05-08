@@ -13,8 +13,9 @@ var NAV_CONFIG = [
   {
     section: 'Live Prototypes',
     items: [
-      { id: 'metadata-analysis', label: 'Metadata Analysis',  icon: ico.metadata },
-      { id: 'taxonomy-showcase', label: 'Taxonomy Explorer',  icon: ico.showcase }
+      { id: 'metadata-analysis',    label: 'Metadata Analysis',        icon: ico.metadata },
+      { id: 'taxonomy-showcase',    label: 'Inventory Explorer (v1)',   icon: ico.showcase },
+      { id: 'inventory-explorer-v2', label: 'Inventory Explorer (v2)',  icon: ico.showcase }
     ]
   },
   {

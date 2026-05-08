@@ -9,8 +9,9 @@ var PAGES = {
   'taxonomy-explorer': renderTaxonomyExplorer,
   'taxonomy-v1':        renderTaxonomyV1,
   'taxonomy-v2':        renderTaxonomyV2,
-  'metadata-analysis':  renderMetadataAnalysis,
-  'taxonomy-showcase':  renderTaxonomyShowcase
+  'metadata-analysis':     renderMetadataAnalysis,
+  'taxonomy-showcase':     renderTaxonomyShowcase,
+  'inventory-explorer-v2': renderInventoryExplorerV2
 };
 
 // ── Nav ──

@@ -452,6 +452,23 @@ function renderTaxonomyShowcase() {
 </div>`;
 }
 
+function renderInventoryExplorerV2() {
+  setTimeout(function() {
+    csTx2TaxStep = 'upload'; csTx2TaxInputType = 'video'; csTx2TaxFileName = '';
+    sdtInjectStyles();
+    csTx2TaxShowUpload();
+    csTx2RenderProcess();
+  }, 0);
+  return `
+<div class="ptitle">Inventory Explorer (v2)</div>
+<div class="psub" style="margin-bottom:24px">Upload a video or brief and let KervSDT analyse moments, metadata and taxonomy classifications</div>
+<div id="sdt-panel-taxonomy2">
+  <div class="cs-card" style="padding:32px">
+    <div id="tx2-content-area"></div>
+  </div>
+</div>`;
+}
+
 // ── Content Selection data ────────────────────────────────────────────────
 var CS_SHOWS = [
   { id:1,  title:'Parks and Recreation',    category:'comedy',    grad:'linear-gradient(145deg,#D4820A,#A05E08)', initials:'PR' },
