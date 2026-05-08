@@ -2590,17 +2590,87 @@ function csTx2TaxAnalyze() {
 // ── Inventory Explorer v2: matched programs data + helpers ────────────────────
 
 var INV_PROGRAMS = [
-  { id:1, title:'Parks and Recreation — Ep. 4x12',  channel:'NBC',   match:96, scenes:['Scene 3 (00:14 – 1:02)','Scene 7 (04:38 – 5:10)'], impressions:'3.2M', moments:['Community','Joy','Outdoor'] },
-  { id:2, title:'MasterChef US — Ep. 6x08',         channel:'Fox',   match:91, scenes:['Scene 5 (02:20 – 3:45)'],                          impressions:'4.8M', moments:['Food & Cooking','Competition','Achievement'] },
-  { id:3, title:'The Good Place — Ep. 2x06',        channel:'NBC',   match:88, scenes:['Scene 2 (00:30 – 1:18)','Scene 9 (18:44 – 19:20)'],impressions:'2.9M', moments:['Comedy','Warmth','Friendship'] },
-  { id:4, title:"America's Got Talent — S17 Finale", channel:'NBC',  match:84, scenes:['Scene 11 (38:05 – 39:30)'],                        impressions:'7.1M', moments:['Entertainment','Emotion','Inspiration'] },
-  { id:5, title:'Modern Family — Ep. 5x09',         channel:'ABC',   match:81, scenes:['Scene 4 (07:12 – 8:00)'],                          impressions:'5.3M', moments:['Family','Comedy','Everyday Life'] },
-  { id:6, title:'The Tonight Show — Ep. 312',       channel:'NBC',   match:77, scenes:['Scene 1 (00:00 – 1:30)'],                          impressions:'3.6M', moments:['Comedy','Live','Entertainment'] },
-  { id:7, title:'Ellen DeGeneres Show — Ep. 1847',  channel:'CBS',   match:74, scenes:['Scene 6 (14:22 – 15:05)'],                         impressions:'2.8M', moments:['Joy','Lifestyle','Community'] },
-  { id:8, title:'Good Morning America — 08 May',    channel:'ABC',   match:71, scenes:['Scene 2 (09:15 – 10:00)'],                         impressions:'4.1M', moments:['Lifestyle','Morning','Positive'] }
+  { id:1, title:'Parks and Recreation — Ep. 4x12',   channel:'NBC', category:'Comedy',          match:96, scenes:['Scene 3 (00:14 – 1:02)','Scene 7 (04:38 – 5:10)'],  impressionsLabel:'3.2M', impressionsNum:3.2,
+    moments:[{label:'Community Spirit',score:94},{label:'Joy & Laughter',score:88},{label:'Outdoor Life',score:82},{label:'Friendship',score:78},{label:'Celebration',score:74},{label:'Teamwork',score:71},{label:'Humor',score:68},{label:'Nostalgia',score:63},{label:'Public Service',score:59},{label:'Local Pride',score:54}] },
+  { id:2, title:'MasterChef US — Ep. 6x08',          channel:'Fox', category:'Reality',          match:91, scenes:['Scene 5 (02:20 – 3:45)'],                            impressionsLabel:'4.8M', impressionsNum:4.8,
+    moments:[{label:'Food & Cooking',score:97},{label:'Competition',score:91},{label:'Achievement',score:85},{label:'Tension',score:82},{label:'Skill & Craft',score:79},{label:'Ambition',score:74},{label:'Passion',score:70},{label:'Precision',score:66},{label:'Leadership',score:61}] },
+  { id:3, title:'The Good Place — Ep. 2x06',         channel:'NBC', category:'Comedy',          match:88, scenes:['Scene 2 (00:30 – 1:18)','Scene 9 (18:44 – 19:20)'], impressionsLabel:'2.9M', impressionsNum:2.9,
+    moments:[{label:'Warmth',score:90},{label:'Comedy',score:87},{label:'Friendship',score:84},{label:'Philosophy',score:77},{label:'Redemption',score:72},{label:'Surprise',score:68},{label:'Ethics',score:63},{label:'Growth',score:58}] },
+  { id:4, title:"America's Got Talent — S17 Finale", channel:'NBC', category:'Reality',          match:84, scenes:['Scene 11 (38:05 – 39:30)'],                         impressionsLabel:'7.1M', impressionsNum:7.1,
+    moments:[{label:'Inspiration',score:92},{label:'Emotion',score:89},{label:'Entertainment',score:85},{label:'Achievement',score:81},{label:'Surprise',score:77},{label:'Family',score:74},{label:'Drama',score:70},{label:'Hope',score:66},{label:'Talent',score:62},{label:'Celebration',score:58}] },
+  { id:5, title:'Modern Family — Ep. 5x09',          channel:'ABC', category:'Comedy',          match:81, scenes:['Scene 4 (07:12 – 8:00)'],                            impressionsLabel:'5.3M', impressionsNum:5.3,
+    moments:[{label:'Family',score:94},{label:'Comedy',score:88},{label:'Everyday Life',score:83},{label:'Warmth',score:78},{label:'Parenting',score:74},{label:'Humor',score:70},{label:'Relationships',score:65},{label:'Home Life',score:60}] },
+  { id:6, title:'The Tonight Show — Ep. 312',        channel:'NBC', category:'Entertainment',   match:77, scenes:['Scene 1 (00:00 – 1:30)'],                            impressionsLabel:'3.6M', impressionsNum:3.6,
+    moments:[{label:'Comedy',score:88},{label:'Live Entertainment',score:83},{label:'Pop Culture',score:78},{label:'Celebrity',score:73},{label:'Music',score:68},{label:'Humor',score:63},{label:'Late Night',score:58}] },
+  { id:7, title:'Ellen DeGeneres Show — Ep. 1847',   channel:'CBS', category:'Entertainment',   match:74, scenes:['Scene 6 (14:22 – 15:05)'],                           impressionsLabel:'2.8M', impressionsNum:2.8,
+    moments:[{label:'Joy',score:90},{label:'Community',score:84},{label:'Lifestyle',score:79},{label:'Positivity',score:75},{label:'Surprise',score:70},{label:'Generosity',score:65},{label:'Fun',score:60}] },
+  { id:8, title:'Good Morning America — 08 May',     channel:'ABC', category:'News & Morning',  match:71, scenes:['Scene 2 (09:15 – 10:00)'],                           impressionsLabel:'4.1M', impressionsNum:4.1,
+    moments:[{label:'Morning Routine',score:82},{label:'Lifestyle',score:77},{label:'Positivity',score:73},{label:'News',score:68},{label:'Family',score:64},{label:'Health',score:59},{label:'Community',score:55}] }
 ];
 
-var invCurrentView = 'gallery';
+var invCurrentView    = 'gallery';
+var invSelected       = {};
+var invFilterChannel  = 'all';
+var invFilterCategory = 'all';
+var invFilterScore    = 0;
+
+function invGetFiltered() {
+  return INV_PROGRAMS.filter(function(p) {
+    if (invFilterChannel  !== 'all' && p.channel  !== invFilterChannel)  return false;
+    if (invFilterCategory !== 'all' && p.category !== invFilterCategory) return false;
+    if (p.match < invFilterScore) return false;
+    return true;
+  });
+}
+
+function invSetFilter(key, val) {
+  if (key === 'channel')  invFilterChannel  = val;
+  if (key === 'category') invFilterCategory = val;
+  if (key === 'score')    invFilterScore    = parseInt(val) || 0;
+  invRenderFilters();
+  invRenderInventory();
+}
+
+function invRemoveFilter(key) {
+  if (key === 'channel')  invFilterChannel  = 'all';
+  if (key === 'category') invFilterCategory = 'all';
+  if (key === 'score')    invFilterScore    = 0;
+  invRenderFilters();
+  invRenderInventory();
+}
+
+function invRenderFilters() {
+  var wrap = document.getElementById('inv-filters-wrap');
+  if (!wrap) return;
+  var channels   = INV_PROGRAMS.map(function(p){ return p.channel; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
+  var categories = INV_PROGRAMS.map(function(p){ return p.category; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
+  var chips = (invFilterChannel  !== 'all' ? '<span class="inv-chip">Channel: '  + invFilterChannel  + ' <span onclick="invRemoveFilter(\'channel\')"  style="cursor:pointer;margin-left:2px">×</span></span>' : '')
+            + (invFilterCategory !== 'all' ? '<span class="inv-chip">Category: ' + invFilterCategory + ' <span onclick="invRemoveFilter(\'category\')" style="cursor:pointer;margin-left:2px">×</span></span>' : '')
+            + (invFilterScore    > 0       ? '<span class="inv-chip">Score ≥ '   + invFilterScore    + '% <span onclick="invRemoveFilter(\'score\')"    style="cursor:pointer;margin-left:2px">×</span></span>' : '');
+  wrap.innerHTML =
+    '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px">'
+    + '<div style="display:flex;align-items:center;gap:5px">'
+    +   '<span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Channel</span>'
+    +   '<select class="cs-dv-select" style="font-size:11px;padding:3px 8px" onchange="invSetFilter(\'channel\',this.value)">'
+    +     '<option value="all">All</option>'
+    +     channels.map(function(c){ return '<option value="' + c + '"' + (invFilterChannel===c?' selected':'') + '>' + c + '</option>'; }).join('')
+    +   '</select>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:5px">'
+    +   '<span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Category</span>'
+    +   '<select class="cs-dv-select" style="font-size:11px;padding:3px 8px" onchange="invSetFilter(\'category\',this.value)">'
+    +     '<option value="all">All</option>'
+    +     categories.map(function(c){ return '<option value="' + c + '"' + (invFilterCategory===c?' selected':'') + '>' + c + '</option>'; }).join('')
+    +   '</select>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:6px">'
+    +   '<span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Min Score</span>'
+    +   '<input type="range" min="0" max="100" value="' + invFilterScore + '" style="width:80px;accent-color:var(--accent)" oninput="this.nextElementSibling.textContent=this.value+\'%\'" onchange="invSetFilter(\'score\',this.value)">'
+    +   '<span style="font-size:11px;color:var(--muted);min-width:28px">' + (invFilterScore > 0 ? invFilterScore + '%' : '0%') + '</span>'
+    + '</div>'
+    + (chips ? '<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">' + chips + '</div>' : '')
+    + '</div>';
+}
 
 function invToggleView(mode) {
   invCurrentView = mode;
@@ -2611,6 +2681,95 @@ function invToggleView(mode) {
   invRenderInventory();
 }
 
+function invToggleSelect(id) {
+  if (invSelected[id]) { delete invSelected[id]; } else { invSelected[id] = true; }
+  var el = document.getElementById('inv-item-' + id);
+  if (el) el.classList.toggle('inv-item--sel', !!invSelected[id]);
+  var cb = document.getElementById('inv-cb-' + id);
+  if (cb) cb.checked = !!invSelected[id];
+  invRenderMediaPlan();
+}
+
+function invClearSelection() {
+  invSelected = {};
+  document.querySelectorAll('.inv-item--sel').forEach(function(el){ el.classList.remove('inv-item--sel'); });
+  document.querySelectorAll('[id^="inv-cb-"]').forEach(function(cb){ cb.checked = false; });
+  invRenderMediaPlan();
+}
+
+function invRenderMediaPlan() {
+  var panel = document.getElementById('inv-media-plan');
+  if (!panel) return;
+  var selected = INV_PROGRAMS.filter(function(p){ return invSelected[p.id]; });
+  if (selected.length === 0) { panel.style.display = 'none'; return; }
+  panel.style.display = 'flex';
+  var total = selected.reduce(function(s,p){ return s + p.impressionsNum; }, 0);
+  var totalLabel = total.toFixed(1) + 'M';
+  panel.innerHTML =
+    '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">'
+    +   '<span>Media Plan <span style="font-size:10px;background:var(--accent);color:#fff;border-radius:20px;padding:1px 7px;margin-left:4px">' + selected.length + '</span></span>'
+    +   '<span style="font-size:10px;color:var(--faint);cursor:pointer;font-weight:400" onclick="invClearSelection()">Clear all</span>'
+    + '</div>'
+    + '<div style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:7px">'
+    + selected.map(function(p){
+        var idx = INV_PROGRAMS.indexOf(p);
+        var seed = 'tvshow' + (idx + 1);
+        var shortTitle = p.title.split(' — ')[0];
+        return '<div style="display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">'
+          + '<div style="width:38px;height:22px;border-radius:3px;overflow:hidden;flex-shrink:0">'
+          +   '<img src="https://picsum.photos/seed/' + seed + '/640/360" style="width:100%;height:100%;object-fit:cover">'
+          + '</div>'
+          + '<div style="flex:1;min-width:0">'
+          +   '<div style="font-size:11px;font-weight:500;color:var(--text);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + shortTitle + '</div>'
+          +   '<div style="font-size:10px;color:var(--faint)">' + p.impressionsLabel + ' imp.</div>'
+          + '</div>'
+          + '<span style="font-size:14px;color:var(--faint);cursor:pointer;flex-shrink:0;line-height:1" onclick="invToggleSelect(' + p.id + ')">×</span>'
+          + '</div>';
+      }).join('')
+    + '</div>'
+    + '<div style="border-top:1px solid var(--border);padding-top:11px;margin-top:8px;flex-shrink:0">'
+    +   '<div style="display:flex;justify-content:space-between;margin-bottom:5px">'
+    +     '<span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Total Shows</span>'
+    +     '<span style="font-size:13px;font-weight:700;color:var(--text)">' + selected.length + '</span>'
+    +   '</div>'
+    +   '<div style="display:flex;justify-content:space-between">'
+    +     '<span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Est. Impressions</span>'
+    +     '<span style="font-size:13px;font-weight:700;color:var(--text)">' + totalLabel + '</span>'
+    +   '</div>'
+    + '</div>';
+}
+
+function invShowMomentsModal(id) {
+  var prog = INV_PROGRAMS.filter(function(p){ return p.id === id; })[0];
+  if (!prog) return;
+  var modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;display:flex;align-items:center;justify-content:center';
+  modal.onclick = function(e){ if (e.target === modal) modal.remove(); };
+  modal.innerHTML =
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;width:460px;max-width:90vw;max-height:75vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.18)">'
+    + '<div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:18px;flex-shrink:0">'
+    +   '<div>'
+    +     '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">' + prog.title + '</div>'
+    +     '<div style="font-size:11px;color:var(--faint)">' + prog.moments.length + ' matched moments</div>'
+    +   '</div>'
+    +   '<button onclick="this.closest(\'[style*=fixed]\').remove()" style="background:none;border:none;cursor:pointer;color:var(--faint);font-size:20px;line-height:1;padding:0 4px">×</button>'
+    + '</div>'
+    + '<div style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:9px">'
+    + prog.moments.map(function(m){
+        var c = m.score >= 85 ? '#16a34a' : m.score >= 70 ? '#d97706' : 'var(--accent)';
+        return '<div style="display:flex;align-items:center;gap:12px">'
+          + '<div style="flex:1;font-size:12px;color:var(--text);font-weight:500">' + m.label + '</div>'
+          + '<div style="width:110px;height:5px;background:var(--bg);border-radius:3px;overflow:hidden">'
+          +   '<div style="height:100%;width:' + m.score + '%;background:' + c + ';border-radius:3px"></div>'
+          + '</div>'
+          + '<div style="font-size:12px;font-weight:600;color:' + c + ';min-width:28px;text-align:right">' + m.score + '</div>'
+          + '</div>';
+      }).join('')
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(modal);
+}
+
 function invScoreColor(s)  { return s >= 90 ? '#16a34a' : s >= 80 ? '#d97706' : s >= 70 ? 'var(--accent)' : 'var(--faint)'; }
 function invScoreBg(s)     { return s >= 90 ? '#f0fdf4' : s >= 80 ? '#fffbeb' : s >= 70 ? '#eff6ff' : '#f8f8f8'; }
 function invScoreBorder(s) { return s >= 90 ? '#bbf7d0' : s >= 80 ? '#fde68a' : s >= 70 ? '#bfdbfe' : '#e5e5e5'; }
@@ -2618,20 +2777,37 @@ function invScoreBorder(s) { return s >= 90 ? '#bbf7d0' : s >= 80 ? '#fde68a' : 
 function invRenderInventory() {
   var wrap = document.getElementById('inv-content-wrap');
   if (!wrap) return;
+  var progs = invGetFiltered();
   var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border);text-align:left';
   var TD = 'padding:10px 12px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border-md);vertical-align:middle';
+
+  if (progs.length === 0) {
+    wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--faint);font-size:13px">No programs match the current filters.</div>';
+    return;
+  }
 
   if (invCurrentView === 'gallery') {
     wrap.innerHTML =
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding-bottom:8px">'
-      + INV_PROGRAMS.map(function(p, i) {
-          var seed = 'tvshow' + (i + 1);
-          return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">'
+      + progs.map(function(p) {
+          var idx  = INV_PROGRAMS.indexOf(p);
+          var seed = 'tvshow' + (idx + 1);
+          var sel  = !!invSelected[p.id];
+          var previewMoments = p.moments.slice(0, 2).map(function(m){
+            return '<span style="font-size:10px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 7px;color:var(--muted)">' + m.label + '</span>';
+          }).join('');
+          return '<div id="inv-item-' + p.id + '" class="inv-card' + (sel ? ' inv-item--sel' : '') + '" onclick="invToggleSelect(' + p.id + ')" style="cursor:pointer">'
+            // thumbnail
             + '<div style="position:relative;width:100%;padding-top:56.25%">'
             +   '<img src="https://picsum.photos/seed/' + seed + '/640/360" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">'
             +   '<div style="position:absolute;top:7px;left:7px;background:rgba(0,0,0,.62);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;color:#fff;letter-spacing:.3px">' + p.channel + '</div>'
             +   '<div style="position:absolute;top:7px;right:7px;background:' + invScoreBg(p.match) + ';border:1px solid ' + invScoreBorder(p.match) + ';border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;color:' + invScoreColor(p.match) + '">' + p.match + '% match</div>'
+            +   '<div style="position:absolute;bottom:7px;left:7px;background:rgba(0,0,0,.55);border-radius:4px;padding:2px 8px;font-size:10px;color:rgba(255,255,255,.85)">' + p.category + '</div>'
+            +   (sel ? '<div style="position:absolute;inset:0;border:2px solid var(--accent);border-radius:0;pointer-events:none"></div>'
+                     + '<div style="position:absolute;top:7px;left:50%;transform:translateX(-50%);width:18px;height:18px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="9" height="7" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
+                     : '')
             + '</div>'
+            // body
             + '<div style="padding:11px 12px 13px">'
             +   '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:9px;line-height:1.3">' + p.title + '</div>'
             +   '<div style="margin-bottom:8px">'
@@ -2640,12 +2816,11 @@ function invRenderInventory() {
             +   '</div>'
             +   '<div style="margin-bottom:10px">'
             +     '<div style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:3px">Est. Impressions</div>'
-            +     '<div style="font-size:13px;font-weight:700;color:var(--text)">' + p.impressions + '</div>'
+            +     '<div style="font-size:13px;font-weight:700;color:var(--text)">' + p.impressionsLabel + '</div>'
             +   '</div>'
-            +   '<div style="display:flex;flex-wrap:wrap;gap:4px">'
-            +     p.moments.map(function(m) {
-                    return '<span style="font-size:10px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 7px;color:var(--muted)">' + m + '</span>';
-                  }).join('')
+            +   '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">'
+            +     previewMoments
+            +     (p.moments.length > 2 ? '<span onclick="event.stopPropagation();invShowMomentsModal(' + p.id + ')" style="font-size:10px;color:var(--accent);cursor:pointer;white-space:nowrap">+' + (p.moments.length - 2) + ' more →</span>' : '')
             +   '</div>'
             + '</div>'
             + '</div>';
@@ -2655,16 +2830,24 @@ function invRenderInventory() {
     wrap.innerHTML =
       '<table style="width:100%;border-collapse:collapse">'
       + '<thead><tr>'
+      +   '<th style="' + TH + ';width:28px;padding-right:0"></th>'
       +   '<th style="' + TH + '">Program</th>'
       +   '<th style="' + TH + '">Channel</th>'
+      +   '<th style="' + TH + '">Category</th>'
       +   '<th style="' + TH + '">Match</th>'
       +   '<th style="' + TH + '">Suggested Scene</th>'
       +   '<th style="' + TH + '">Est. Impressions</th>'
-      +   '<th style="' + TH + '">Matched Moments</th>'
+      +   '<th style="' + TH + '">Moments</th>'
       + '</tr></thead><tbody>'
-      + INV_PROGRAMS.map(function(p, i) {
-          var seed = 'tvshow' + (i + 1);
-          return '<tr>'
+      + progs.map(function(p) {
+          var idx  = INV_PROGRAMS.indexOf(p);
+          var seed = 'tvshow' + (idx + 1);
+          var sel  = !!invSelected[p.id];
+          var rowBg = sel ? 'background:color-mix(in srgb,var(--accent) 6%,transparent)' : '';
+          return '<tr id="inv-item-' + p.id + '" class="' + (sel ? 'inv-item--sel' : '') + '" style="cursor:pointer;' + rowBg + '" onclick="invToggleSelect(' + p.id + ')">'
+            + '<td style="' + TD + ';padding-right:4px;width:28px" onclick="event.stopPropagation()">'
+            +   '<input type="checkbox" id="inv-cb-' + p.id + '"' + (sel ? ' checked' : '') + ' onchange="invToggleSelect(' + p.id + ')" style="cursor:pointer;accent-color:var(--accent)">'
+            + '</td>'
             + '<td style="' + TD + '">'
             +   '<div style="display:flex;align-items:center;gap:9px">'
             +     '<div style="width:54px;height:30px;border-radius:4px;overflow:hidden;flex-shrink:0">'
@@ -2674,17 +2857,14 @@ function invRenderInventory() {
             +   '</div>'
             + '</td>'
             + '<td style="' + TD + ';color:var(--muted)">' + p.channel + '</td>'
+            + '<td style="' + TD + ';color:var(--muted)">' + p.category + '</td>'
             + '<td style="' + TD + '">'
             +   '<span style="font-size:11px;font-weight:700;color:' + invScoreColor(p.match) + ';background:' + invScoreBg(p.match) + ';border:1px solid ' + invScoreBorder(p.match) + ';border-radius:20px;padding:3px 9px">' + p.match + '%</span>'
             + '</td>'
             + '<td style="' + TD + ';color:var(--muted);font-size:11px">' + p.scenes[0] + '</td>'
-            + '<td style="' + TD + ';font-weight:600">' + p.impressions + '</td>'
+            + '<td style="' + TD + ';font-weight:600">' + p.impressionsLabel + '</td>'
             + '<td style="' + TD + '">'
-            +   '<div style="display:flex;flex-wrap:wrap;gap:3px">'
-            +     p.moments.map(function(m) {
-                    return '<span style="font-size:10px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 7px;color:var(--muted)">' + m + '</span>';
-                  }).join('')
-            +   '</div>'
+            +   '<span onclick="event.stopPropagation();invShowMomentsModal(' + p.id + ')" style="font-size:11px;color:var(--accent);cursor:pointer;white-space:nowrap">' + p.moments.length + ' moments →</span>'
             + '</td>'
             + '</tr>';
         }).join('')
@@ -2796,7 +2976,13 @@ function csTx2TaxShowResults() {
 
     // ── Inventory (v2 only) ──
     +   (isInventoryV2
-          ? '<div id="tx2-sub-content-inventory" style="flex:1;overflow-y:auto;min-height:0"><div id="inv-content-wrap"></div></div>'
+          ? '<div id="tx2-sub-content-inventory" style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden">'
+          +   '<div id="inv-filters-wrap"></div>'
+          +   '<div style="display:flex;gap:16px;flex:1;min-height:0;overflow:hidden">'
+          +     '<div id="inv-content-wrap" style="flex:1;min-width:0;overflow-y:auto"></div>'
+          +     '<div id="inv-media-plan" style="display:none;width:220px;flex-shrink:0;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;overflow:hidden"></div>'
+          +   '</div>'
+          + '</div>'
           : '')
 
     // ── Moments ──
@@ -2856,8 +3042,8 @@ function csTx2TaxShowResults() {
   if (typeof txInjectStyles === 'function') txInjectStyles();
   txCustomSelections = [];
   if (isInventoryV2) {
-    invCurrentView = 'gallery';
-    invRenderInventory();
+    invCurrentView = 'gallery'; invSelected = {}; invFilterChannel = 'all'; invFilterCategory = 'all'; invFilterScore = 0;
+    invRenderFilters(); invRenderInventory();
   } else {
     txRenderCategories();
   }
@@ -2870,7 +3056,7 @@ function csTx2SubTab(tab) {
     if (btn) btn.className = 'cs-dv-tab' + (t === tab ? ' cs-dv-tab--act' : '');
     if (pnl) pnl.style.display = t === tab ? '' : 'none';
   });
-  if (tab === 'inventory')  { invCurrentView = 'gallery'; invRenderInventory(); }
+  if (tab === 'inventory')  { invCurrentView = 'gallery'; invSelected = {}; invFilterChannel = 'all'; invFilterCategory = 'all'; invFilterScore = 0; invRenderFilters(); invRenderInventory(); invRenderMediaPlan(); }
   if (tab === 'moments')    { txCustomSelections = []; txRenderCategories(); }
   if (tab === 'taxonomies') { txCustomActiveTab = 'emotion'; txCustomCurrentPage = 1; txCustomRenderTable(); txRenderChips(); }
   if (tab === 'episodes')   txRenderEpisodes();
@@ -3488,6 +3674,27 @@ function sdtInjectStyles() {
     }
     .cs-dv-tab:hover { color: var(--text); }
     .cs-dv-tab--act  { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Inventory cards */
+    .inv-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .inv-card:hover { border-color: var(--border-md); box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .inv-item--sel.inv-card { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }
+    tr.inv-item--sel td { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+
+    /* Inventory filter chips */
+    .inv-chip {
+      display: inline-flex; align-items: center;
+      font-size: 11px; color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+      border-radius: 20px; padding: 2px 9px;
+    }
 
     /* Inventory view toggle buttons */
     .inv-view-btn {
