@@ -13,15 +13,15 @@ var NAV_CONFIG = [
   {
     section: 'Live Prototypes',
     items: [
-      { id: 'metadata-analysis',    label: 'Metadata Analysis',        icon: ico.metadata },
-      { id: 'taxonomy-showcase',    label: 'Inventory Explorer (v1)',   icon: ico.showcase },
-      { id: 'inventory-explorer-v2', label: 'Inventory Explorer (v2)',  icon: ico.showcase }
+      { id: 'metadata-analysis',     label: 'Metadata Analysis',       icon: ico.metadata },
+      { id: 'inventory-explorer-v2', label: 'Inventory Explorer (v2)', icon: ico.showcase }
     ]
   },
   {
     section: 'Work in Progress',
     items: [
-      { id: 'sdt-content-form', label: 'SDT - New Content Form',      icon: ico.sdtform },
+      { id: 'sdt-content-form', label: 'SDT - New Content Form',    icon: ico.sdtform },
+      { id: 'taxonomy-showcase', label: 'Inventory Explorer (v1)', icon: ico.showcase },
       { id: 'taxonomy-v1',      label: 'Layout Options – v1',      icon: ico.taxonomy },
       { id: 'taxonomy-v2',      label: 'Layout Options – v2',      icon: ico.taxonomy }
     ]
