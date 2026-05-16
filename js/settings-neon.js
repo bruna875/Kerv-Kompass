@@ -1127,8 +1127,8 @@ function snxSimpleTableHtml(type, placeholder) {
   var rows = items.map(function(item) {
     var sf = 'snxSaveSimple(\'' + type + '\',' + item.id + ')';
     var tplCell = isDrivers
-      ? '<td style="' + _S.TD + ';width:220px">'
-        + _autoSEL('snx-drivers-tpl-' + item.id, ROI_TEMPLATE_OPTIONS, item.templateSlug || '', sf)
+      ? '<td style="' + _S.TD + ';width:200px">'
+        + _autoTI('snx-drivers-tpl-' + item.id, item.templateSlug || '', 'template_slug', sf)
         + '</td>'
       : '';
     return '<tr onmouseenter="this.style.background=\'#FAFAF8\'" onmouseleave="this.style.background=\'\'">'
@@ -1142,8 +1142,8 @@ function snxSimpleTableHtml(type, placeholder) {
   }).join('');
 
   var tplNewCell = isDrivers
-    ? '<td style="' + _S.TD + ';width:220px">'
-      + _solidDROP('snx-drivers-new-tpl', ROI_TEMPLATE_OPTIONS, '')
+    ? '<td style="' + _S.TD + ';width:200px">'
+      + '<input type="text" id="snx-drivers-new-tpl" placeholder="template_slug" style="' + _S.INPs + '" ' + _SOL_FOCUS + ' ' + _SOL_BLUR + ' />'
       + '</td>'
     : '';
 
@@ -1155,7 +1155,7 @@ function snxSimpleTableHtml(type, placeholder) {
     + '<td style="' + _S.TD + ';text-align:right">' + _saveBtn('snxAddSimple(\'' + type + '\')') + '</td>'
     + '</tr>';
 
-  var headers = isDrivers ? _th('Name', 'ROI Template', '') : _th('Name', '');
+  var headers = isDrivers ? _th('Name', 'Template Slug', '') : _th('Name', '');
   return _scrollCard('<tr>' + headers + '</tr>', rows, newRow);
 }
 
@@ -1350,12 +1350,8 @@ function renderSettingsNeon() {
         return '<button class="tabitem snx-tabitem' + (t.id === snxActiveTab ? ' act' : '') + '" data-snxtab="' + t.id + '">' + t.label + '</button>';
       }).join('')
     + '</div>'
-    + '<div id="snx-loading" style="display:flex;align-items:center;gap:10px;padding:32px 0;font-size:13px;color:var(--muted)">'
-    +   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="animation:snxSpin 1s linear infinite"><circle cx="12" cy="12" r="9" stroke="var(--border-md)" stroke-width="2.5"/><path d="M12 3a9 9 0 019 9" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/></svg>'
-    +   'Loading…'
-    + '</div>'
-    + '<div id="snx-tab-body" style="display:none"></div>'
-    + '<style>@keyframes snxSpin{to{transform:rotate(360deg)}}</style>';
+    + '<div id="snx-loading">' + (typeof _KERV_LOADER_HTML !== 'undefined' ? _KERV_LOADER_HTML : '<div class="kerv-loader"><div class="kerv-loader-mark"><img src="https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg" alt=""></div><div class="kerv-loader-text">Loading</div></div>') + '</div>'
+    + '<div id="snx-tab-body" style="display:none"></div>';
 
   setTimeout(function() {
     snxLoadAll(function(err) {

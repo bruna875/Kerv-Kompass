@@ -1,19 +1,26 @@
 // roadmap-neon.js — Independent Roadmap module backed by Neon DB
 // All globals prefixed rnx_ to avoid collisions with legacy roadmap.js
 
-// ── Shared loader HTML (spinner + label, matches settings Google-API loader) ─
+// ── Global Kerv loader (K logo pulse + label) ─────────────────────────────
 ;(function(){
   var s = document.createElement('style');
-  s.textContent = '@keyframes rnxLoaderSpin{to{transform:rotate(360deg)}}';
+  s.textContent =
+    '@keyframes kervPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.13);opacity:.65}}' +
+    '@keyframes kervFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}' +
+    '.kerv-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:64px 0;animation:kervFadeIn .25s ease}' +
+    '.kerv-loader-mark{width:48px;height:48px;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.10);animation:kervPulse 1.8s ease-in-out infinite}' +
+    '.kerv-loader-mark img{width:100%;height:100%;object-fit:contain;display:block}' +
+    '.kerv-loader-text{font-size:11px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}';
   document.head.appendChild(s);
 })();
-var _RNX_LOADER_HTML = '<div style="display:flex;align-items:center;gap:10px;padding:32px 0;font-size:13px;color:var(--muted)">'
-  + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="animation:rnxLoaderSpin 1s linear infinite;flex-shrink:0">'
-  +   '<circle cx="12" cy="12" r="9" stroke="var(--border-md)" stroke-width="2.5"/>'
-  +   '<path d="M12 3a9 9 0 019 9" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>'
-  + '</svg>'
-  + 'Loading…'
+var _KERV_LOGO_URL = 'https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg';
+var _KERV_LOADER_HTML =
+  '<div class="kerv-loader">'
+  + '<div class="kerv-loader-mark"><img src="' + _KERV_LOGO_URL + '" alt=""></div>'
+  + '<div class="kerv-loader-text">Loading</div>'
   + '</div>';
+// legacy alias
+var _RNX_LOADER_HTML = _KERV_LOADER_HTML;
 
 // ── State ──────────────────────────────────────────────────────────────────
 
@@ -2519,12 +2526,8 @@ function rnxOpenSettings() {
 
   // Content
   var content = '<div id="snx-tab-body" style="flex:1;overflow-y:auto;padding:24px">'
-    + '<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)">'
-    +   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="animation:snxSpin 1s linear infinite"><circle cx="12" cy="12" r="9" stroke="var(--border-md)" stroke-width="2.5"/><path d="M12 3a9 9 0 019 9" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/></svg>'
-    +   'Loading…'
-    + '</div>'
-    + '</div>'
-    + '<style>@keyframes snxSpin{to{transform:rotate(360deg)}}</style>';
+    + _KERV_LOADER_HTML
+    + '</div>';
 
   panel.innerHTML = panelHeader + tabNav + content;
   overlay.appendChild(backdrop);
