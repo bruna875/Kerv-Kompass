@@ -206,7 +206,13 @@ function ovxRender(initiatives, members) {
             }).join('')
       +     '</div>'
       +   '</div>'
-      +   '<div style="padding:8px 0">'
+      +   '<div style="display:flex;align-items:center;gap:12px;padding:6px 20px;border-bottom:1px solid var(--border-lt)">'
+      +     '<span style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;width:120px;flex-shrink:0">Team</span>'
+      +     '<span style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;flex:1">Status</span>'
+      +     '<span style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;width:24px;text-align:right;flex-shrink:0">#</span>'
+      +     '<span style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;width:32px;text-align:right;flex-shrink:0">Done</span>'
+      +   '</div>'
+      +   '<div style="padding:4px 0">'
       +     teamNames.map(function(t) { return ovxTeamBar(t, teamMap[t]); }).join('')
       +     '<div style="height:1px;background:var(--border);margin:4px 0"></div>'
       +     ovxTeamBar('Total', qByDs, true)
