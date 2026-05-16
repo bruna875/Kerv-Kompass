@@ -14,7 +14,7 @@ var NAV_CONFIG = [
     ]
   },
   {
-    section: 'Roadmap & Product Dev',
+    section: 'Product',
     items: [
       { id: 'roadmap-neon',        label: 'Product Roadmap', icon: ico.roadmap  },
       { id: 'teamcapacity-neon',   label: 'Team Capacity',   icon: ico.capacity },
