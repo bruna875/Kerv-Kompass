@@ -1296,8 +1296,8 @@ function rnxRoiStrategicCalc() {
   var rawGap          = (multipleActual || multipleDesired) ? +(multipleDesired - multipleActual).toFixed(4) : 0;
   // Project Δ = (Desired - Actual) × SAF × Confidence
   var projectDelta    = rawGap * (safPct / 100) * (confidenceScore / 100);
-  // Implied new = Actual - Project Δ
-  var impliedNew      = multipleActual - projectDelta;
+  // Implied new = Actual + Project Δ
+  var impliedNew      = multipleActual + projectDelta;
   var marketCapAnte   = ebitda * multipleActual;
   var marketCapPost   = ebitda * impliedNew;
   var addedValue      = marketCapPost - marketCapAnte;
