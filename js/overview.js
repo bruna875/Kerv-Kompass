@@ -34,11 +34,12 @@ function ovxLoad() {
 // ── Delivery status config ─────────────────────────────────────────────────
 
 var OVX_DS = [
-  { val: 'done',        label: 'Done',        color: '#10B981' },
-  { val: 'in-progress', label: 'In progress', color: '#3B82F6' },
-  { val: 'not-started', label: 'Not started', color: '#9CA3AF' },
-  { val: 'at-risk',     label: 'At risk',     color: '#F59E0B' },
-  { val: 'blocked',     label: 'Blocked',     color: '#E5243B' }
+  { val: 'not-started', label: 'Not Started', color: '#8E8E93' },
+  { val: 'on-track',    label: 'On Track',    color: '#2EAD4B' },
+  { val: 'at-risk',     label: 'At Risk',     color: '#E5A100' },
+  { val: 'delayed',     label: 'Delayed',     color: '#E5243B' },
+  { val: 'on-hold',     label: 'On Hold',     color: '#C2410C' },
+  { val: 'delivered',   label: 'Delivered',   color: '#1D4ED8' }
 ];
 
 // ── Quarters sort order ────────────────────────────────────────────────────
@@ -94,7 +95,7 @@ function ovxRender(initiatives, members) {
     if (qByDs[ds] !== undefined) qByDs[ds]++; else qByDs['not-started']++;
   });
   var qTotal    = qInits.length;
-  var qDone     = qByDs['done'] || 0;
+  var qDone     = qByDs['delivered'] || 0;
   var qPct      = qTotal ? Math.round(qDone / qTotal * 100) : 0;
 
   // ── Portfolio ──
@@ -114,7 +115,7 @@ function ovxRender(initiatives, members) {
   });
   var quarters = Object.keys(qMap).sort(function(a, b) { return ovxQSort(a) - ovxQSort(b); });
 
-  var doneCount = byDs['done'] || 0;
+  var doneCount = byDs['delivered'] || 0;
   var pct = total ? Math.round(doneCount / total * 100) : 0;
 
   // ── Quick-nav cards ──
@@ -201,7 +202,7 @@ function ovxRender(initiatives, members) {
 
 function ovxTeamBar(name, dsByVal, isBold) {
   var total = OVX_DS.reduce(function(s, d) { return s + (dsByVal[d.val] || 0); }, 0);
-  var done  = dsByVal['done'] || 0;
+  var done  = dsByVal['delivered'] || 0;
   var pct   = total ? Math.round(done / total * 100) : 0;
 
   var segments = total > 0
