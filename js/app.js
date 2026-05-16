@@ -1,23 +1,68 @@
-// app.js — navigation, routing, data loading, events, init (cleaned)
+// app.js — navigation, routing, events, init
 
+// ── App state ──
+var activeId  = 'overview';
+var collapsed = false;
+
+// ── Nav config ──
+var NAV_CONFIG = [
+  {
+    section: '',
+    noHeader: true,
+    items: [
+      { id: 'overview', label: 'Overview', icon: ico.overview }
+    ]
+  },
+  {
+    section: 'Roadmap & Product Dev',
+    items: [
+      { id: 'roadmap-neon',        label: 'Product Roadmap', icon: ico.roadmap  },
+      { id: 'teamcapacity-neon',   label: 'Team Capacity',   icon: ico.capacity },
+      { id: 'sdt-sprint-analysis', label: 'XTS Team',               icon: ico.sprint,    dividerBefore: true },
+      { id: 'api-team',            label: 'API Team',               icon: ico.api,       disabled: true },
+      { id: 'ads-team',            label: 'Ads Team',               icon: ico.ads,       disabled: true },
+      { id: 'kervone-team',        label: 'KERV One Team',          icon: ico.kervone,   disabled: true },
+      { id: 'shared-team',         label: 'Shared Serv. Team',      icon: ico.shared,    disabled: true },
+      { id: 'reporting-team',      label: 'Reporting Team',         icon: ico.reporting, disabled: true },
+      { id: 'product-ideas',       label: 'Product Requests / Ideas', icon: ico.ideas,   disabled: true, dividerBefore: true }
+    ]
+  },
+  {
+    section: 'Live Prototypes',
+    items: [
+      { id: 'metadata-analysis', label: 'Metadata Analysis',  icon: ico.metadata },
+      { id: 'media-planner-v2',  label: 'Media Planner (v2)', icon: ico.showcase }
+    ]
+  },
+  {
+    section: 'Work in Progress',
+    items: [
+      { id: 'sdt-content-form',    label: 'New Content Upload',   icon: ico.sdtform },
+      { id: 'taxonomy-showcase',   label: 'Taxonomy Explorer',    icon: ico.taxonomy },
+      { id: 'media-planner',       label: 'Media Planner (v1)',   icon: ico.showcase }
+    ]
+  },
+];
 
 // ── Pages map ──
 var PAGES = {
-  roadmap:            renderRoadmap,
-  teamcapacity:       renderTeamCapacity,
-  'sdt-content-form': renderSdtContentForm,
-  'taxonomy-explorer': renderTaxonomyExplorer,
-  'taxonomy-v1':        renderTaxonomyV1,
-  'taxonomy-v2':        renderTaxonomyV2,
-  'metadata-analysis':     renderMetadataAnalysis,
-  'taxonomy-showcase':     renderTaxonomyShowcase,
-  'inventory-explorer-v2': renderInventoryExplorerV2
+  'overview':            renderOverview,
+  'roadmap-neon':        renderRoadmapNeon,
+  'teamcapacity-neon':   renderTeamCapacityNeon,
+  'settings-neon':       renderSettingsNeon,
+  'sdt-content-form':    renderSdtContentForm,
+  'taxonomy-explorer':   renderTaxonomyExplorer,
+  'metadata-analysis':   renderMetadataAnalysis,
+  'taxonomy-showcase':   renderTaxonomyShowcase,
+  'media-planner':       renderInventoryExplorerV2,
+  'media-planner-v2':    renderMediaPlannerV2,
+  'sdt-sprint-analysis': renderSdtSprintAnalysis
 };
 
 // ── Nav ──
 
 // Sections collapsed by default (by section label)
-var navCollapsed = { 'Roadmap': true, 'Work in Progress': true };
+var navCollapsed = { 'Live Prototypes': true, 'Work in Progress': true, 'Administration': true };
 
 function toggleNavSection(section) {
   navCollapsed[section] = !navCollapsed[section];
@@ -26,6 +71,28 @@ function toggleNavSection(section) {
 
 function buildNav() {
   document.getElementById('nav').innerHTML = NAV_CONFIG.map(function(sec) {
+    var items = sec.items.map(function(item) {
+      var act     = item.id === activeId;
+      var divider = item.dividerBefore ? '<div style="height:1px;background:var(--border);margin:4px 12px"></div>' : '';
+      if (item.disabled) {
+        return divider + '<div class="nitem" style="opacity:.4;cursor:default;pointer-events:none">'
+          + '<div class="nico">' + item.icon + '</div>'
+          + '<span class="nlabel">' + item.label + '</span>'
+          + '<span style="margin-left:auto;font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.3px;white-space:nowrap">Soon</span>'
+          + '</div>';
+      }
+      return divider + '<div class="nitem' + (act ? ' act' : '') + '" data-page="' + item.id + '" data-label="' + item.label + '">'
+        + (act ? '<div class="nbar"></div>' : '')
+        + '<div class="nico">' + item.icon + '</div>'
+        + '<span class="nlabel">' + item.label + '</span>'
+        + '</div>';
+    }).join('');
+
+    // Sections with noHeader render items directly (no toggle header)
+    if (sec.noHeader) {
+      return '<div style="padding-bottom:4px">' + items + '</div>';
+    }
+
     var col = !!navCollapsed[sec.section];
     var chevron = col
       ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -34,36 +101,26 @@ function buildNav() {
       + '<span>' + sec.section + '</span>'
       + '<span class="seclabel-chevron">' + chevron + '</span>'
       + '</div>';
-    var items = col ? '' : sec.items.map(function(item) {
-      var act = item.id === activeId;
-      return '<div class="nitem' + (act ? ' act' : '') + '" data-page="' + item.id + '" data-label="' + item.label + '">'
-        + (act ? '<div class="nbar"></div>' : '')
-        + '<div class="nico">' + item.icon + '</div>'
-        + '<span class="nlabel">' + item.label + '</span>'
-        + '</div>';
-    }).join('');
-    return '<div>' + header + items + '</div>';
+    return '<div>' + header + (col ? '' : items) + '</div>';
   }).join('');
 }
 
 function setPage(id, label, noPush) {
   activeId = id;
-  document.getElementById('pgname').textContent = label;
   var content = document.getElementById('content');
-  if (PAGES[id]) {
-    content.innerHTML = PAGES[id]();
-  } else {
-    content.innerHTML = '<div class="ptitle">' + label + '</div>';
-  }
+  var pageHtml = PAGES[id] ? PAGES[id]() : '<div class="ptitle">' + label + '</div>';
+  content.innerHTML = '<div id="content-bc" class="content-bc">' + label + '</div>' + pageHtml;
   buildNav();
-  if (id === 'roadmap') setTimeout(ganttTooltipInit, 50);
+  if (id === 'overview')          setTimeout(ovxLoad, 0);
+  if (id === 'roadmap-neon')      setTimeout(rnxGanttTooltipInit, 50);
+  if (id === 'sdt-sprint-analysis') setTimeout(xtsInit, 50);
   if (!noPush) history.pushState({ id: id, label: label }, '', '/' + id);
 }
 
 // ── URL routing helpers ──
 
 function pageFromPath() {
-  var path = location.pathname.replace(/^\//, '').replace(/\/$/, '') || 'metadata-analysis';
+  var path = location.pathname.replace(/^\//, '').replace(/\/$/, '') || 'overview';
   // find matching nav item
   var found = null;
   NAV_CONFIG.forEach(function(sec) {
@@ -71,11 +128,11 @@ function pageFromPath() {
       if (item.id === path) found = item;
     });
   });
-  // default fallback: Metadata Analysis
+  // default fallback: Overview
   if (!found) {
     NAV_CONFIG.forEach(function(sec) {
       sec.items.forEach(function(item) {
-        if (item.id === 'metadata-analysis') found = item;
+        if (item.id === 'overview') found = item;
       });
     });
   }
@@ -91,209 +148,12 @@ window.addEventListener('popstate', function(e) {
   }
 });
 
-// ── Data loading ──
-
-var capBudgetData = {};
-
-function loadData(cb) {
-  var el = document.getElementById('content');
-  if (el) el.innerHTML = renderLoader();
-  fetch('/api/data')
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      initiatives = (data.initiatives || []).map(function(i) {
-        return {
-          quarter: String(i.quarter || '').trim(),
-          title: String(i.title || '').trim(),
-          driver: String(i.driver || '').trim(),
-          team: String(i.team || '').trim(),
-          theme: String(i.theme || '').trim(),
-          productOwner: String(i.productOwner || '').trim(),
-          techLead: String(i.techLead || '').trim(),
-          addedValue: (i.addedValue !== undefined && i.addedValue !== '') ? i.addedValue : '\u2014',
-          roi: (i.roi !== undefined && i.roi !== '') ? i.roi : '\u2014',
-          designDays: i.designDays || 0,
-          engineeringDays: i.engineeringDays || 0,
-          productDays: i.productDays || 0,
-          deliveryStatus: 'not-started',
-          confidence: 'medium',
-          link: ''
-        };
-      });
-      capBudgetData = data.capBudget || {};
-      loadLocalState(function() { if (cb) cb(); });
-    })
-    .catch(function(err) {
-      if (el) el.innerHTML = '<div style="padding:40px 32px;font-size:13px;color:#C0392B">Failed to load data.<br><br>' + err + '</div>';
-    });
-}
-
 // ── Event delegation ──
 
 document.addEventListener('click', function(e) {
   var ni = e.target.closest('[data-page]');
   if (ni) { setPage(ni.dataset.page, ni.dataset.label); return; }
-
-  var ct = e.target.closest('[data-captab]');
-  if (ct) { switchCapTab(ct.dataset.captab); return; }
-
-  var gg = e.target.closest('[data-ganttgroup]');
-  if (gg) { switchGanttGroup(gg.dataset.ganttgroup); return; }
-
-  var ti = e.target.closest('[data-tab]');
-  if (ti) {
-    var id = ti.dataset.tab;
-    document.querySelectorAll('.tabnav .tabitem').forEach(function(b) { b.classList.remove('act'); });
-    ti.classList.add('act');
-    document.querySelectorAll('.tabpanel').forEach(function(p) { p.classList.remove('act'); });
-    var tp = document.getElementById('rt-' + id);
-    if (tp) tp.classList.add('act');
-    if (id === 'roi') setTimeout(function() { renderScatterChart(currentQ()); }, 50);
-    if (id === 'gantt') setTimeout(ganttTooltipInit, 50);
-    return;
-  }
-
-  var qb = e.target.closest('[data-qfn]');
-  if (qb) {
-    var fn = qb.dataset.qfn, q = qb.dataset.q;
-    if (fn === 'switchTableQuarter') switchTableQuarter(q);
-    else if (fn === 'switchKanbanQuarter') switchKanbanQuarter(q);
-    else if (fn === 'switchROIQuarter') switchROIQuarter(q);
-    else if (fn === 'switchCapQuarter') switchCapQuarter(q);
-    return;
-  }
-
-  var dw = e.target.closest('.ds-wrap[data-idx]');
-  if (dw) {
-    e.stopPropagation();
-    var idx = parseInt(dw.dataset.idx);
-    document.querySelectorAll('.status-menu').forEach(function(m) { m.remove(); });
-    var menu = document.createElement('div');
-    menu.className = 'status-menu';
-    menu.style.cssText = 'position:fixed;z-index:999;background:var(--surface);border:1px solid var(--border-md);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:4px;min-width:130px;';
-    deliveryOpts.forEach(function(o) {
-      var item = document.createElement('div');
-      item.style.cssText = 'padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;';
-      item.innerHTML = '<span class="pill ' + o.cls + '" style="pointer-events:none">' + o.label + '</span>';
-      item.onmouseenter = function() { item.style.background = 'var(--bg)'; };
-      item.onmouseleave = function() { item.style.background = ''; };
-      item.onclick = function(ev) { ev.stopPropagation(); updateStatus(idx, o.val); menu.remove(); };
-      menu.appendChild(item);
-    });
-    var r = dw.getBoundingClientRect();
-    menu.style.top = (r.bottom + 4) + 'px';
-    menu.style.left = r.left + 'px';
-    document.body.appendChild(menu);
-    setTimeout(function() { document.addEventListener('click', function h() { menu.remove(); document.removeEventListener('click', h); }); }, 0);
-    return;
-  }
-
-  var lb = e.target.closest('[data-link-idx]');
-  if (lb) {
-    e.stopPropagation();
-    var idx2 = parseInt(lb.dataset.linkIdx);
-    _linkIdx = idx2;
-    var pop = document.getElementById('linkPopup');
-    document.getElementById('linkInput').value = initiatives[idx2].link || '';
-    document.getElementById('linkOpenBtn').disabled = !initiatives[idx2].link;
-    var r2 = lb.getBoundingClientRect();
-    pop.style.top = (r2.bottom + 6) + 'px';
-    pop.style.left = Math.min(r2.left, window.innerWidth - 316) + 'px';
-    pop.classList.add('show');
-    setTimeout(function() { document.getElementById('linkInput').focus(); }, 50);
-    return;
-  }
-
-  var fr = e.target.closest('[data-reset]');
-  if (fr) {
-    var sfx = fr.dataset.reset;
-    if (sfx === 'q') resetFiltersQ(); else resetFilters();
-    return;
-  }
-
-  var pop2 = document.getElementById('linkPopup');
-  if (pop2.classList.contains('show') && !pop2.contains(e.target)) closePopup();
 });
-
-document.addEventListener('change', function(e) {
-  var ss = e.target.closest('[data-status-idx]');
-  if (ss) { updateStatus(parseInt(ss.dataset.statusIdx), ss.value); return; }
-  var ff = e.target.closest('[data-filter]');
-  if (ff) {
-    var sfx = ff.dataset.filter;
-    if (sfx === 'q') applyFiltersQ(); else applyFilters();
-    return;
-  }
-});
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closePopup();
-});
-
-// ── Status update ──
-
-function updateStatus(idx, val) {
-  initiatives[idx].deliveryStatus = val;
-  var opt = deliveryOpts.filter(function(o) { return o.val === val; })[0] || deliveryOpts[0];
-  document.querySelectorAll('.ds-wrap[data-idx="' + idx + '"] .ds-pill').forEach(function(p) {
-    p.className = 'pill ds-pill ' + opt.cls;
-    p.textContent = opt.label;
-  });
-  document.querySelectorAll('.ds-select[data-status-idx="' + idx + '"]').forEach(function(s) { s.value = val; });
-  saveLocalState();
-
-  // Refresh table scorecards
-  var aq = '';
-  ['Q1', 'Q2', 'Q3', 'Q4', 'all'].forEach(function(q) {
-    var b = document.getElementById('tbl-btn-' + q);
-    if (b && b.classList.contains('act')) aq = q;
-  });
-  if (!aq) aq = currentQ();
-  var label = aq === 'all' ? 'All Year' : aq;
-  var subset = aq === 'all' ? initiatives : initiatives.filter(function(i) { return i.quarter === aq; });
-  refreshCards(subset, label);
-
-  // Refresh quarterly progress bars
-  var qpWrap = document.querySelector('#rt-quarterly');
-  if (qpWrap) {
-    var oldBars = qpWrap.querySelector(':scope > div:first-child');
-    if (oldBars) {
-      var tmp = document.createElement('div');
-      tmp.innerHTML = buildQuarterlyProgressBars();
-      oldBars.replaceWith(tmp.firstChild);
-    }
-  }
-}
-
-// ── Link popup ──
-
-function closePopup() {
-  document.getElementById('linkPopup').classList.remove('show');
-  _linkIdx = null;
-}
-
-function openCurrentLink() {
-  var u = document.getElementById('linkInput').value.trim();
-  if (u) window.open(u, '_blank');
-}
-
-function saveLink() {
-  if (_linkIdx === null) return;
-  initiatives[_linkIdx].link = document.getElementById('linkInput').value.trim();
-  closePopup();
-  var rows = document.querySelectorAll('#rt-table table tbody tr');
-  if (rows[_linkIdx]) rows[_linkIdx].cells[1].innerHTML = titleCellHtml(_linkIdx);
-  saveLocalState();
-}
-
-function clearLink() {
-  if (_linkIdx === null) return;
-  initiatives[_linkIdx].link = '';
-  closePopup();
-  var rows = document.querySelectorAll('#rt-table table tbody tr');
-  if (rows[_linkIdx]) rows[_linkIdx].cells[1].innerHTML = titleCellHtml(_linkIdx);
-  saveLocalState();
-}
 
 // ── Sidebar toggle ──
 
@@ -316,14 +176,10 @@ function login() {
     var name = e.split('@')[0];
     document.getElementById('un').textContent = name.charAt(0).toUpperCase() + name.slice(1);
     document.getElementById('av').textContent = name.charAt(0).toUpperCase() + name.charAt(name.length > 1 ? 1 : 0).toUpperCase();
-    new Promise(function(resolve) { loadData(resolve); })
-      .then(function() {
-        buildColorMaps();
-        var startItem = pageFromPath();
-        activeId = startItem.id;
-        buildNav();
-        setPage(startItem.id, startItem.label, true);
-      });
+    var startItem = pageFromPath();
+    activeId = startItem.id;
+    buildNav();
+    setPage(startItem.id, startItem.label, true);
   } else {
     document.getElementById('err').textContent = 'Invalid credentials.';
   }
@@ -344,9 +200,6 @@ document.getElementById('qbadge').textContent = 'Q' + (m < 3 ? 1 : m < 6 ? 2 : m
 document.getElementById('loginBtn').addEventListener('click', login);
 document.getElementById('logoutBtn').addEventListener('click', logout);
 document.getElementById('tog').addEventListener('click', toggleSb);
-document.getElementById('linkOpenBtn').addEventListener('click', openCurrentLink);
-document.getElementById('linkSaveBtn').addEventListener('click', saveLink);
-document.getElementById('linkClearBtn').addEventListener('click', clearLink);
 document.getElementById('pw').addEventListener('keydown', function(e) { if (e.key === 'Enter') login(); });
 document.getElementById('em').addEventListener('keydown', function(e) { if (e.key === 'Enter') login(); });
 

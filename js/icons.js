@@ -1,36 +1,18 @@
-// icons.js — SVG icons only
+// icons.js — SVG icon definitions
 
 var ico = {
+  overview:  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5.5" height="5.5" rx="1.2" stroke="currentColor" stroke-width="1.4"/><rect x="8.5" y="2" width="5.5" height="5.5" rx="1.2" stroke="currentColor" stroke-width="1.4"/><rect x="2" y="8.5" width="5.5" height="5.5" rx="1.2" stroke="currentColor" stroke-width="1.4"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.2" stroke="currentColor" stroke-width="1.4"/></svg>',
   roadmap:   '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="4" height="3" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="7" y="6.5" width="4" height="3" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="4" y="10" width="4" height="3" rx="1" stroke="currentColor" stroke-width="1.4"/><path d="M6 5.5L8 6.5M8.5 9.5L7 10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
   capacity:  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="6" r="2.5" stroke="currentColor" stroke-width="1.4" opacity=".7"/><circle cx="11" cy="6" r="2.5" stroke="currentColor" stroke-width="1.4" opacity=".4"/><path d="M1 14c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".7"/><path d="M11 10c1.7.4 3 1.9 3 3.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".4"/></svg>',
   sdtform:   '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="4" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M11 7l4-2v6l-4-2V7z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
   taxonomy:  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="1.5" stroke="currentColor" stroke-width="1.3"/><circle cx="3.5" cy="11" r="1.5" stroke="currentColor" stroke-width="1.3"/><circle cx="12.5" cy="11" r="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 4.5v2.5M8 7l-4.5 3M8 7l4.5 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
   showcase:  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 12.5v1M10.5 12.5v1M3.5 13.5h9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4.5 7.5h7M4.5 5.5h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".6"/></svg>',
-  metadata:  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>'
+  metadata:  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>',
+  sprint:    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="9" width="2.5" height="5" rx=".6" stroke="currentColor" stroke-width="1.3"/><rect x="6.5" y="6" width="2.5" height="8" rx=".6" stroke="currentColor" stroke-width="1.3"/><rect x="11" y="3" width="2.5" height="11" rx=".6" stroke="currentColor" stroke-width="1.3"/><path d="M2 6.5l3-3 3.5 2L14 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  api:       '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M5 5.5L2 8l3 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 5.5L14 8l-3 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 3.5l-3 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  ads:       '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 6.5h1.5l4-3v9l-4-3H2V6.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9.5 7c.7.3 1.2.9 1.2 1.5S10.2 9.7 9.5 10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M11.5 5.5c1.4.7 2.3 1.8 2.3 3s-.9 2.2-2.3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5.5 12.5l.5-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+  kervone:   '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.4 3 3.6.5-2.6 2.5.6 3.5L8 10 4.9 11.5l.6-3.5L3 5.5l3.6-.5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
+  shared:    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="11" width="12" height="3" rx=".8" stroke="currentColor" stroke-width="1.3"/><rect x="3.5" y="6.5" width="9" height="3" rx=".8" stroke="currentColor" stroke-width="1.3"/><rect x="5.5" y="2" width="5" height="3" rx=".8" stroke="currentColor" stroke-width="1.3"/></svg>',
+  reporting: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 13V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M7 13V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M11 13V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M1 13h14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+  ideas:     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2a4 4 0 0 1 2.2 7.3c-.2.2-.2.3-.2.5V11H6v-1.2c0-.2-.1-.3-.2-.5A4 4 0 0 1 8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 13h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M7 14.5h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
 };
-
-var NAV_CONFIG = [
-  {
-    section: 'Live Prototypes',
-    items: [
-      { id: 'metadata-analysis',     label: 'Metadata Analysis',       icon: ico.metadata },
-      { id: 'inventory-explorer-v2', label: 'Inventory Explorer (v2)', icon: ico.showcase }
-    ]
-  },
-  {
-    section: 'Work in Progress',
-    items: [
-      { id: 'sdt-content-form', label: 'SDT - New Content Form',    icon: ico.sdtform },
-      { id: 'taxonomy-showcase', label: 'Inventory Explorer (v1)', icon: ico.showcase },
-      { id: 'taxonomy-v1',      label: 'Layout Options – v1',      icon: ico.taxonomy },
-      { id: 'taxonomy-v2',      label: 'Layout Options – v2',      icon: ico.taxonomy }
-    ]
-  },
-  {
-    section: 'Roadmap',
-    items: [
-      { id: 'roadmap',      label: 'Product Roadmap',      icon: ico.roadmap },
-      { id: 'teamcapacity', label: 'Team Capacity',        icon: ico.capacity }
-    ]
-  }
-];
