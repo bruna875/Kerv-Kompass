@@ -5,12 +5,12 @@
 ;(function(){
   var s = document.createElement('style');
   s.textContent =
-    '@keyframes kervPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.13);opacity:.65}}' +
-    '@keyframes kervFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}' +
-    '.kerv-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:64px 0;animation:kervFadeIn .25s ease}' +
-    '.kerv-loader-mark{width:48px;height:48px;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.10);animation:kervPulse 1.8s ease-in-out infinite}' +
+    '@keyframes kervFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}' +
+    '@keyframes kervFadeIn{from{opacity:0}to{opacity:1}}' +
+    '.kerv-loader{display:flex;flex-direction:column;align-items:center;gap:10px;padding:28px 0 12px;animation:kervFadeIn .3s ease}' +
+    '.kerv-loader-mark{width:28px;height:28px;border-radius:7px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.10);animation:kervFloat 2.4s ease-in-out infinite}' +
     '.kerv-loader-mark img{width:100%;height:100%;object-fit:contain;display:block}' +
-    '.kerv-loader-text{font-size:11px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}';
+    '.kerv-loader-text{font-size:10px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}';
   document.head.appendChild(s);
 })();
 var _KERV_LOGO_URL = 'https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg';
