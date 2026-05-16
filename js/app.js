@@ -24,7 +24,7 @@ var NAV_CONFIG = [
       { id: 'kervone-team',        label: 'KERV One Team',          icon: ico.kervone,   disabled: true },
       { id: 'shared-team',         label: 'Shared Serv. Team',      icon: ico.shared,    disabled: true },
       { id: 'reporting-team',      label: 'Reporting Team',         icon: ico.reporting, disabled: true },
-      { id: 'product-ideas',       label: 'Product Requests / Ideas', icon: ico.ideas,   disabled: true, dividerBefore: true }
+      { id: 'product-ideas',       label: 'Product Req / Ideas',      icon: ico.ideas,   disabled: true, dividerBefore: true }
     ]
   },
   {
