@@ -1278,24 +1278,7 @@ function rnxRoiStrategicCalc() {
 
   var confidenceScore = parseFloat((document.getElementById('rnxroi-confidence_score') || {}).value) || 0;
 
-  // ── Multiples — all from assumptions ─────────────────────────────────────
-  var multipleActual  = getAsm('multiple - actual')  || getAsm('multiple actual')  || getAsm('actual multiple');
-  var multipleDesired = getAsm('multiple - desired')  || getAsm('multiple desired') || getAsm('benchmark')    || getAsm('targeted');
-  var multipleGap     = (multipleActual || multipleDesired) ? +(multipleDesired - multipleActual).toFixed(2) : 0;
-  var multipleAdj     = multipleActual + (multipleGap * (confidenceScore / 100));
-  var marketCapAnte   = ebitda * multipleActual;
-  var marketCapPost   = ebitda * multipleAdj;
-  var addedValue      = marketCapPost - marketCapAnte;
-
-  function fmt1(v) { return v ? (+v).toFixed(1) : null; }
-  setSpan('rnxroi-multiple_actual',   fmt1(multipleActual));
-  setSpan('rnxroi-multiple_desired',  fmt1(multipleDesired));
-  setSpan('rnxroi-multiple_gap',      fmt1(multipleGap));
-  setSpan('rnxroi-multiple_adjusted', fmt1(multipleAdj));
-  setSpan('rnxroi-market_cap_ante',       marketCapAnte || null, true);
-  setSpan('rnxroi-market_cap_post',       marketCapPost || null, true);
-
-  // ── SAF — Strategic Attribution Factor ──────────────────────────────────
+  // ── SAF — Strategic Attribution Factor (needed before multiples) ─────────
   var safTier = ((document.getElementById('rnxroi-saf_tier') || {}).value || '').toUpperCase();
   var safPct  = 0;
   if (safTier) {
@@ -1306,6 +1289,27 @@ function rnxRoiStrategicCalc() {
   }
   var safEl = document.getElementById('rnxroi-saf');
   if (safEl) safEl.textContent = safPct ? safPct.toFixed(1) + '%' : '—';
+
+  // ── Multiples — all from assumptions ─────────────────────────────────────
+  var multipleActual  = getAsm('multiple - actual')  || getAsm('multiple actual')  || getAsm('actual multiple');
+  var multipleDesired = getAsm('multiple - desired')  || getAsm('multiple desired') || getAsm('benchmark')    || getAsm('targeted');
+  var rawGap          = (multipleActual || multipleDesired) ? +(multipleDesired - multipleActual).toFixed(4) : 0;
+  // Project Δ = (Desired - Actual) × SAF × Confidence
+  var projectDelta    = rawGap * (safPct / 100) * (confidenceScore / 100);
+  // Implied new = Actual + Project Δ
+  var impliedNew      = multipleActual + projectDelta;
+  var marketCapAnte   = ebitda * multipleActual;
+  var marketCapPost   = ebitda * impliedNew;
+  var addedValue      = marketCapPost - marketCapAnte;
+
+  function fmt1(v) { return v ? (+v).toFixed(1) : null; }
+  function fmt2(v) { return v ? (+v).toFixed(2) : null; }
+  setSpan('rnxroi-multiple_actual',   fmt1(multipleActual));
+  setSpan('rnxroi-multiple_desired',  fmt1(multipleDesired));
+  setSpan('rnxroi-multiple_gap',      fmt2(projectDelta));
+  setSpan('rnxroi-multiple_adjusted', fmt2(impliedNew));
+  setSpan('rnxroi-market_cap_ante',   marketCapAnte || null, true);
+  setSpan('rnxroi-market_cap_post',   marketCapPost || null, true);
 
   // Apply SAF to attributed added value (raw delta × SAF%)
   var attributedValue = (safPct > 0 && addedValue) ? addedValue * (safPct / 100) : addedValue;
