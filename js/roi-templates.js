@@ -326,15 +326,105 @@ function roiFmtMultiple(roi) { return (roi + 1).toFixed(1) + '×'; }
   document.head.appendChild(s);
 })();
 
+// ── "How it works" content per template slug ──────────────────────────────
+
+var _ROI_HOW_IT_WORKS = {
+  revenue_generating: {
+    title: 'Revenue Generating Model',
+    body:  'Measures the direct revenue impact of the initiative over a 12-month forecast window.',
+    formulas: [
+      'Added Value  =  Additional Revenue (12m forecast)',
+      'ROI  =  (Added Value − Project Cost) / Project Cost'
+    ]
+  },
+  op_efficiency: {
+    title: 'Operational Efficiency Model',
+    body:  'Converts staff time saved into monetary value using the hourly cost assumption, projected over one and three years.',
+    formulas: [
+      'Weekly Saving  =  Hours Saved × Employees Impacted × Hourly Rate',
+      'Yearly Saving  =  Weekly Saving × 52',
+      'ROI  =  (Yearly Saving − Project Cost) / Project Cost'
+    ]
+  },
+  enhancements: {
+    title: 'Enhancement Attribution Model',
+    body:  'Attributes a share of existing product revenue to this initiative based on its estimated contribution to growth.',
+    formulas: [
+      'Added Value  =  Product Revenue (last year) × Contribution to Growth%',
+      'ROI  =  (Added Value − Project Cost) / Project Cost'
+    ]
+  },
+  strategic: {
+    title: 'Multiple Expansion Attribution Model',
+    body:  'Quantifies the financial impact of strategic market positioning by calculating enterprise value creation through EBITDA multiple expansion. The model isolates each initiative\'s contribution using a Strategic Attribution Factor (SAF) tier and adjusts for execution risk via a Confidence Score.',
+    formulas: [
+      'Attributed Multiple  =  (Target Multiple − Actual Multiple) × SAF% × Confidence%',
+      'Implied Multiple  =  Actual Multiple + Attributed Multiple',
+      'Value Added  =  EBITDA × (Implied Multiple − Actual Multiple)'
+    ]
+  },
+  tech_scaling: {
+    title: 'Tech Scaling Model',
+    body:  'Converts engineering time freed from maintenance and firefighting into monetary value, projected over one and three years.',
+    formulas: [
+      'Weekly Saving  =  Hours Saved × Engineers Impacted × Engineering Hourly Rate',
+      'Yearly Saving  =  Weekly Saving × 52',
+      'ROI  =  (Yearly Saving − Project Cost) / Project Cost'
+    ]
+  },
+  tech_rd: {
+    title: 'Tech R&D Model',
+    body:  'Benefits model in progress — template coming soon.',
+    formulas: []
+  }
+};
+
+function rnxRoiHowItWorksToggle() {
+  var panel = document.getElementById('rnx-hiw-panel');
+  if (!panel) return;
+  var isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  var btn = document.getElementById('rnx-hiw-btn');
+  if (btn) btn.style.color = isOpen ? 'var(--muted)' : 'var(--accent)';
+}
+
+function _rnxUpdateHowItWorks(slug) {
+  var panel = document.getElementById('rnx-hiw-panel');
+  var btn   = document.getElementById('rnx-hiw-btn');
+  if (!panel) return;
+  var hw = slug && _ROI_HOW_IT_WORKS[slug];
+  if (!hw) {
+    panel.style.display = 'none';
+    if (btn) { btn.style.display = 'none'; btn.style.color = 'var(--muted)'; }
+    return;
+  }
+  if (btn) btn.style.display = 'inline-flex';
+  panel.innerHTML =
+    '<div style="background:var(--subtle);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px">' + hw.title + '</div>'
+    + '<div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:' + (hw.formulas.length ? '10px' : '0') + '">' + hw.body + '</div>'
+    + hw.formulas.map(function(f) {
+        return '<div style="font-family:ui-monospace,monospace;font-size:10px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 10px;margin-top:5px;white-space:nowrap;overflow-x:auto">' + f + '</div>';
+      }).join('')
+    + '</div>';
+}
+
 function rnxRoiSelectDriver(driverName) {
   rnxMddSet('rnxi-driver', driverName);
   rnxModalStep2Data.driver = driverName;
+
+  // Reset "How it works" panel on driver change
+  var hiwPanel = document.getElementById('rnx-hiw-panel');
+  if (hiwPanel) hiwPanel.style.display = 'none';
+  var hiwBtn = document.getElementById('rnx-hiw-btn');
+  if (hiwBtn) hiwBtn.style.color = 'var(--muted)';
 
   var area = document.getElementById('rnx-roi-template-area');
   if (!area) return;
 
   if (!driverName) {
     area.innerHTML = '<div class="rnx-roi-empty">Select a Driver to load the ROI template.</div>';
+    _rnxUpdateHowItWorks(null);
     return;
   }
 
@@ -343,9 +433,11 @@ function rnxRoiSelectDriver(driverName) {
 
   if (!slug || !ROI_TEMPLATES[slug]) {
     area.innerHTML = '<div class="rnx-roi-empty">No ROI template configured for this driver yet.</div>';
+    _rnxUpdateHowItWorks(null);
     return;
   }
 
+  _rnxUpdateHowItWorks(slug);
   rnxModalStep2Data.driverSlug = slug;
   area.innerHTML = rnxRoiRenderTemplate(slug);
 
@@ -512,8 +604,13 @@ function rnxRoiBuildStep2(drivers) {
     +     '<input type="hidden" id="rnxi-driver" value="">'
     +     '<div class="rnx-mdd-panel" id="rnxi-driver-panel">' + driverOpts + '</div>'
     +   '</div>'
+    +   '<button id="rnx-hiw-btn" type="button" onclick="rnxRoiHowItWorksToggle()" style="display:none;flex-shrink:0;align-items:center;gap:5px;background:none;border:none;cursor:pointer;font-size:11px;font-weight:500;color:var(--muted);padding:0;white-space:nowrap">'
+    +     '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M8 7v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="4.5" r="0.75" fill="currentColor"/></svg>'
+    +     'How it works'
+    +   '</button>'
     + '</div>'
-    + '<hr class="rnx-rt-driver-sep">'
+    + '<div id="rnx-hiw-panel" style="display:none"></div>'
+    + '<hr class="rnx-rt-driver-sep" style="margin-top:0">'
     + '<div id="rnx-roi-template-area">'
     +   '<div class="rnx-roi-empty">Select a Driver to load the ROI template.</div>'
     + '</div>'
