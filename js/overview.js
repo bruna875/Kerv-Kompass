@@ -16,6 +16,9 @@ function ovxLoad() {
   var root = document.getElementById('ovx-root');
   if (!root) return;
 
+  // Reset quarter selection to current on each page load
+  window._ovxSelQ = ovxCurrentQLabel();
+
   Promise.all([
     fetch('/api/neon/initiatives').then(function(r) { return r.json(); }),
     fetch('/api/neon/team-members').then(function(r) { return r.json(); })
@@ -68,25 +71,71 @@ function ovxCurrentQLabel() {
   return q + ' ' + new Date().getFullYear();
 }
 
+// ── Quarter navigator helpers ──────────────────────────────────────────────
+
+// Returns sorted list of all quarters present in data + current quarter
+function ovxAllQuarters(initiatives) {
+  var set = {};
+  set[ovxCurrentQLabel()] = true;
+  initiatives.forEach(function(i) {
+    var q = i.quarter || '';
+    if (q && q !== 'Backlog' && /Q\d/i.test(q)) set[q] = true;
+  });
+  return Object.keys(set).sort(function(a, b) { return ovxQSort(a) - ovxQSort(b); });
+}
+
+// Count initiatives in a given quarter label
+function ovxQCount(initiatives, qLabel) {
+  var qKey  = qLabel.split(' ')[0];
+  var qYear = parseInt(qLabel.split(' ')[1]);
+  return initiatives.filter(function(i) {
+    var q = i.quarter || '';
+    var m = q.match(/Q(\d)\s*(\d{4})?/i);
+    if (!m) return false;
+    return q.indexOf(qKey) !== -1 && (m[2] ? parseInt(m[2]) : qYear) === qYear;
+  }).length;
+}
+
+function ovxChangeQ(dir) {
+  var qs  = ovxAllQuarters(window._ovxInits || []);
+  var idx = qs.indexOf(window._ovxSelQ || ovxCurrentQLabel());
+  var next = idx + dir;
+  if (next < 0 || next >= qs.length) return;
+  window._ovxSelQ = qs[next];
+  ovxRender(window._ovxInits, window._ovxMembers);
+}
+
 // ── Main render ────────────────────────────────────────────────────────────
 
 function ovxRender(initiatives, members) {
   var body = document.getElementById('ovx-body');
   if (!body) return;
 
-  // ── Current quarter ──
-  var curQLabel = ovxCurrentQLabel(); // e.g. "Q2 2026"
-  var curQKey   = curQLabel.split(' ')[0]; // "Q2"
-  var curYear   = parseInt(curQLabel.split(' ')[1]);
+  // Persist data for quarter navigation
+  window._ovxInits   = initiatives;
+  window._ovxMembers = members;
+  // Default to current quarter on first load
+  if (!window._ovxSelQ) window._ovxSelQ = ovxCurrentQLabel();
+
+  // ── Selected quarter (navigable) ──
+  var selQ    = window._ovxSelQ;
+  var selQKey = selQ.split(' ')[0];         // e.g. "Q2"
+  var selYear = parseInt(selQ.split(' ')[1]); // e.g. 2026
 
   var qInits = initiatives.filter(function(i) {
     var q = i.quarter || '';
     var m = q.match(/Q(\d)\s*(\d{4})?/i);
     if (!m) return false;
-    var iqn  = parseInt(m[1]);
-    var iyear = m[2] ? parseInt(m[2]) : curYear;
-    return q.indexOf(curQKey) !== -1 && iyear === curYear;
+    var iyear = m[2] ? parseInt(m[2]) : selYear;
+    return q.indexOf(selQKey) !== -1 && iyear === selYear;
   });
+
+  // Navigator state
+  var allQs    = ovxAllQuarters(initiatives);
+  var selIdx   = allQs.indexOf(selQ);
+  var hasPrev  = selIdx > 0;
+  var nextQ    = allQs[selIdx + 1];
+  var hasNext  = !!nextQ && ovxQCount(initiatives, nextQ) > 0;
 
   var qByDs = {};
   OVX_DS.forEach(function(d) { qByDs[d.val] = 0; });
@@ -140,7 +189,8 @@ function ovxRender(initiatives, members) {
   body.innerHTML =
 
     // ══ THIS QUARTER AT A GLANCE ══════════════════════════════════════════════
-    ovxSectionHeader('This quarter at a glance', curQLabel)
+    ovxSectionHeader('This quarter at a glance', null)
+    + ovxQNav(selQ, hasPrev, hasNext)
 
     + '<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start">'
 
@@ -199,6 +249,20 @@ function ovxRender(initiatives, members) {
 }
 
 // ── Component builders ─────────────────────────────────────────────────────
+
+function ovxQNav(label, hasPrev, hasNext) {
+  function btn(dir, enabled) {
+    var arrow = dir === -1 ? '&#8592;' : '&#8594;';
+    var base  = 'width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text);transition:background .12s';
+    var dis   = 'opacity:.3;cursor:default;pointer-events:none';
+    return '<button type="button" onclick="ovxChangeQ(' + dir + ')" style="' + base + (enabled ? '' : ';' + dis) + '">' + arrow + '</button>';
+  }
+  return '<div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:16px">'
+    + btn(-1, hasPrev)
+    + '<span style="font-size:12px;font-weight:600;color:var(--text);min-width:60px;text-align:center">' + label + '</span>'
+    + btn(1, hasNext)
+    + '</div>';
+}
 
 function ovxTeamBar(name, dsByVal, isBold) {
   var total = OVX_DS.reduce(function(s, d) { return s + (dsByVal[d.val] || 0); }, 0);
