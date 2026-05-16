@@ -401,7 +401,10 @@ function _rnxUpdateHowItWorks(slug) {
   if (btn) btn.style.display = 'inline-flex';
   panel.innerHTML =
     '<div style="background:var(--subtle);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
-    + '<div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px">' + hw.title + '</div>'
+    + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">'
+    +   '<div style="font-size:11px;font-weight:700;color:var(--text)">' + hw.title + '</div>'
+    +   '<button type="button" onclick="rnxRoiHowItWorksToggle()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:0;line-height:1;flex-shrink:0" aria-label="Close">&#x2715;</button>'
+    + '</div>'
     + '<div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:' + (hw.formulas.length ? '10px' : '0') + '">' + hw.body + '</div>'
     + hw.formulas.map(function(f) {
         return '<div style="font-family:ui-monospace,monospace;font-size:10px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 10px;margin-top:5px;white-space:nowrap;overflow-x:auto">' + f + '</div>';
