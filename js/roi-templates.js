@@ -1211,12 +1211,12 @@ function rnxRoiStrategicBenefitsHtml() {
     +         '</div>'
     +         '<div style="width:1px;height:14px;background:var(--border);flex-shrink:0"></div>'
     +         '<div style="display:flex;align-items:center;gap:5px">'
-    +           '<span style="font-size:10px;color:var(--faint);font-weight:500;white-space:nowrap">Gap</span>'
+    +           '<span style="font-size:10px;color:var(--faint);font-weight:500;white-space:nowrap">Project Δ</span>'
     +           _rnxRoSpan('rnxroi-multiple_gap')
     +         '</div>'
     +         '<div style="width:1px;height:14px;background:var(--border);flex-shrink:0"></div>'
     +         '<div style="display:flex;align-items:center;gap:5px">'
-    +           '<span style="font-size:10px;color:var(--faint);font-weight:500;white-space:nowrap">Adjusted</span>'
+    +           '<span style="font-size:10px;color:var(--faint);font-weight:500;white-space:nowrap">Implied new</span>'
     +           _rnxRoSpan('rnxroi-multiple_adjusted')
     +         '</div>'
     +       '</div>'
