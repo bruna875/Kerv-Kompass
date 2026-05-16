@@ -1,15 +1,31 @@
 // roadmap-neon.js — Independent Roadmap module backed by Neon DB
 // All globals prefixed rnx_ to avoid collisions with legacy roadmap.js
 
+// ── Shared loader HTML (spinner + label, matches settings Google-API loader) ─
+;(function(){
+  var s = document.createElement('style');
+  s.textContent = '@keyframes rnxLoaderSpin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(s);
+})();
+var _RNX_LOADER_HTML = '<div style="display:flex;align-items:center;gap:10px;padding:32px 0;font-size:13px;color:var(--muted)">'
+  + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="animation:rnxLoaderSpin 1s linear infinite;flex-shrink:0">'
+  +   '<circle cx="12" cy="12" r="9" stroke="var(--border-md)" stroke-width="2.5"/>'
+  +   '<path d="M12 3a9 9 0 019 9" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>'
+  + '</svg>'
+  + 'Loading…'
+  + '</div>';
+
 // ── State ──────────────────────────────────────────────────────────────────
 
 var rnxInitiatives  = [];
 var rnxLoading      = false;
 var rnxGanttGroup   = 'driver';
+var rnxGroupKey     = 'driver'; // active tab in grouped analysis card
 var rnxEditId       = null;  // null = new, number = editing
+var rnxModalStep2Data = {};  // persists step-2 ROI fields between steps and across edits
 
 // Reference data loaded from Neon
-var rnxRefData = { teams: [], members: [], drivers: [], themes: [] };
+var rnxRefData = { teams: [], members: [], drivers: [], themes: [], assumptions: [] };
 
 var rnxDeliveryOpts = [
   { val: 'not-started', label: 'Not Started', cls: 'ds-gray'   },
@@ -68,12 +84,20 @@ function rnxFmtAV(n) {
   return '$' + n.toFixed(2);
 }
 
-function rnxRoiHtml(v) {
+function rnxRoiHtml(v, id) {
   if (!v && v !== 0) return '—';
   var n = parseFloat(String(v).replace(/[^0-9.-]/g, ''));
   if (isNaN(n)) return '—';
   var p = Math.round(n * 100);
-  return '<span style="color:' + (p < 0 ? '#E5243B' : '#2EAD4B') + ';font-weight:500">' + p + '%</span>';
+  var pct = '<span style="color:' + (p < 0 ? '#E5243B' : '#2EAD4B') + ';font-weight:500">' + p + '%</span>';
+  if (!id) return pct;
+  var eye = '<button onclick="rnxOpenRoiCalc(' + id + ')" title="View / edit ROI" class="rnx-roi-eye"'
+    + ' style="background:none;border:none;cursor:pointer;color:var(--muted);padding:0 0 0 9px;line-height:0;vertical-align:middle;opacity:.5">'
+    + '<svg width="13" height="13" viewBox="0 0 16 16" fill="none">'
+    + '<path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.4"/>'
+    + '<circle cx="8" cy="8" r="2.2" stroke="currentColor" stroke-width="1.4"/>'
+    + '</svg></button>';
+  return pct + eye;
 }
 
 function rnxBadge(text, color) {
@@ -202,9 +226,90 @@ function rnxScLeadCard(id, label, key, subset, qlabel) {
 function rnxRefreshCards(subset, label) {
   var sc = document.getElementById('rnx-sc-init');
   if (sc) sc.outerHTML = rnxScInitiativesFor(subset, label);
-  [['rnx-sc-driver','By Driver','driver'],['rnx-sc-theme','By Theme','theme'],['rnx-sc-team','By Team','team']].forEach(function(t) {
-    var el = document.getElementById(t[0]);
-    if (el) el.outerHTML = rnxScGroupedFor(t[0], t[1], t[2], subset, label);
+  var gc = document.getElementById('rnx-grouped-card');
+  if (gc) gc.outerHTML = rnxGroupedChartCard(subset);
+  setTimeout(function() { rnxRenderGroupChart(rnxGroupKey, subset); rnxWireGroupTabs(subset); }, 0);
+}
+
+// ── Grouped analysis card (Driver / Theme / Team + stacked bar chart) ────────
+
+function rnxGroupedChartCard(subset) {
+  var tabs = [
+    { key: 'driver', label: 'By Driver' },
+    { key: 'theme',  label: 'By Theme'  },
+    { key: 'team',   label: 'By Team'   },
+  ];
+  var tabsHtml = tabs.map(function(t) {
+    var ns=0, on=0, ar=0, dl=0;
+    subset.forEach(function(i) {
+      if      (i.deliveryStatus === 'not-started') ns++;
+      else if (i.deliveryStatus === 'on-track')    on++;
+      else if (i.deliveryStatus === 'at-risk')     ar++;
+      else if (i.deliveryStatus === 'delayed')     dl++;
+    });
+    var total = subset.length;
+    // per-tab total: count distinct entries with at least 1 item
+    var keys = []; subset.forEach(function(i) { var k=(i[t.key]||'').trim(); if(k && keys.indexOf(k)===-1) keys.push(k); });
+    var badges = '';
+    if (ns>0) badges += '<span class="mini-pill ds-gray">'   + ns + '</span>';
+    if (on>0) badges += '<span class="mini-pill ds-green">'  + on + '</span>';
+    if (ar>0) badges += '<span class="mini-pill ds-yellow">' + ar + '</span>';
+    if (dl>0) badges += '<span class="mini-pill ds-red">'    + dl + '</span>';
+    return '<button class="rnx-gtab' + (t.key === rnxGroupKey ? ' act' : '') + '" data-rnxgtab="' + t.key + '">'
+      + '<div class="rnx-gtab-label">' + t.label + '</div>'
+      + '<div class="rnx-gtab-count">' + keys.length + ' <span style="font-size:10px;font-weight:400;color:var(--muted)">groups · ' + total + ' items</span></div>'
+      + '<div class="rnx-gtab-badges">' + badges + '</div>'
+      + '</button>';
+  }).join('');
+  return '<div class="rnx-grouped-card" id="rnx-grouped-card">'
+    + '<div class="rnx-grouped-tabs">' + tabsHtml + '</div>'
+    + '<div class="rnx-grouped-chart"><canvas id="rnx-group-chart"></canvas></div>'
+    + '</div>';
+}
+
+function rnxRenderGroupChart(key, subset) {
+  var canvas = document.getElementById('rnx-group-chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+  var groups = {};
+  subset.forEach(function(i) {
+    var k = (i[key] || '—').trim() || '—';
+    if (!groups[k]) groups[k] = { 'not-started':0, 'on-track':0, 'at-risk':0, 'delayed':0 };
+    groups[k][i.deliveryStatus || 'not-started']++;
+  });
+  var labels = Object.keys(groups).sort();
+  if (window._rnxGroupChart) { window._rnxGroupChart.destroy(); window._rnxGroupChart = null; }
+  window._rnxGroupChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'On Track',    data: labels.map(function(k){return groups[k]['on-track'];   }), backgroundColor: '#2EAD4B', borderRadius: 0 },
+        { label: 'At Risk',     data: labels.map(function(k){return groups[k]['at-risk'];    }), backgroundColor: '#E5A100', borderRadius: 0 },
+        { label: 'Delayed',     data: labels.map(function(k){return groups[k]['delayed'];    }), backgroundColor: '#E5243B', borderRadius: 0 },
+        { label: 'Not Started', data: labels.map(function(k){return groups[k]['not-started'];}), backgroundColor: '#C8C8C8', borderRadius: 0 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11, family: 'inherit' }, boxWidth: 12, padding: 14 } },
+        tooltip: { callbacks: { title: function(items) { return items[0].label; } } }
+      },
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 10, family: 'inherit' }, maxRotation: 30 }, grid: { display: false } },
+        y: { stacked: true, ticks: { font: { size: 10, family: 'inherit' }, stepSize: 1, precision: 0 }, grid: { color: 'rgba(0,0,0,.05)' }, border: { display: false } }
+      }
+    }
+  });
+}
+
+function rnxWireGroupTabs(subset) {
+  document.querySelectorAll('.rnx-gtab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      rnxGroupKey = btn.dataset.rnxgtab;
+      document.querySelectorAll('.rnx-gtab').forEach(function(b) { b.classList.toggle('act', b === btn); });
+      rnxRenderGroupChart(rnxGroupKey, subset);
+    });
   });
 }
 
@@ -220,7 +325,11 @@ function rnxFilterOptions(key) {
 function rnxFilterBar(sfx) {
   sfx = sfx || '';
   var ds = rnxDeliveryOpts.map(function(o) { return '<option value="' + o.val + '">' + o.label + '</option>'; }).join('');
+  var searchBox = sfx === ''
+    ? '<input type="search" id="rnxf-search" placeholder="🔍 Search initiatives…" class="filterbar-search" data-rnxsearch>'
+    : '';
   return '<div class="filterbar">'
+    + searchBox
     + '<select id="rnxf-driver'  + sfx + '" data-rnxfilter="' + sfx + '"><option value="">All Drivers</option>'        + rnxFilterOptions('driver')       + '</select>'
     + '<select id="rnxf-team'    + sfx + '" data-rnxfilter="' + sfx + '"><option value="">All Teams</option>'          + rnxFilterOptions('team')         + '</select>'
     + '<select id="rnxf-theme'   + sfx + '" data-rnxfilter="' + sfx + '"><option value="">All Themes</option>'         + rnxFilterOptions('theme')        + '</select>'
@@ -234,11 +343,16 @@ function rnxApplyTableFilters() {
   var fd = document.getElementById('rnxf-driver'), ft = document.getElementById('rnxf-team'),
       fth = document.getElementById('rnxf-theme'), fpo = document.getElementById('rnxf-po'),
       ftl = document.getElementById('rnxf-tl'),   fs = document.getElementById('rnxf-status');
+  var fsi = document.getElementById('rnxf-search');
+  var q = fsi ? fsi.value.trim().toLowerCase() : '';
   document.querySelectorAll('#rnx-table-body tr').forEach(function(row) {
     var id = parseInt(row.dataset.id);
     var i = rnxInitiatives.filter(function(x) { return x.id === id; })[0];
     if (!i) { row.style.display = 'none'; return; }
+    var matchSearch = !q || [i.title, i.driver, i.team, i.theme, i.productOwner, i.techLead]
+      .join(' ').toLowerCase().indexOf(q) !== -1;
     row.style.display =
+      matchSearch &&
       (!fd  || !fd.value  || i.driver       === fd.value)  &&
       (!ft  || !ft.value  || i.team         === ft.value)  &&
       (!fth || !fth.value || i.theme        === fth.value) &&
@@ -325,13 +439,77 @@ function rnxSetQAct(prefix, q) {
     '.rnx-roi-cta:hover{background:rgba(237,0,94,.06)}' +
     // Tighter table cells (scoped to roadmap table only)
     '.rnx-table td{padding:7px 10px;font-size:11px}' +
-    '.rnx-table th{padding:7px 10px;font-size:10px}';
+    '.rnx-table th{padding:7px 10px;font-size:10px}' +
+    // Modal form fields
+    '.rnx-modal-sel{width:100%;box-sizing:border-box;padding:7px 36px 7px 10px;font-size:13px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);outline:none;font-family:inherit;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%23A8A8A0\' stroke-width=\'1.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;cursor:pointer}' +
+    '.rnx-modal-sel:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(237,0,94,.08)}' +
+    '.rnx-modal-inp{width:100%;box-sizing:border-box;padding:7px 10px;font-size:13px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);outline:none;font-family:inherit}' +
+    '.rnx-modal-inp:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(237,0,94,.08)}' +
+    // Custom modal dropdowns
+    '.rnx-mdd-wrap{position:relative}' +
+    '.rnx-mdd-btn{width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;font-size:11px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;font-family:inherit;text-align:left;min-height:36px;box-sizing:border-box}' +
+    '.rnx-mdd-btn:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(237,0,94,.08)}' +
+    '.rnx-mdd-label{flex:1;display:flex;align-items:center;gap:8px;overflow:hidden;min-width:0;font-size:11px}' +
+    '.rnx-mdd-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}' +
+    '.rnx-mdd-chev{flex-shrink:0;color:var(--muted)}' +
+    '.rnx-mdd-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:3000;background:var(--surface);border:1px solid var(--border-md);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:4px;max-height:220px;overflow-y:auto}' +
+    '.rnx-mdd-panel.open{display:block}' +
+    '.rnx-mdd-opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:5px;cursor:pointer;font-size:11px;color:var(--text)}' +
+    '.rnx-mdd-opt:hover{background:var(--bg)}' +
+    '.rnx-mdd-opt.sel{background:var(--subtle);font-weight:500}' +
+    '.rnx-mdd-av{width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0}' +
+    '.rnx-mdd-no-av{width:22px;height:22px;border-radius:50%;background:var(--subtle);flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:var(--muted)}' +
+    // Tooltip
+    '.rnx-tip-wrap{position:relative;display:inline-flex;align-items:center;cursor:default}' +
+    '.rnx-tip{display:none}' +
+    '#rnx-global-tip{position:fixed;z-index:9999;background:var(--text);color:var(--surface);font-size:9px;line-height:1.6;border-radius:7px;padding:10px 12px;width:280px;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.22)}' +
+    '#rnx-global-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--text)}';
   document.head.appendChild(s);
+
+  // Global fixed tooltip for .rnx-tip-wrap (avoids overflow:hidden clipping)
+  (function() {
+    var tip = document.createElement('div');
+    tip.id = 'rnx-global-tip';
+    tip.style.display = 'none';
+    document.body.appendChild(tip);
+
+    document.addEventListener('mouseover', function(e) {
+      var wrap = e.target.closest && e.target.closest('.rnx-tip-wrap');
+      if (!wrap) return;
+      var src = wrap.querySelector('.rnx-tip');
+      if (!src) return;
+      tip.innerHTML = src.innerHTML;
+      tip.style.display = 'block';
+      var rect = wrap.getBoundingClientRect();
+      var tipW = 280;
+      var left = rect.left + rect.width / 2 - tipW / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - tipW - 8));
+      tip.style.left = left + 'px';
+      tip.style.top  = (rect.top - tip.offsetHeight - 10) + 'px';
+      // Recheck after layout (height now known)
+      requestAnimationFrame(function() {
+        tip.style.top = (rect.top - tip.offsetHeight - 10) + 'px';
+      });
+    }, false);
+
+    document.addEventListener('mouseout', function(e) {
+      var wrap = e.target.closest && e.target.closest('.rnx-tip-wrap');
+      if (wrap && !wrap.contains(e.relatedTarget)) tip.style.display = 'none';
+      if (!wrap) tip.style.display = 'none';
+    }, false);
+  })();
 
   // Close avatar panels on outside click (registered once)
   document.addEventListener('click', function(e) {
     if (!e.target.closest || !e.target.closest('.rnx-av-wrap')) {
       document.querySelectorAll('.rnx-av-panel').forEach(function(p) { p.style.display = 'none'; });
+    }
+  }, true);
+
+  // Close modal dropdowns on outside click
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest || !e.target.closest('.rnx-mdd-wrap')) {
+      document.querySelectorAll('.rnx-mdd-panel.open').forEach(function(p) { p.classList.remove('open'); });
     }
   }, true);
 })();
@@ -539,24 +717,27 @@ function rnxTableRows(subset) {
 
   return subset.map(function(i) {
     var roiCell = (i.roi != null && String(i.roi) !== '')
-      ? rnxRoiHtml(i.roi)
+      ? rnxRoiHtml(i.roi, i.id)
       : '<button class="rnx-roi-cta" onclick="rnxOpenRoiCalc(' + i.id + ')">Calculate est. ROI</button>';
 
     var linkBtn = '<button class="rnx-link-btn' + (i.link ? ' has-link' : '') + '" onclick="rnxOpenLinkModal(' + i.id + ')" title="' + (i.link ? 'Edit link' : 'Add link') + '">' + linkSvg + '</button>';
 
     return '<tr data-id="' + i.id + '">'
-      + '<td style="min-width:80px">'   + rnxCustomSel('rnx-t-q-'  + i.id, qItems,  i.quarter,         i.id) + '</td>'
+      + '<td style="min-width:65px">'   + rnxCustomSel('rnx-t-q-'  + i.id, qItems,  i.quarter,         i.id) + '</td>'
       + '<td style="min-width:280px" class="rnx-title-cell">' + iinp('rnx-t-ttl-' + i.id, i.title, i.id) + linkBtn + '</td>'
       + '<td style="min-width:150px">'  + rnxCustomSel('rnx-t-drv-' + i.id, dItems,  i.driver,          i.id) + '</td>'
       + '<td style="min-width:120px">'  + rnxCustomSel('rnx-t-tm-'  + i.id, tItems,  i.team,            i.id) + '</td>'
       + '<td style="min-width:140px">'  + rnxAvatarSel('rnx-t-po-'  + i.id, poMbrs,  i.productOwner,    i.id) + '</td>'
       + '<td style="min-width:140px">'  + rnxAvatarSel('rnx-t-tl-'  + i.id, tlMbrs,  i.techLead,        i.id) + '</td>'
-      + '<td style="min-width:120px">'  + rnxCustomSel('rnx-t-th-'  + i.id, thItems, i.theme,           i.id) + '</td>'
+      + '<td style="min-width:155px">'  + rnxCustomSel('rnx-t-th-'  + i.id, thItems, i.theme,           i.id) + '</td>'
       + '<td style="white-space:nowrap">' + roiCell + '</td>'
       + '<td style="min-width:130px">'  + rnxCustomSel('rnx-t-ds-'  + i.id, dsItems, i.deliveryStatus || 'not-started', i.id) + '</td>'
       + '<td style="white-space:nowrap">'
-      +   '<button class="rnx-del-btn" data-rnxdel="' + i.id + '" title="Delete" style="background:none;border:none;cursor:pointer;padding:4px 6px;color:var(--muted);border-radius:4px">'
-      +     '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V3h4v1M5 4v8a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      +   '<button class="rnx-del-btn" data-rnxdel="' + i.id + '" title="Delete"'
+      +     ' style="width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:6px;background:none;color:var(--faint);cursor:pointer;transition:color .12s,background .12s"'
+      +     ' onmouseenter="this.style.color=\'#E5243B\';this.style.background=\'#FFF0F0\'"'
+      +     ' onmouseleave="this.style.color=\'var(--faint)\';this.style.background=\'none\'">'
+      +     '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2.5h4V4M5.5 6.5v4M8.5 6.5v4M3 4l.8 7.5A1 1 0 004.8 12.5h4.4a1 1 0 001-.9L11 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
       +   '</button>'
       + '</td>'
       + '</tr>';
@@ -663,78 +844,9 @@ function rnxSaveLinkModal(id) {
 // ── ROI Calculator modal ───────────────────────────────────────────────────
 
 function rnxOpenRoiCalc(id) {
-  var i = rnxInitiatives.filter(function(x) { return x.id === id; })[0];
-  if (!i) return;
-
-  // Find template slug from driver
-  var driverObj = rnxRefData.drivers.filter(function(d) { return d.name === i.driver; })[0];
-  var slug = driverObj && driverObj.templateSlug ? driverObj.templateSlug : '';
-  var tpl  = slug ? roiGetTemplate(slug) : null;
-
-  // Remove any existing modal
-  var existing = document.getElementById('rnx-roi-modal');
-  if (existing) existing.remove();
-
-  var IF = 'width:100%;box-sizing:border-box;padding:7px 10px;font-size:13px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);outline:none';
-  var LB = 'display:block;font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px';
-
-  // Build inputs
-  var inputsHtml = '';
-  if (tpl) {
-    tpl.inputs.forEach(function(inp) {
-      var suffix = inp.unit === 'percent' ? ' (%)' : inp.unit === 'dollar' ? ' ($)' : '';
-      inputsHtml += '<div style="margin-bottom:12px">'
-        + '<label style="' + LB + '">' + inp.label + suffix + '</label>'
-        + '<input type="number" id="rnx-rcalc-' + inp.key + '" placeholder="' + (inp.placeholder || '') + '"'
-        + ' style="' + IF + '" />'
-        + (inp.helper ? '<div style="font-size:11px;color:var(--faint);margin-top:3px">' + inp.helper + '</div>' : '')
-        + '</div>';
-    });
-  } else {
-    // Manual fallback
-    inputsHtml = '<div style="margin-bottom:12px">'
-      + '<label style="' + LB + '">ROI (decimal — e.g. 0.15 = 15%)</label>'
-      + '<input type="number" id="rnx-rcalc-manual-roi" step="0.01" placeholder="0.15" style="' + IF + '" />'
-      + '</div>'
-      + '<div style="margin-bottom:12px">'
-      + '<label style="' + LB + '">Added Value ($)</label>'
-      + '<input type="number" id="rnx-rcalc-manual-av" placeholder="100000" style="' + IF + '" />'
-      + '</div>';
-  }
-
-  var titleStr = tpl ? tpl.label + ' — ROI Calculator' : 'ROI Calculator';
-  var descStr  = tpl ? tpl.description
-    : (i.driver ? 'No ROI template is configured for the "' + i.driver + '" driver. Enter values manually.'
-                : 'No driver assigned to this initiative. Enter values manually.');
-
-  var idEsc   = String(id);
-  var slugEsc = slug ? "'" + slug + "'" : 'null';
-
-  var overlay = document.createElement('div');
-  overlay.id = 'rnx-roi-modal';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto';
-
-  overlay.innerHTML = ''
-    + '<div style="background:var(--surface);border:1px solid var(--border-md);border-radius:12px;width:100%;max-width:500px;box-shadow:0 8px 40px rgba(0,0,0,.18);padding:28px 28px 20px">'
-    +   '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
-    +     '<div style="font-size:15px;font-weight:600;color:var(--text)">' + titleStr + '</div>'
-    +     '<button onclick="document.getElementById(\'rnx-roi-modal\').remove()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px">'
-    +       '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
-    +     '</button>'
-    +   '</div>'
-    +   '<div style="font-size:12px;color:var(--muted);margin-bottom:16px">' + descStr + '</div>'
-    +   '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:14px;padding:8px 10px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">' + i.title + '</div>'
-    +   inputsHtml
-    +   '<div id="rnx-roi-breakdown-' + idEsc + '" style="display:none;margin:10px 0 18px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px"></div>'
-    +   '<div style="display:flex;justify-content:flex-end;gap:10px;padding-top:12px;border-top:1px solid var(--border)">'
-    +     (tpl ? '<button onclick="rnxCalcRoi(' + idEsc + ',' + slugEsc + ')" style="padding:7px 16px;font-size:13px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Calculate</button>' : '')
-    +     '<button onclick="rnxApplyRoi(' + idEsc + ',' + slugEsc + ')" style="padding:7px 18px;font-size:13px;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">Apply</button>'
-    +     '<button onclick="document.getElementById(\'rnx-roi-modal\').remove()" style="padding:7px 16px;font-size:13px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Cancel</button>'
-    +   '</div>'
-    + '</div>';
-
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+  // Open the main Add/Edit modal pre-filled, then jump straight to the ROI Calculator step
+  rnxOpenModal(id);
+  rnxModalNextStep(); // title is already filled from rnxOpenModal, validation passes
 }
 
 function rnxCalcRoi(id, slug) {
@@ -810,9 +922,13 @@ function rnxApplyRoi(id, slug) {
   var i = rnxInitiatives.filter(function(x) { return x.id === id; })[0];
   if (!i) return;
 
-  var patch = { roi: roi };
-  if (!isNaN(av)) patch.addedValue = av;
-  Object.assign(i, patch);
+  // Merge roi (and optional addedValue) into roi_inputs JSON
+  var ri = {};
+  try { if (i.roiInputs) ri = JSON.parse(i.roiInputs); } catch(e) {}
+  ri.roi = roi;
+  if (!isNaN(av)) { ri.addedValue = av; i.addedValue = av; }
+  i.roi       = roi;    // update virtual field for immediate DOM refresh
+  i.roiInputs = JSON.stringify(ri);
 
   fetch('/api/neon/initiatives', {
     method: 'POST',
@@ -826,7 +942,7 @@ function rnxApplyRoi(id, slug) {
     var row = document.querySelector('#rnx-table-body tr[data-id="' + id + '"]');
     if (row) {
       var cells = row.querySelectorAll('td');
-      if (cells[7]) cells[7].innerHTML = rnxRoiHtml(roi);
+      if (cells[7]) cells[7].innerHTML = rnxRoiHtml(roi, id);
     }
     var modal = document.getElementById('rnx-roi-modal');
     if (modal) modal.remove();
@@ -855,7 +971,7 @@ function rnxLeadAv(name) {
 }
 
 function rnxKanbanHtml() {
-  var quarters = RNX_QUARTERS.concat(['Backlog']);
+  var quarters = RNX_QUARTERS;
   return quarters.map(function(q) {
     var items = rnxInitiatives.filter(function(i) { return i.quarter === q; });
     var cards = items.map(function(i) {
@@ -899,7 +1015,7 @@ function rnxSwitchKanbanQuarter(q) {
 // ── Quarterly progress bars ────────────────────────────────────────────────
 
 function rnxQuarterlyBars() {
-  var quarters = RNX_QUARTERS.concat(['Backlog']);
+  var quarters = RNX_QUARTERS;
   return '<div class="qp-grid">' + quarters.map(function(q) {
     var items = rnxInitiatives.filter(function(i) { return i.quarter === q; });
     var total = items.length || 1;
@@ -947,6 +1063,15 @@ function rnxBuildGantt() {
     groups[g].push(i);
   });
   var groupNames = Object.keys(groups); groupNames.sort();
+
+  // Sort items within each group: descending by year then quarter (Q4→Q1)
+  groupNames.forEach(function(g) {
+    groups[g].sort(function(a, b) {
+      var ya = (a.year || 0) * 10 + parseInt((a.quarter || 'Q0').replace('Q', ''), 10);
+      var yb = (b.year || 0) * 10 + parseInt((b.quarter || 'Q0').replace('Q', ''), 10);
+      return yb - ya;
+    });
+  });
 
   var toggle = '<div class="gantt-group-toggle">'
     + '<span class="gantt-group-label">Group by</span>'
@@ -1148,94 +1273,311 @@ function rnxSwitchROIQuarter(q) {
   rnxSetQAct('rnx-roi', q);
 }
 
+// ── Custom modal dropdown helpers ──────────────────────────────────────────
+
+function rnxMddToggle(id) {
+  var panel = document.getElementById(id + '-panel');
+  if (!panel) return;
+  var isOpen = panel.classList.contains('open');
+  // Close all open panels and reset any fixed-positioned ones
+  document.querySelectorAll('.rnx-mdd-panel.open').forEach(function(p) {
+    p.classList.remove('open');
+    if (p._rnxFixed) {
+      p.style.position = ''; p.style.top = ''; p.style.bottom = '';
+      p.style.left = ''; p.style.width = ''; p.style.transform = '';
+      p._rnxFixed = false;
+    }
+  });
+  if (!isOpen) {
+    var wrap = panel.parentElement;
+    // If inside overflow:hidden container (.rnx-rt-wrap or modal card), use fixed positioning
+    if (wrap && (wrap.closest('.rnx-rt-wrap') || wrap.closest('#rnx-modal-overlay'))) {
+      var r = wrap.getBoundingClientRect();
+      panel.style.position = 'fixed';
+      panel.style.left    = r.left + 'px';
+      panel.style.width   = Math.max(r.width, 120) + 'px';
+      panel.style.right   = 'auto';
+      if (r.bottom + 230 > window.innerHeight) {
+        panel.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+        panel.style.top    = 'auto';
+        panel.style.transform = '';
+      } else {
+        panel.style.top    = (r.bottom + 4) + 'px';
+        panel.style.bottom = 'auto';
+        panel.style.transform = '';
+      }
+      panel._rnxFixed = true;
+    } else {
+      // Standard absolute positioning with viewport flip check
+      if (wrap) {
+        var wr = wrap.getBoundingClientRect();
+        if (wr.bottom + 230 > window.innerHeight) {
+          panel.style.top = 'auto';
+          panel.style.bottom = 'calc(100% + 4px)';
+        } else {
+          panel.style.top = '';
+          panel.style.bottom = '';
+        }
+      }
+      panel._rnxFixed = false;
+    }
+    panel.classList.add('open');
+  }
+}
+
+function rnxMddSet(id, val) {
+  var inp = document.getElementById(id);
+  if (inp) inp.value = val;
+  var panel = document.getElementById(id + '-panel');
+  var labelEl = document.getElementById(id + '-label');
+  if (panel) {
+    var matched = null;
+    panel.querySelectorAll('.rnx-mdd-opt').forEach(function(o) {
+      var isMatch = o.dataset.val === val;
+      o.classList.toggle('sel', isMatch);
+      if (isMatch) matched = o;
+    });
+    if (labelEl) {
+      if (matched) {
+        labelEl.innerHTML = matched.innerHTML;
+      } else {
+        labelEl.innerHTML = '<span class="rnx-mdd-text" style="color:var(--muted)">—</span>';
+      }
+    }
+    panel.classList.remove('open');
+  }
+}
+
 // ── CRUD Modal ─────────────────────────────────────────────────────────────
 
 function rnxModalHtml() {
-  var IF = 'width:100%;box-sizing:border-box;padding:7px 10px;font-size:13px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);outline:none';
-  var LB = 'display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px';
-  var GR = 'margin-bottom:14px';
+  var LB  = 'display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px';
+  var GR  = 'margin-bottom:14px';
+  var CHEV = '<svg class="rnx-mdd-chev" width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  // Build options from ref data (with fallback to empty)
-  var qOpts = RNX_QUARTERS.concat(['Backlog']).map(function(q) {
-    return '<option value="'+q+'">'+q+'</option>';
-  }).join('');
+  function esc(s) { return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
 
-  var teamOpts = '<option value="">—</option>'
-    + rnxRefData.teams.map(function(t) { return '<option value="'+t.name+'">'+t.name+'</option>'; }).join('');
+  // Plain custom dropdown
+  function mdd(id, label, items, placeholder) {
+    placeholder = placeholder || '—';
+    var opts = items.map(function(o) {
+      return '<div class="rnx-mdd-opt" data-val="' + esc(o.val) + '" onclick="rnxMddSet(\'' + id + '\',\'' + esc(o.val) + '\')">'
+        + '<span class="rnx-mdd-text">' + o.label + '</span></div>';
+    }).join('');
+    return '<div style="' + GR + '"><label style="' + LB + '">' + label + '</label>'
+      + '<div class="rnx-mdd-wrap">'
+      + '<button type="button" class="rnx-mdd-btn" onclick="rnxMddToggle(\'' + id + '\')">'
+      + '<span class="rnx-mdd-label" id="' + id + '-label"><span class="rnx-mdd-text" style="color:var(--muted)">' + placeholder + '</span></span>'
+      + CHEV
+      + '</button>'
+      + '<input type="hidden" id="' + id + '" value="">'
+      + '<div class="rnx-mdd-panel" id="' + id + '-panel">' + opts + '</div>'
+      + '</div></div>';
+  }
 
-  var driverOpts = '<option value="">—</option>'
-    + rnxRefData.drivers.map(function(d) { return '<option value="'+d.name+'">'+d.name+'</option>'; }).join('');
-
-  var themeOpts = '<option value="">—</option>'
-    + rnxRefData.themes.map(function(t) { return '<option value="'+t.name+'">'+t.name+'</option>'; }).join('');
-
-  var poOpts = '<option value="">—</option>'
-    + rnxRefData.members
-        .filter(function(m) { return m.role === 'Product'; })
-        .map(function(m) {
-          var av = m.pictureUrl ? '<img src="'+m.pictureUrl+'" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;margin-right:4px">' : '';
-          return '<option value="'+m.name+'">'+m.name+'</option>';
+  // Avatar dropdown (for team members)
+  function mddAv(id, label, members) {
+    function avHtml(m) {
+      if (m && m.pictureUrl) return '<img src="' + m.pictureUrl + '" class="rnx-mdd-av">';
+      var ini = (m && m.name) ? m.name.split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase() : '?';
+      return '<span class="rnx-mdd-no-av">' + ini + '</span>';
+    }
+    var opts = '<div class="rnx-mdd-opt" data-val="" onclick="rnxMddSet(\'' + id + '\',\'\')">'
+      + '<span style="width:22px;height:22px;display:inline-block;flex-shrink:0"></span>'
+      + '<span class="rnx-mdd-text" style="color:var(--muted)">—</span></div>'
+      + members.map(function(m) {
+          return '<div class="rnx-mdd-opt" data-val="' + esc(m.name) + '" onclick="rnxMddSet(\'' + id + '\',\'' + esc(m.name) + '\')">'
+            + avHtml(m)
+            + '<span class="rnx-mdd-text">' + m.name + '</span></div>';
         }).join('');
-
-  var tlOpts = '<option value="">—</option>'
-    + rnxRefData.members
-        .filter(function(m) { return m.role === 'Tech'; })
-        .map(function(m) { return '<option value="'+m.name+'">'+m.name+'</option>'; }).join('');
-
-  var dsOpts = rnxDeliveryOpts.map(function(o) {
-    return '<option value="'+o.val+'">'+o.label+'</option>';
-  }).join('');
-
-  var cfOpts = rnxConfidenceOpts.map(function(c) {
-    return '<option value="'+c+'">'+c.charAt(0).toUpperCase()+c.slice(1)+'</option>';
-  }).join('');
-
-  function sel(id, label, opts) {
-    return '<div style="'+GR+'"><label for="'+id+'" style="'+LB+'">'+label+'</label>'
-      + '<select id="'+id+'" style="'+IF+'">'+opts+'</select></div>';
+    return '<div style="' + GR + '"><label style="' + LB + '">' + label + '</label>'
+      + '<div class="rnx-mdd-wrap">'
+      + '<button type="button" class="rnx-mdd-btn" onclick="rnxMddToggle(\'' + id + '\')">'
+      + '<span class="rnx-mdd-label" id="' + id + '-label"><span class="rnx-mdd-text" style="color:var(--muted)">—</span></span>'
+      + CHEV
+      + '</button>'
+      + '<input type="hidden" id="' + id + '" value="">'
+      + '<div class="rnx-mdd-panel" id="' + id + '-panel">' + opts + '</div>'
+      + '</div></div>';
   }
-  function inp(id, label, type) {
-    return '<div style="'+GR+'"><label for="'+id+'" style="'+LB+'">'+label+'</label>'
-      + '<input id="'+id+'" type="'+type+'" style="'+IF+'" /></div>';
-  }
+
+  var qItems = RNX_QUARTERS.concat(['Backlog']).map(function(q) { return {val:q, label:q}; });
+  var teamItems = [{val:'',label:'—'}].concat(rnxRefData.teams.map(function(t) { return {val:t.name,label:t.name}; }));
+  var themeItems = [{val:'',label:'—'}].concat(rnxRefData.themes.map(function(t) { return {val:t.name,label:t.name}; }));
+  var poMembers = rnxRefData.members.filter(function(m) { return m.role === 'Product'; });
+  var tlMembers = rnxRefData.members.filter(function(m) { return m.role === 'Tech'; });
+
+  // Status chips
+  var statusChips = '<div style="' + GR + '">'
+    + '<label style="' + LB + '">Status</label>'
+    + '<input type="hidden" id="rnxi-status" value="not-started">'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">'
+    + rnxDeliveryOpts.map(function(o) {
+        return '<button type="button" class="rnx-status-chip ' + o.cls + (o.val === 'not-started' ? ' act' : '') + '" data-val="' + o.val + '" onclick="rnxModalSetStatus(\'' + o.val + '\')" '
+          + 'style="padding:4px 12px;border-radius:20px;border:1.5px solid transparent;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s">'
+          + o.label + '</button>';
+      }).join('')
+    + '</div>'
+    + '</div>';
+
+  // Step indicator — vertical sidebar, bg bleeds to card edges
+  var stepIndicator = '<div id="rnx-modal-step-indicator" style="display:flex;flex-direction:column;flex-shrink:0;background:var(--bg);padding:20px 20px 24px 24px">'
+    + '<div style="display:flex;align-items:center;gap:8px">'
+    +   '<span id="rnx-step-dot-1" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;flex-shrink:0">1</span>'
+    +   '<span id="rnx-step-label-1" style="font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap">Product Info</span>'
+    + '</div>'
+    + '<div style="width:1px;height:26px;background:var(--border-md);margin:4px 0 4px 9px"></div>'
+    + '<div style="display:flex;align-items:center;gap:8px">'
+    +   '<span id="rnx-step-dot-2" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-md);background:transparent;color:var(--muted);font-size:11px;font-weight:600;flex-shrink:0">2</span>'
+    +   '<span id="rnx-step-label-2" style="font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap">ROI Calculator</span>'
+    + '</div>'
+    + '</div>';
+
+  // Step 1 content
+  var step1 = '<div id="rnx-modal-step-1">'
+    + '<div style="display:grid;grid-template-columns:130px 1fr;gap:0 16px">'
+    +   '<div>' + mdd('rnxi-quarter','Quarter',qItems) + '</div>'
+    +   '<div style="' + GR + '"><label style="' + LB + '">Initiative Name *</label><input id="rnxi-title" type="text" class="rnx-modal-inp" oninput="rnxModalUpdateTitle(this.value)" /></div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">'
+    +   '<div>' + mdd('rnxi-team','Team',teamItems)   + '</div>'
+    +   '<div>' + mdd('rnxi-theme','Theme',themeItems) + '</div>'
+    +   '<div>' + mddAv('rnxi-po','Product Lead',poMembers)       + '</div>'
+    +   '<div>' + mddAv('rnxi-tl','Engineering Lead',tlMembers)   + '</div>'
+    + '</div>'
+    + '<div style="' + GR + '">'
+    +   '<label for="rnxi-link" style="' + LB + '">Link Initiative</label>'
+    +   '<input id="rnxi-link" type="url" class="rnx-modal-inp" />'
+    + '</div>'
+    + statusChips
+    + '</div>';
+
+  // Step 2 — ROI Calculator (built by roi-templates.js)
+  var step2 = (typeof rnxRoiBuildStep2 === 'function')
+    ? rnxRoiBuildStep2(rnxRefData.drivers)
+    : '<div id="rnx-modal-step-2" style="display:none">' + _RNX_LOADER_HTML + '</div>';
+
+  // Footer step 1
+  var footer1 = '<div id="rnx-modal-footer-1" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:12px;border-top:1px solid var(--border)">'
+    + '<button onclick="rnxCloseModal()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Cancel</button>'
+    + '<button onclick="rnxModalNextStep()" style="padding:7px 18px;font-size:13px;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">Next →</button>'
+    + '</div>';
+
+  // Footer step 2
+  var footer2 = '<div id="rnx-modal-footer-2" style="display:none;align-items:center;justify-content:space-between;gap:10px;padding-top:16px">'
+    + '<div style="display:flex;gap:8px">'
+    +   '<button onclick="rnxModalPrevStep()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">← Back</button>'
+    +   '<button onclick="rnxRoiReset()" style="padding:7px 14px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--muted);cursor:pointer">Reset</button>'
+    + '</div>'
+    + '<button id="rnx-modal-save-btn" onclick="rnxSaveInitiative()" style="padding:7px 18px;font-size:13px;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">Save</button>'
+    + '</div>';
 
   return '<div id="rnx-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto">'
-    + '<div style="background:var(--surface);border:1px solid var(--border-md);border-radius:12px;width:100%;max-width:580px;box-shadow:0 8px 40px rgba(0,0,0,.18);padding:28px 28px 20px">'
-    +   '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">'
-    +     '<div id="rnx-modal-title" style="font-size:15px;font-weight:600;color:var(--text)">Add Initiative</div>'
-    +     '<button onclick="rnxCloseModal()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px">'
-    +       '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
-    +     '</button>'
+    + '<div style="background:var(--surface);border-radius:12px;padding:0;overflow:hidden;width:100%;max-width:780px;box-shadow:0 8px 40px rgba(0,0,0,.18);position:relative">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)">'
+    +   '<h3 id="rnx-modal-title" style="margin:0;font-size:16px;font-weight:600;color:var(--text)">Add Initiative</h3>'
+    +   '<button onclick="rnxCloseModal()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;border-radius:4px;line-height:0">'
+    +     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+    +   '</button>'
+    + '</div>'
+    + '<div style="display:flex;align-items:stretch">'
+    +   stepIndicator
+    +   '<div style="flex:1;min-width:0;padding:20px 24px 24px 20px">'
+    +     '<div id="rnx-modal-err" style="display:none;color:#C0392B;font-size:12px;margin-bottom:10px;padding:8px 10px;background:rgba(192,57,43,.08);border-radius:5px"></div>'
+    +     step1
+    +     step2
+    +     footer1
+    +     footer2
     +   '</div>'
-    +   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">'
-    +     '<div>' + inp('rnxi-title','Title *','text')                    + '</div>'
-    +     '<div>' + sel('rnxi-quarter','Quarter',qOpts)                  + '</div>'
-    +     '<div>' + sel('rnxi-driver','Driver',driverOpts)               + '</div>'
-    +     '<div>' + sel('rnxi-team','Team',teamOpts)                     + '</div>'
-    +     '<div>' + sel('rnxi-theme','Theme',themeOpts)                  + '</div>'
-    +     '<div>' + sel('rnxi-po','Product Owner',poOpts)                + '</div>'
-    +     '<div>' + sel('rnxi-tl','Tech Lead',tlOpts)                    + '</div>'
-    +     '<div>' + sel('rnxi-status','Delivery Status',dsOpts)          + '</div>'
-    +     '<div>' + inp('rnxi-av','Added Value ($)','number')            + '</div>'
-    +     '<div>' + inp('rnxi-roi','ROI (e.g. 0.15 = 15%)','number')    + '</div>'
-    +     '<div>' + inp('rnxi-design','Design Days','number')            + '</div>'
-    +     '<div>' + inp('rnxi-eng','Engineering Days','number')          + '</div>'
-    +     '<div>' + inp('rnxi-product','Product Days','number')          + '</div>'
-    +     '<div>' + sel('rnxi-conf','Confidence',cfOpts)                 + '</div>'
-    +   '</div>'
-    +   '<div style="margin-bottom:14px"><label for="rnxi-link" style="'+LB+'">Link URL</label><input id="rnxi-link" type="url" style="'+IF+'" /></div>'
-    +   '<div id="rnx-modal-err" style="font-size:12px;color:#E5243B;margin-bottom:10px;display:none"></div>'
-    +   '<div style="display:flex;justify-content:flex-end;gap:10px;padding-top:8px;border-top:1px solid var(--border)">'
-    +     '<button onclick="rnxCloseModal()" style="padding:7px 16px;font-size:13px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Cancel</button>'
-    +     '<button id="rnx-modal-save-btn" onclick="rnxSaveInitiative()" style="padding:7px 18px;font-size:13px;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">Save</button>'
-    +   '</div>'
-    + '</div></div>';
+    + '</div>'
+    + '</div>'
+    + '</div>';
+}
+
+function rnxModalSetStatus(val) {
+  var inp = document.getElementById('rnxi-status');
+  if (inp) inp.value = val;
+  document.querySelectorAll('.rnx-status-chip').forEach(function(c) {
+    var isAct = c.dataset.val === val;
+    c.classList.toggle('act', isAct);
+  });
+}
+
+function rnxModalNextStep() {
+  var titleEl = document.getElementById('rnxi-title');
+  var title = titleEl ? titleEl.value.trim() : '';
+  if (!title) {
+    var err = document.getElementById('rnx-modal-err');
+    if (err) { err.textContent = 'Initiative Name is required.'; err.style.display = 'block'; }
+    if (titleEl) titleEl.focus();
+    return;
+  }
+  var err = document.getElementById('rnx-modal-err');
+  if (err) { err.style.display = 'none'; err.textContent = ''; }
+
+  // Switch panels
+  document.getElementById('rnx-modal-step-1').style.display = 'none';
+  document.getElementById('rnx-modal-step-2').style.display = 'block';
+  document.getElementById('rnx-modal-footer-1').style.display = 'none';
+  document.getElementById('rnx-modal-footer-2').style.display = 'flex';
+
+  // Update step indicator
+  document.getElementById('rnx-step-dot-1').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-md);background:transparent;color:var(--muted);font-size:11px;font-weight:600;flex-shrink:0';
+  document.getElementById('rnx-step-label-1').style.cssText = 'font-size:12px;font-weight:500;color:var(--muted)';
+  document.getElementById('rnx-step-dot-2').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;flex-shrink:0';
+  document.getElementById('rnx-step-label-2').style.cssText = 'font-size:12px;font-weight:600;color:var(--accent)';
+}
+
+function rnxModalPrevStep() {
+  // Switch panels
+  document.getElementById('rnx-modal-step-1').style.display = 'block';
+  document.getElementById('rnx-modal-step-2').style.display = 'none';
+  document.getElementById('rnx-modal-footer-1').style.display = 'flex';
+  document.getElementById('rnx-modal-footer-2').style.display = 'none';
+
+  // Update step indicator
+  document.getElementById('rnx-step-dot-1').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;flex-shrink:0';
+  document.getElementById('rnx-step-label-1').style.cssText = 'font-size:12px;font-weight:600;color:var(--accent)';
+  document.getElementById('rnx-step-dot-2').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-md);background:transparent;color:var(--muted);font-size:11px;font-weight:600;flex-shrink:0';
+  document.getElementById('rnx-step-label-2').style.cssText = 'font-size:12px;font-weight:500;color:var(--muted)';
+}
+
+function rnxRoiReset() {
+  // Clear stored ROI values so the template re-renders empty
+  if (typeof rnxModalStep2Data !== 'undefined') {
+    rnxModalStep2Data.roiValues  = null;
+    rnxModalStep2Data.addedValue = null;
+    rnxModalStep2Data.roi        = null;
+  }
+  // Re-render template from scratch with current driver
+  var driverEl = document.getElementById('rnxi-driver');
+  if (typeof rnxRoiSelectDriver === 'function') {
+    rnxRoiSelectDriver(driverEl ? driverEl.value : '');
+  }
+}
+
+function rnxModalUpdateTitle(val) {
+  if (rnxEditId) return; // leave "Edit Initiative" unchanged
+  var t = (val || '').trim();
+  var el = document.getElementById('rnx-modal-title');
+  if (el) el.textContent = t ? 'Add Initiative — ' + t : 'Add Initiative';
 }
 
 function rnxOpenModal(id) {
   var overlay = document.getElementById('rnx-modal-overlay');
   if (!overlay) return;
   overlay.style.display = 'flex';
+
+  // Always reset to step 1
+  document.getElementById('rnx-modal-step-1').style.display = 'block';
+  document.getElementById('rnx-modal-step-2').style.display = 'none';
+  document.getElementById('rnx-modal-footer-1').style.display = 'flex';
+  document.getElementById('rnx-modal-footer-2').style.display = 'none';
+  document.getElementById('rnx-step-dot-1').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;flex-shrink:0';
+  document.getElementById('rnx-step-label-1').style.cssText = 'font-size:12px;font-weight:600;color:var(--accent)';
+  document.getElementById('rnx-step-dot-2').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-md);background:transparent;color:var(--muted);font-size:11px;font-weight:600;flex-shrink:0';
+  document.getElementById('rnx-step-label-2').style.cssText = 'font-size:12px;font-weight:500;color:var(--muted)';
+
   var err = document.getElementById('rnx-modal-err');
   if (err) { err.style.display = 'none'; err.textContent = ''; }
 
@@ -1244,33 +1586,50 @@ function rnxOpenModal(id) {
     var i = rnxInitiatives.filter(function(x) { return x.id === id; })[0];
     if (!i) return;
     document.getElementById('rnx-modal-title').textContent = 'Edit Initiative';
+    // Step 1 fields
     document.getElementById('rnxi-title').value   = i.title          || '';
-    document.getElementById('rnxi-quarter').value = i.quarter        || 'Backlog';
-    document.getElementById('rnxi-driver').value  = i.driver         || '';
-    document.getElementById('rnxi-team').value    = i.team           || '';
-    document.getElementById('rnxi-theme').value   = i.theme          || '';
-    document.getElementById('rnxi-po').value      = i.productOwner   || '';
-    document.getElementById('rnxi-tl').value      = i.techLead       || '';
-    document.getElementById('rnxi-status').value  = i.deliveryStatus || 'not-started';
-    document.getElementById('rnxi-av').value      = (i.addedValue != null && i.addedValue !== '') ? i.addedValue : '';
-    document.getElementById('rnxi-roi').value     = (i.roi        != null && i.roi !== '')        ? i.roi        : '';
-    document.getElementById('rnxi-design').value  = i.designDays      || '';
-    document.getElementById('rnxi-eng').value     = i.engineeringDays || '';
-    document.getElementById('rnxi-product').value = i.productDays     || '';
-    document.getElementById('rnxi-conf').value    = i.confidence      || 'medium';
-    document.getElementById('rnxi-link').value    = i.link            || '';
+    // Set hidden inputs and sync custom dropdown displays
+    rnxMddSet('rnxi-quarter', i.quarter || 'Backlog');
+    rnxMddSet('rnxi-team',    i.team    || '');
+    rnxMddSet('rnxi-theme',   i.theme   || '');
+    rnxMddSet('rnxi-po',      i.productOwner || '');
+    rnxMddSet('rnxi-tl',      i.techLead     || '');
+    setTimeout(function() { rnxModalSetStatus(i.deliveryStatus || 'not-started'); }, 0);
+    document.getElementById('rnxi-link').value    = i.link           || '';
+    // Save step-2 fields into global store
+    rnxModalStep2Data = {
+      driver:          i.driver          || '',
+      addedValue:      (i.addedValue != null && i.addedValue !== '') ? i.addedValue : '',
+      roi:             (i.roi        != null && i.roi !== '')        ? i.roi        : '',
+      designDays:      i.designDays      || '',
+      engineeringDays: i.engineeringDays || '',
+      productDays:     i.productDays     || '',
+      engineeringSize: i.engineeringSize || ''
+    };
+    // Restore ROI input values from DB (persisted in roi_inputs column)
+    try {
+      if (i.roiInputs) rnxModalStep2Data.roiValues = JSON.parse(i.roiInputs);
+    } catch(e) {}
+    // Restore driver dropdown and template
+    if (typeof rnxRoiSelectDriver === 'function') {
+      setTimeout(function() { rnxRoiSelectDriver(i.driver || ''); }, 0);
+    }
   } else {
     rnxEditId = null;
+    rnxModalStep2Data = {};
     document.getElementById('rnx-modal-title').textContent = 'Add Initiative';
-    ['rnxi-title','rnxi-av','rnxi-roi','rnxi-design','rnxi-eng','rnxi-product','rnxi-link'].forEach(function(id) {
-      var el = document.getElementById(id); if (el) el.value = '';
-    });
-    ['rnxi-driver','rnxi-team','rnxi-theme','rnxi-po','rnxi-tl'].forEach(function(id) {
-      var el = document.getElementById(id); if (el) el.selectedIndex = 0;
-    });
-    document.getElementById('rnxi-quarter').value = rnxCurrentQ();
-    document.getElementById('rnxi-status').value  = 'not-started';
-    document.getElementById('rnxi-conf').value    = 'medium';
+    document.getElementById('rnxi-title').value   = '';
+    document.getElementById('rnxi-link').value    = '';
+    rnxMddSet('rnxi-quarter', rnxCurrentQ());
+    rnxMddSet('rnxi-team',  '');
+    rnxMddSet('rnxi-theme', '');
+    rnxMddSet('rnxi-po',    '');
+    rnxMddSet('rnxi-tl',    '');
+    setTimeout(function() { rnxModalSetStatus('not-started'); }, 0);
+    // Reset driver dropdown
+    if (typeof rnxRoiSelectDriver === 'function') {
+      setTimeout(function() { rnxRoiSelectDriver(''); }, 0);
+    }
   }
   setTimeout(function() { var t = document.getElementById('rnxi-title'); if(t) t.focus(); }, 50);
 }
@@ -1285,29 +1644,68 @@ function rnxSaveInitiative() {
   var title = document.getElementById('rnxi-title').value.trim();
   if (!title) {
     var err = document.getElementById('rnx-modal-err');
-    err.textContent = 'Title is required.';
-    err.style.display = 'block';
+    if (err) { err.textContent = 'Initiative Name is required.'; err.style.display = 'block'; }
     return;
   }
   var saveBtn = document.getElementById('rnx-modal-save-btn');
   if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
 
+  var s2 = rnxModalStep2Data || {};
+  var av  = s2.addedValue;
+  var roi = s2.roi;
+
+  // Prefer live ROI Calculator span values over stored fallback —
+  // the calc functions update the spans but don't write back to s2.
+  // Chain: live span → s2 (DB column value) → ri (roi_inputs JSON)
+  var ri = s2.roiValues || {};
+  function _readDays(spanId, s2Val, riVal) {
+    var el = document.getElementById(spanId);
+    var v  = el ? parseFloat(el.textContent) : NaN;
+    if (!isNaN(v) && v > 0) return v;
+    var fb = parseFloat(s2Val);
+    if (!isNaN(fb) && fb > 0) return fb;
+    var rb = parseFloat(riVal);
+    return (!isNaN(rb) && rb > 0) ? rb : 0;
+  }
+  var dd = _readDays('rnxroi-des_days', s2.designDays,      ri.des_days);
+  var ed = _readDays('rnxroi-eng_days', s2.engineeringDays, ri.eng_days);
+  var pd = _readDays('rnxroi-prd_days', s2.productDays,     ri.prd_days);
+
+  var quarterVal = document.getElementById('rnxi-quarter').value || 'Backlog';
+  var yearVal = (function() {
+    if (!quarterVal || quarterVal === 'Backlog') return new Date().getFullYear();
+    var now = new Date();
+    var curQ = Math.ceil((now.getMonth() + 1) / 3);
+    var selQ = parseInt(quarterVal.replace('Q', ''), 10);
+    return selQ >= curQ ? now.getFullYear() : now.getFullYear() + 1;
+  })();
+
   var payload = {
     title:           title,
-    quarter:         document.getElementById('rnxi-quarter').value || 'Backlog',
-    driver:          document.getElementById('rnxi-driver').value.trim(),
+    quarter:         quarterVal,
+    year:            yearVal,
     team:            document.getElementById('rnxi-team').value.trim(),
     theme:           document.getElementById('rnxi-theme').value.trim(),
     productOwner:    document.getElementById('rnxi-po').value.trim(),
     techLead:        document.getElementById('rnxi-tl').value.trim(),
     deliveryStatus:  document.getElementById('rnxi-status').value || 'not-started',
-    confidence:      document.getElementById('rnxi-conf').value   || 'medium',
     link:            document.getElementById('rnxi-link').value.trim(),
-    addedValue:      document.getElementById('rnxi-av').value      !== '' ? parseFloat(document.getElementById('rnxi-av').value)      : null,
-    roi:             document.getElementById('rnxi-roi').value     !== '' ? parseFloat(document.getElementById('rnxi-roi').value)     : null,
-    designDays:      document.getElementById('rnxi-design').value  !== '' ? parseFloat(document.getElementById('rnxi-design').value)  : 0,
-    engineeringDays: document.getElementById('rnxi-eng').value     !== '' ? parseFloat(document.getElementById('rnxi-eng').value)     : 0,
-    productDays:     document.getElementById('rnxi-product').value !== '' ? parseFloat(document.getElementById('rnxi-product').value) : 0
+    // merged from step-2 (live read wins over stored)
+    driver:          (document.getElementById('rnxi-driver') || {}).value || s2.driver || '',
+    addedValue:      (av  !== '' && av  != null) ? parseFloat(av)  : null,
+    designDays:      dd || 0,
+    engineeringDays: ed || 0,
+    productDays:     pd || 0,
+    // roi and eng_size live inside roi_inputs JSON (no longer separate DB columns)
+    roiInputs: (function() {
+      var ri = {};
+      if (s2.roiValues) Object.assign(ri, s2.roiValues);
+      if (roi !== '' && roi != null)  ri.roi        = parseFloat(roi);
+      if (av  !== '' && av  != null)  ri.addedValue = parseFloat(av);
+      var es = (document.getElementById('rnxroi-eng_size') || {}).value || s2.engineeringSize || '';
+      if (es) ri.eng_size = es;
+      return Object.keys(ri).length ? JSON.stringify(ri) : null;
+    })()
   };
   if (rnxEditId) payload.id = rnxEditId;
 
@@ -1332,18 +1730,19 @@ function rnxSaveInitiative() {
 function rnxDeleteInitiative(id) {
   var i = rnxInitiatives.filter(function(x) { return x.id === id; })[0];
   if (!i) return;
-  if (!confirm('Delete "' + i.title + '"? This cannot be undone.')) return;
-  fetch('/api/neon/initiatives', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: id })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(res) {
-    if (!res.ok) throw new Error(res.error || 'Delete failed');
-    rnxLoadAndRender();
-  })
-  .catch(function(e) { alert('Delete failed: ' + e.message); });
+  snxConfirm('Delete <strong>' + i.title + '</strong>? This cannot be undone.', function() {
+    fetch('/api/neon/initiatives', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!res.ok) throw new Error(res.error || 'Delete failed');
+      rnxLoadAndRender();
+    })
+    .catch(function(e) { alert('Delete failed: ' + e.message); });
+  });
 }
 
 // ── Status update (inline click) ──────────────────────────────────────────
@@ -1381,26 +1780,45 @@ function rnxLoadAndRender() {
   var tabBtns = document.querySelectorAll('.rnx-tabitem.act');
   if (tabBtns.length > 0) activeTab = tabBtns[0].dataset.rnxtab || 'gantt';
 
-  container.innerHTML = '<div style="padding:40px 32px;font-size:13px;color:var(--muted)">Loading…</div>';
+  container.innerHTML = _RNX_LOADER_HTML;
 
   Promise.all([
     fetch('/api/neon/initiatives').then(function(r) { return r.json(); }),
     fetch('/api/neon/lookup?t=teams').then(function(r) { return r.json(); }),
     fetch('/api/neon/lookup?t=drivers').then(function(r) { return r.json(); }),
     fetch('/api/neon/lookup?t=themes').then(function(r) { return r.json(); }),
-    fetch('/api/neon/team-members').then(function(r) { return r.json(); })
+    fetch('/api/neon/team-members').then(function(r) { return r.json(); }),
+    fetch('/api/neon/assumptions').then(function(r) { return r.json(); })
   ])
   .then(function(results) {
-    rnxInitiatives       = Array.isArray(results[0]) ? results[0] : [];
-    rnxRefData.teams     = Array.isArray(results[1]) ? results[1] : [];
-    rnxRefData.drivers   = Array.isArray(results[2]) ? results[2] : [];
-    rnxRefData.themes    = Array.isArray(results[3]) ? results[3] : [];
-    rnxRefData.members   = Array.isArray(results[4]) ? results[4] : [];
+    rnxInitiatives            = (Array.isArray(results[0]) ? results[0] : []).map(function(i) {
+      // Hydrate virtual fields from roi_inputs JSON (roi & engineeringSize no longer DB columns)
+      var ri = {};
+      try { if (i.roiInputs) ri = JSON.parse(i.roiInputs); } catch(e) {}
+      i._ri             = ri;
+      i.roi             = (ri.roi != null) ? ri.roi : null;
+      i.engineeringSize = ri.eng_size || '';
+      return i;
+    });
+    rnxRefData.teams          = Array.isArray(results[1]) ? results[1] : [];
+    rnxRefData.drivers        = Array.isArray(results[2]) ? results[2] : [];
+    rnxRefData.themes         = Array.isArray(results[3]) ? results[3] : [];
+    rnxRefData.members        = Array.isArray(results[4]) ? results[4] : [];
+    rnxRefData.assumptions    = Array.isArray(results[5]) ? results[5] : [];
     rnxBuildColorMaps();
     container.innerHTML = rnxBuildInner(activeTab);
     rnxInitEvents();
     if (activeTab === 'gantt') setTimeout(rnxGanttTooltipInit, 50);
     if (activeTab === 'roi')   setTimeout(function() { rnxRenderScatter(rnxCurrentQ()); }, 50);
+    // Render grouped chart after paint (subset = current quarter filter)
+    var initSubset = rnxInitiatives.filter(function(i) { return i.quarter === rnxCurrentQ(); });
+    setTimeout(function() { rnxRenderGroupChart(rnxGroupKey, initSubset); rnxWireGroupTabs(initSubset); }, 0);
+    // Open modal if navigated here from another page (e.g. Team Capacity "Add Initiative")
+    if (window._rnxPendingModal !== undefined) {
+      var pid = window._rnxPendingModal;
+      window._rnxPendingModal = undefined;
+      setTimeout(function() { rnxOpenModal(pid); }, 50);
+    }
   })
   .catch(function(err) {
     container.innerHTML = '<div style="padding:40px 32px;font-size:13px;color:#C0392B">Failed to load data.<br><br>' + err + '</div>';
@@ -1422,7 +1840,7 @@ function rnxBuildInner(activeTab) {
   return '<div class="tabnav">'
     + tab('gantt',     'Gantt')
     + tab('table',     'Table View')
-    + tab('quarterly', 'Quarterly')
+    + tab('quarterly', 'Quarterly Kanban')
     + tab('roi',       'By ROI')
     + '</div>'
 
@@ -1434,11 +1852,9 @@ function rnxBuildInner(activeTab) {
     // ── Table ──
     + '<div id="rnx-rt-table" class="tabpanel' + (activeTab==='table'?' act':'') + '">'
     +   rnxQFilter('rnx-tbl', 'rnxSwitchTableQuarter')
-    +   '<div class="cards">'
-    +     rnxScInitiativesFor(subset, rnxCurrentQLabel())
-    +     rnxScGroupedFor('rnx-sc-driver','By Driver',       'driver',        subset,rnxCurrentQLabel())
-    +     rnxScGroupedFor('rnx-sc-theme', 'By Theme',        'theme',         subset,rnxCurrentQLabel())
-    +     rnxScGroupedFor('rnx-sc-team',  'By Team',         'team',          subset,rnxCurrentQLabel())
+    +   '<div class="rnx-analysis-row">'
+    +     '<div class="rnx-analysis-total">' + rnxScInitiativesFor(subset, rnxCurrentQLabel()) + '</div>'
+    +     rnxGroupedChartCard(subset)
     +   '</div>'
     +   '<div class="twrap">'
     +     '<div class="thead-row">Initiatives</div>'
@@ -1466,7 +1882,22 @@ function rnxBuildInner(activeTab) {
     + '<div id="rnx-rt-roi" class="tabpanel' + (activeTab==='roi'?' act':'') + '">'
     +   rnxQFilter('rnx-roi','rnxSwitchROIQuarter')
     +   '<div id="rnx-roi-content">' + rnxRoiContent(cq) + '</div>'
-    + '</div>';
+    + '</div>'
+
+    // ── Modal (rendered here so rnxRefData is already populated) ──
+    + rnxModalHtml();
+}
+
+// ── Gantt group-by wiring (called on init and after every gantt rebuild) ──────
+
+function rnxWireGanttGroup() {
+  document.querySelectorAll('[data-rnxganttgroup]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      rnxGanttGroup = btn.dataset.rnxganttgroup;
+      var panel = document.getElementById('rnx-rt-gantt');
+      if (panel) { panel.innerHTML = rnxBuildGantt(); rnxGanttTooltipInit(); rnxWireGanttGroup(); }
+    });
+  });
 }
 
 // ── Event wiring (delegated, scoped to #content) ───────────────────────────
@@ -1488,13 +1919,7 @@ function rnxInitEvents() {
   });
 
   // Gantt group toggle
-  document.querySelectorAll('[data-rnxganttgroup]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      rnxGanttGroup = btn.dataset.rnxganttgroup;
-      var panel = document.getElementById('rnx-rt-gantt');
-      if (panel) { panel.innerHTML = rnxBuildGantt(); rnxGanttTooltipInit(); }
-    });
-  });
+  rnxWireGanttGroup();
 
   // Q filter buttons
   document.querySelectorAll('[data-rnxqfn]').forEach(function(btn) {
@@ -1514,6 +1939,10 @@ function rnxInitEvents() {
     });
   });
 
+  // Search input
+  var rnxSearchEl = document.getElementById('rnxf-search');
+  if (rnxSearchEl) rnxSearchEl.addEventListener('input', rnxApplyTableFilters);
+
   // Filter reset
   document.querySelectorAll('[data-rnxreset]').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -1523,6 +1952,7 @@ function rnxInitEvents() {
         document.querySelectorAll('#rnx-kanban .kancard').forEach(function(c) { c.style.display = ''; });
       } else {
         document.querySelectorAll('[data-rnxfilter=""]').forEach(function(s) { s.value = ''; });
+        var si = document.getElementById('rnxf-search'); if (si) si.value = '';
         document.querySelectorAll('#rnx-table-body tr').forEach(function(r) { r.style.display = ''; });
       }
     });
@@ -1578,6 +2008,425 @@ function rnxInitEvents() {
 
 // ── Main render (called by app.js PAGES map) ───────────────────────────────
 
+var _RNX_CSV_BTN = '<button onclick="rnxTriggerCsvUpload()" title="Import CSV"'
+  + ' style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s"'
+  + ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
+  + ' onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
+  + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+  +   '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>'
+  +   '<path d="M14 2v4a2 2 0 0 0 2 2h4"/>'
+  +   '<path d="M8 13h2"/><path d="M14 13h2"/>'
+  +   '<path d="M8 17h2"/><path d="M14 17h2"/>'
+  + '</svg>'
+  + '</button>'
+  + '<div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>';
+
+var _RNX_CSV_HEADERS = ['quarter','title','driver','team','theme','productOwner','techLead','link'];
+var _RNX_CSV_SAMPLE_ROW = ['Q3 2025','Improve checkout conversion','Revenue Generating','Engineering','Growth','Alice Rossi','Marco Bianchi','https://notion.so/example'];
+
+function rnxTriggerCsvUpload() {
+  if (document.getElementById('rnx-csv-modal-overlay')) return;
+
+  var overlay = document.createElement('div');
+  overlay.id = 'rnx-csv-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center';
+
+  overlay.innerHTML =
+    '<div style="background:var(--surface);border-radius:14px;padding:0;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(0,0,0,.18);overflow:hidden">'
+
+    // header
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)">'
+    +   '<span style="font-size:14px;font-weight:600;color:var(--text)">Import CSV</span>'
+    +   '<button onclick="rnxCloseCsvModal()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;line-height:1;font-size:18px;font-family:inherit">×</button>'
+    + '</div>'
+
+    // body
+    + '<div style="padding:20px">'
+
+    // drop zone
+    +   '<div id="rnx-csv-dropzone"'
+    +     ' onclick="document.getElementById(\'rnx-csv-file-inp\').click()"'
+    +     ' ondragover="event.preventDefault();this.style.borderColor=\'var(--accent)\';this.style.background=\'rgba(237,0,94,.04)\'"'
+    +     ' ondragleave="this.style.borderColor=\'var(--border-md)\';this.style.background=\'transparent\'"'
+    +     ' ondrop="event.preventDefault();this.style.borderColor=\'var(--border-md)\';this.style.background=\'transparent\';rnxHandleCsvUpload(event.dataTransfer.files[0])"'
+    +     ' style="border:2px dashed var(--border-md);border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s">'
+    +     '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="color:var(--muted);margin-bottom:10px"><path d="M12 15V3M8 7l4-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+    +     '<div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px">Drag your CSV here</div>'
+    +     '<div style="font-size:12px;color:var(--muted)">or click to browse</div>'
+    +   '</div>'
+    +   '<input type="file" id="rnx-csv-file-inp" accept=".csv" style="display:none" onchange="rnxHandleCsvUpload(this.files[0])">'
+
+    // status
+    +   '<div id="rnx-csv-status" style="min-height:18px;margin-top:12px;font-size:12px;color:var(--muted);text-align:center"></div>'
+
+    // footer
+    +   '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">'
+    +     '<button onclick="rnxDownloadCsvSample()" style="display:flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;padding:0;transition:color .15s" onmouseenter="this.style.color=\'var(--accent)\'" onmouseleave="this.style.color=\'var(--muted)\'">'
+    +       '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 8l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 13h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+    +       'Download sample CSV'
+    +     '</button>'
+    +     '<button onclick="rnxCloseCsvModal()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Cancel</button>'
+    +   '</div>'
+
+    + '</div>'
+    + '</div>';
+
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) rnxCloseCsvModal();
+  });
+
+  document.body.appendChild(overlay);
+}
+
+function rnxCloseCsvModal() {
+  var el = document.getElementById('rnx-csv-modal-overlay');
+  if (el) el.remove();
+}
+
+function rnxDownloadCsvSample() {
+  var rows = [_RNX_CSV_HEADERS, _RNX_CSV_SAMPLE_ROW];
+  var csv = rows.map(function(r) {
+    return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(',');
+  }).join('\r\n');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'initiatives_sample.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── CSV parsing ────────────────────────────────────────────────────────────
+
+function rnxParseCsvText(text) {
+  var lines = text.split(/\r?\n/).filter(function(l) { return l.trim(); });
+  if (lines.length < 2) return { headers: [], rows: [] };
+
+  function parseRow(line) {
+    var cells = [], cur = '', inQ = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (inQ) {
+        if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+        else if (ch === '"') inQ = false;
+        else cur += ch;
+      } else {
+        if (ch === '"') inQ = true;
+        else if (ch === ',') { cells.push(cur.trim()); cur = ''; }
+        else cur += ch;
+      }
+    }
+    cells.push(cur.trim());
+    return cells;
+  }
+
+  var headers = parseRow(lines[0]).map(function(h) { return h.trim(); }); // keep original for display
+  var rows = [];
+  for (var i = 1; i < lines.length; i++) {
+    var cells = parseRow(lines[i]);
+    if (cells.every(function(c) { return !c; })) continue;
+    var obj = {};
+    headers.forEach(function(h, idx) { obj[h] = (cells[idx] || '').trim(); });
+    rows.push(obj);
+  }
+  return { headers: headers, rows: rows };
+}
+
+function rnxCsvFuzzyMatch(val, list, key) {
+  if (!val) return { value: '', ok: true };
+  var lc = val.toLowerCase();
+  // 1. exact
+  var m = list.filter(function(x) { return (x[key] || '').toLowerCase() === lc; })[0];
+  if (m) return { value: m[key], ok: true };
+  // 2. DB value starts with input  ("Cody" → "Cody Howard")
+  m = list.filter(function(x) { return (x[key] || '').toLowerCase().indexOf(lc) === 0; })[0];
+  if (m) return { value: m[key], ok: true };
+  // 3. DB value contains input
+  m = list.filter(function(x) { return (x[key] || '').toLowerCase().indexOf(lc) !== -1; })[0];
+  if (m) return { value: m[key], ok: true };
+  // 4. input contains DB value  ("Cody Howard" → "Cody")
+  m = list.filter(function(x) { return lc.indexOf((x[key] || '').toLowerCase()) !== -1; })[0];
+  if (m) return { value: m[key], ok: true };
+  // 5. every word of input appears in DB value  ("Howard Cody" → "Cody Howard")
+  var words = lc.split(/\s+/).filter(Boolean);
+  if (words.length > 1) {
+    m = list.filter(function(x) {
+      var v = (x[key] || '').toLowerCase();
+      return words.every(function(w) { return v.indexOf(w) !== -1; });
+    })[0];
+    if (m) return { value: m[key], ok: true };
+  }
+  return { value: val, ok: false };
+}
+
+function rnxParseQuarter(raw) {
+  if (!raw) return { q: '', year: new Date().getFullYear() };
+  var s = raw.trim();
+  var m = s.match(/^(\d{4})[-\/\s]?(Q[1-4]|Backlog)$/i);
+  if (m) return { q: m[2].toUpperCase().replace('BACKLOG','Backlog'), year: parseInt(m[1]) };
+  m = s.match(/^(Q[1-4]|Backlog)[-\/\s]?(\d{4})?$/i);
+  if (m) return { q: m[1].toUpperCase().replace('BACKLOG','Backlog'), year: m[2] ? parseInt(m[2]) : new Date().getFullYear() };
+  if (/backlog/i.test(s)) return { q: 'Backlog', year: new Date().getFullYear() };
+  return { q: s, year: new Date().getFullYear() };
+}
+
+// Rows already have canonical keys (set by the mapping step)
+function rnxMatchCsvRows(rows) {
+  var drivers = rnxRefData.drivers || [];
+  var teams   = rnxRefData.teams   || [];
+  var themes  = rnxRefData.themes  || [];
+  var members = rnxRefData.members || [];
+
+  return rows.map(function(row) {
+    var qp        = rnxParseQuarter(row.quarter || '');
+    var quarter   = qp.q;
+    var year      = qp.year;
+    var quarterOk = !quarter || /^(Q[1-4]|Backlog)$/i.test(quarter);
+    var title     = (row.title || '').trim();
+
+    var driverM = rnxCsvFuzzyMatch(row.driver,       drivers, 'name');
+    var teamM   = rnxCsvFuzzyMatch(row.team,         teams,   'name');
+    var themeM  = rnxCsvFuzzyMatch(row.theme,        themes,  'name');
+    var ownerM  = rnxCsvFuzzyMatch(row.productowner, members, 'name');
+    var leadM   = rnxCsvFuzzyMatch(row.techlead,     members, 'name');
+
+    return {
+      quarter:      { value: quarter,       ok: quarterOk },
+      year:         year,
+      title:        { value: title,         ok: !!title   },
+      driver:       driverM,
+      team:         teamM,
+      theme:        themeM,
+      productOwner: ownerM,
+      techLead:     leadM,
+      link:         { value: row.link || '', ok: true      },
+      rowOk:        quarterOk && !!title && driverM.ok && teamM.ok
+    };
+  });
+}
+
+// ── Column mapper UI ───────────────────────────────────────────────────────
+
+var _RNX_CSV_APP_FIELDS = [
+  { key: 'quarter',      label: 'Quarter',      required: true,  hints: ['quarter','period','sprint','q'] },
+  { key: 'title',        label: 'Title',         required: true,  hints: ['title','initiative','name','feature','item','description'] },
+  { key: 'driver',       label: 'Driver',        required: false, hints: ['driver','type','category','pillar'] },
+  { key: 'team',         label: 'Team',          required: false, hints: ['team','squad','group'] },
+  { key: 'theme',        label: 'Theme',         required: false, hints: ['theme','workstream','area'] },
+  { key: 'productowner', label: 'Product Owner', required: false, hints: ['owner','po','product'] },
+  { key: 'techlead',     label: 'Tech Lead',     required: false, hints: ['lead','tech','engineer','eng'] },
+  { key: 'link',         label: 'Link',          required: false, hints: ['link','url','jira','ticket','notion'] }
+];
+
+function rnxCsvAutoSuggest(hints, headers) {
+  for (var k = 0; k < hints.length; k++) {
+    var kw = hints[k].toLowerCase();
+    for (var i = 0; i < headers.length; i++) {
+      if (headers[i].toLowerCase().indexOf(kw) !== -1) return headers[i];
+    }
+  }
+  return '';
+}
+
+function rnxShowCsvColumnMapper(headers, rawRows) {
+  var overlay = document.getElementById('rnx-csv-modal-overlay');
+  if (!overlay) return;
+
+  function ddOpts(suggested) {
+    return '<option value="">— not mapped —</option>'
+      + headers.map(function(h) {
+          return '<option value="' + h + '"' + (h === suggested ? ' selected' : '') + '>' + h + '</option>';
+        }).join('');
+  }
+
+  var SEL = 'width:100%;padding:5px 8px;font-size:12px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit;outline:none';
+
+  var tableRows = _RNX_CSV_APP_FIELDS.map(function(f) {
+    var suggested = rnxCsvAutoSuggest(f.hints, headers);
+    return '<tr>'
+      + '<td style="padding:7px 12px;font-size:12px;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border)">'
+      +   f.label + (f.required ? '&thinsp;<span style="color:var(--accent);font-size:10px">*</span>' : '')
+      + '</td>'
+      + '<td style="padding:4px 12px;border-bottom:1px solid var(--border)">'
+      +   '<select id="rnx-csv-map-' + f.key + '" style="' + SEL + '">' + ddOpts(suggested) + '</select>'
+      + '</td>'
+      + '</tr>';
+  }).join('');
+
+  overlay.querySelector('div').innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)">'
+    +   '<div>'
+    +     '<div style="font-size:14px;font-weight:600;color:var(--text)">Map columns</div>'
+    +     '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + rawRows.length + ' rows — match each app field to a CSV column</div>'
+    +   '</div>'
+    +   '<button onclick="rnxCloseCsvModal()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;font-family:inherit;line-height:1;padding:2px">×</button>'
+    + '</div>'
+    + '<div style="padding:20px">'
+    +   '<table style="width:100%;border-collapse:collapse">'
+    +     '<thead><tr style="background:var(--bg)">'
+    +       '<th style="padding:6px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:left;border-bottom:1px solid var(--border);width:40%">App field</th>'
+    +       '<th style="padding:6px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:left;border-bottom:1px solid var(--border)">CSV column</th>'
+    +     '</tr></thead>'
+    +     '<tbody>' + tableRows + '</tbody>'
+    +   '</table>'
+    +   '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">'
+    +     '<button onclick="rnxCloseCsvModal()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Cancel</button>'
+    +     '<button onclick="rnxConfirmCsvMapping()" style="padding:7px 16px;font-size:13px;font-weight:500;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer">Preview →</button>'
+    +   '</div>'
+    + '</div>';
+
+  overlay.querySelector('div').style.maxWidth = '500px';
+  overlay._csvRawRows = rawRows;
+}
+
+function rnxConfirmCsvMapping() {
+  var overlay = document.getElementById('rnx-csv-modal-overlay');
+  if (!overlay) return;
+  var rawRows = overlay._csvRawRows || [];
+
+  var mapping = {};
+  _RNX_CSV_APP_FIELDS.forEach(function(f) {
+    var el = document.getElementById('rnx-csv-map-' + f.key);
+    mapping[f.key] = el ? el.value : '';
+  });
+
+  var normalised = rawRows.map(function(row) {
+    var obj = {};
+    _RNX_CSV_APP_FIELDS.forEach(function(f) {
+      obj[f.key] = mapping[f.key] ? (row[mapping[f.key]] || '') : '';
+    });
+    return obj;
+  });
+
+  var matched = rnxMatchCsvRows(normalised);
+  rnxShowCsvPreview(matched);
+}
+
+function rnxHandleCsvUpload(file) {
+  if (!file) return;
+  var status = document.getElementById('rnx-csv-status');
+  if (status) status.textContent = 'Reading file…';
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var parsed = rnxParseCsvText(e.target.result);
+    if (!parsed.rows.length) {
+      if (status) status.textContent = 'No data rows found.';
+      return;
+    }
+    rnxShowCsvColumnMapper(parsed.headers, parsed.rows);
+  };
+  reader.onerror = function() {
+    if (status) { status.textContent = 'Error reading file.'; status.style.color = '#C0392B'; }
+  };
+  reader.readAsText(file);
+}
+
+// ── CSV preview modal ──────────────────────────────────────────────────────
+
+function rnxShowCsvPreview(rows) {
+  var overlay = document.getElementById('rnx-csv-modal-overlay');
+  if (!overlay) return;
+
+  var okCount  = rows.filter(function(r) { return r.rowOk; }).length;
+  var errCount = rows.length - okCount;
+
+  function cell(f) {
+    var ok  = f.ok;
+    var val = f.value || '—';
+    var col = ok ? 'var(--text)' : '#ea580c';
+    var bg  = ok ? 'transparent' : 'rgba(234,88,12,.07)';
+    return '<td style="padding:4px 8px;font-size:11px;white-space:nowrap;color:' + col + ';background:' + bg + ';border-bottom:1px solid var(--border)">' + val + '</td>';
+  }
+
+  var thead = '<tr style="background:var(--bg)">'
+    + ['Quarter','Title','Driver','Team','Theme','Product Owner','Tech Lead','Link'].map(function(h) {
+        return '<th style="padding:5px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border)">' + h + '</th>';
+      }).join('')
+    + '</tr>';
+
+  var tbody = rows.map(function(r) {
+    return '<tr>'
+      + cell(r.quarter) + cell(r.title) + cell(r.driver) + cell(r.team)
+      + cell(r.theme) + cell(r.productOwner) + cell(r.techLead) + cell(r.link)
+      + '</tr>';
+  }).join('');
+
+  var summary = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:12px">'
+    + '<span style="color:#16a34a;font-weight:500">✓ ' + okCount + ' ready</span>'
+    + (errCount ? '<span style="color:#ea580c;font-weight:500">⚠ ' + errCount + ' with warnings</span>' : '')
+    + '<span style="color:var(--faint);margin-left:auto">Orange = no match found — will be imported as-is</span>'
+    + '</div>';
+
+  var tableHtml = '<div style="overflow-x:auto;border:1px solid var(--border);border-radius:8px;max-height:320px;overflow-y:auto">'
+    + '<table style="width:100%;border-collapse:collapse"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>'
+    + '</div>';
+
+  var footer = '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">'
+    + '<button onclick="rnxCloseCsvModal()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Cancel</button>'
+    + '<button onclick="rnxImportCsvRows()" style="padding:7px 16px;font-size:13px;font-weight:500;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer">Import ' + rows.length + ' initiative' + (rows.length !== 1 ? 's' : '') + '</button>'
+    + '</div>';
+
+  // Replace modal body with preview
+  overlay.querySelector('div').innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)">'
+    +   '<span style="font-size:14px;font-weight:600;color:var(--text)">Preview import</span>'
+    +   '<button onclick="rnxCloseCsvModal()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;line-height:1;font-size:18px;font-family:inherit">×</button>'
+    + '</div>'
+    + '<div style="padding:20px">'
+    + summary + tableHtml + footer
+    + '</div>';
+
+  // Widen modal for the table
+  overlay.querySelector('div').style.maxWidth = '860px';
+
+  // Store matched rows for import
+  overlay._csvRows = rows;
+}
+
+// ── CSV import ─────────────────────────────────────────────────────────────
+
+function rnxImportCsvRows() {
+  var overlay = document.getElementById('rnx-csv-modal-overlay');
+  var rows = overlay && overlay._csvRows;
+  if (!rows || !rows.length) return;
+
+  var btn = overlay.querySelector('button[onclick="rnxImportCsvRows()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Importing…'; }
+
+  var q = rnxCurrentQ();
+
+  var promises = rows.map(function(r) {
+    var body = {
+      quarter:      r.quarter.value      || q,
+      title:        r.title.value        || '',
+      driver:       r.driver.value       || '',
+      team:         r.team.value         || '',
+      theme:        r.theme.value        || '',
+      productOwner: r.productOwner.value || '',
+      techLead:     r.techLead.value     || '',
+      link:         r.link.value         || '',
+      year:         r.year               || new Date().getFullYear(),
+      deliveryStatus: 'not-started',
+      sortOrder:    0
+    };
+    return fetch('/api/neon/initiatives', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+  });
+
+  Promise.all(promises)
+    .then(function() {
+      rnxCloseCsvModal();
+      rnxLoadAndRender();
+    })
+    .catch(function(err) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Retry'; }
+      console.error('[CSV import]', err);
+    });
+}
+
 function renderRoadmapNeon() {
   var html = '<div class="page-header">'
     + '<div>'
@@ -1589,6 +2438,7 @@ function renderRoadmapNeon() {
     +     '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
     +     'Add Initiative'
     +   '</button>'
+    +   _RNX_CSV_BTN
     +   '<button onclick="rnxOpenSettings()" title="Settings"'
     +     ' style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s"'
     +     ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
@@ -1597,7 +2447,6 @@ function renderRoadmapNeon() {
     +   '</button>'
     + '</div>'
     + '</div>'
-    + rnxModalHtml()
     + '<div id="rnx-content"></div>';
 
   setTimeout(rnxLoadAndRender, 0);
@@ -1660,7 +2509,7 @@ function rnxOpenSettings() {
   var tabNav = '<div style="display:flex;gap:2px;padding:10px 24px 0;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">'
     + SNX_TABS_LOCAL.map(function(t) {
         var act = t.id === activeTab;
-        return '<button class="rnx-stab" data-tab="' + t.id + '"'
+        return '<button class="rnx-stab" data-settingstab="' + t.id + '"'
           + ' style="height:30px;padding:0 14px;border:none;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;border-radius:6px 6px 0 0;transition:background .15s,color .15s;'
           + 'background:' + (act ? 'var(--bg)' : 'transparent') + ';'
           + 'color:' + (act ? 'var(--text)' : 'var(--muted)') + '">'
@@ -1693,10 +2542,10 @@ function rnxOpenSettings() {
   // Wire tab clicks
   panel.querySelectorAll('.rnx-stab').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      var tab = btn.dataset.tab;
+      var tab = btn.dataset.settingstab;
       if (typeof snxActiveTab !== 'undefined') snxActiveTab = tab;
       panel.querySelectorAll('.rnx-stab').forEach(function(b) {
-        var a = b.dataset.tab === tab;
+        var a = b.dataset.settingstab === tab;
         b.style.background = a ? 'var(--bg)' : 'transparent';
         b.style.color       = a ? 'var(--text)' : 'var(--muted)';
       });
@@ -1724,5 +2573,9 @@ function rnxCloseSettings() {
   var panel    = overlay.lastElementChild;
   if (backdrop) backdrop.style.background = 'rgba(0,0,0,0)';
   if (panel)    panel.style.transform = 'translateX(100%)';
-  setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 310);
+  setTimeout(function() {
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    // Refresh roadmap so any settings changes (teams, members, etc.) are reflected
+    if (typeof rnxLoadAndRender === 'function') rnxLoadAndRender();
+  }, 310);
 }
