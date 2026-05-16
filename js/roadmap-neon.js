@@ -1082,7 +1082,7 @@ function rnxBuildGantt() {
 
   var toggle = '<div class="gantt-group-toggle">'
     + '<span class="gantt-group-label">Group by</span>'
-    + ['driver','theme','team'].map(function(v) {
+    + ['team','theme','driver'].map(function(v) {
         var lbl = v === 'team' ? 'Team' : v === 'theme' ? 'Theme' : 'Driver';
         return '<button data-rnxganttgroup="' + v + '" class="gantt-group-btn' + (v === gk ? ' act' : '') + '">' + lbl + '</button>';
       }).join('')
