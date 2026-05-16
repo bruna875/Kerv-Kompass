@@ -125,27 +125,44 @@ function ovxRender(initiatives, members) {
     { id: null,                label: 'OKR',                           icon: _ovxOkrIcon,  disabled: true }
   ];
 
+  // ── Team breakdown for current quarter ──
+  var teamMap = {};
+  qInits.forEach(function(i) {
+    var t = i.team || 'Unassigned';
+    if (!teamMap[t]) teamMap[t] = {};
+    OVX_DS.forEach(function(d) { if (!teamMap[t][d.val]) teamMap[t][d.val] = 0; });
+    var ds = i.deliveryStatus || 'not-started';
+    teamMap[t][ds] = (teamMap[t][ds] || 0) + 1;
+  });
+  var teamNames = Object.keys(teamMap).sort();
+
   body.innerHTML =
 
-    // ══ THIS QUARTER ══════════════════════════════════════════════════════════
-    ovxSectionHeader('This Quarter', curQLabel)
+    // ══ THIS QUARTER AT A GLANCE ══════════════════════════════════════════════
+    ovxSectionHeader('This quarter at a glance', curQLabel)
 
-    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">'
-    + ovxStatCard('Initiatives', qTotal, '#6366F1', ovxBarIcon())
-    + ovxStatCard('Completed', qDone, '#10B981', ovxCheckIcon())
-    + ovxStatCard('In progress', qByDs['in-progress'] || 0, '#3B82F6', ovxPlayIcon())
-    + ovxStatCard('Completion', qPct + '%', '#F59E0B', ovxPctIcon())
-    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start">'
 
-    + '<div style="display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start">'
-
-      // Status breakdown for current quarter
-      + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px">'
-      +   '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px">Status breakdown</div>'
-      +   OVX_DS.map(function(d) { return ovxStatusRow(d, qByDs[d.val] || 0, qTotal); }).join('')
+      // ── Status breakdown by team ──
+      + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">'
+      +   '<div style="padding:14px 20px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px">'
+      +     '<span style="font-size:13px;font-weight:600;color:var(--text)">Status breakdown</span>'
+      +     '<div style="display:flex;align-items:center;gap:10px;margin-left:auto">'
+      +     OVX_DS.map(function(d) {
+              return '<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)">'
+                + '<span style="width:8px;height:8px;border-radius:2px;background:' + d.color + ';flex-shrink:0"></span>'
+                + d.label + '</span>';
+            }).join('')
+      +     '</div>'
+      +   '</div>'
+      +   '<div style="padding:8px 0">'
+      +     teamNames.map(function(t) { return ovxTeamBar(t, teamMap[t]); }).join('')
+      +     '<div style="height:1px;background:var(--border);margin:4px 0"></div>'
+      +     ovxTeamBar('Total', qByDs, true)
+      +   '</div>'
       + '</div>'
 
-      // Quick nav
+      // ── Quick nav ──
       + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px">'
       +   '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Quick access</div>'
       +   navCards.map(function(c) { return ovxNavCard(c); }).join('')
@@ -181,6 +198,32 @@ function ovxRender(initiatives, members) {
 }
 
 // ── Component builders ─────────────────────────────────────────────────────
+
+function ovxTeamBar(name, dsByVal, isBold) {
+  var total = OVX_DS.reduce(function(s, d) { return s + (dsByVal[d.val] || 0); }, 0);
+  var done  = dsByVal['done'] || 0;
+  var pct   = total ? Math.round(done / total * 100) : 0;
+
+  var segments = total > 0
+    ? OVX_DS.map(function(d) {
+        var n = dsByVal[d.val] || 0;
+        if (!n) return '';
+        var w = (n / total * 100).toFixed(1);
+        return '<div title="' + d.label + ': ' + n + '" style="height:100%;width:' + w + '%;background:' + d.color + ';flex-shrink:0"></div>';
+      }).join('')
+    : '<div style="height:100%;width:100%;background:var(--border)"></div>';
+
+  var labelStyle = isBold
+    ? 'font-size:11px;font-weight:700;color:var(--text);width:120px;flex-shrink:0'
+    : 'font-size:11px;color:var(--muted);width:120px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+
+  return '<div style="display:flex;align-items:center;gap:12px;padding:7px 20px">'
+    + '<span style="' + labelStyle + '" title="' + name + '">' + name + '</span>'
+    + '<div style="flex:1;height:8px;border-radius:4px;overflow:hidden;display:flex;background:var(--border)">' + segments + '</div>'
+    + '<span style="font-size:11px;color:var(--muted);width:24px;text-align:right;flex-shrink:0">' + total + '</span>'
+    + '<span style="font-size:10px;font-weight:' + (isBold ? '700' : '500') + ';color:' + (pct >= 75 ? '#10B981' : pct >= 40 ? '#F59E0B' : 'var(--muted)') + ';width:32px;text-align:right;flex-shrink:0">' + (total ? pct + '%' : '—') + '</span>'
+    + '</div>';
+}
 
 function ovxStatCard(label, value, color, iconSvg) {
   return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px">'
