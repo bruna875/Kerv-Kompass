@@ -189,8 +189,10 @@ function ovxRender(initiatives, members) {
   body.innerHTML =
 
     // ══ THIS QUARTER AT A GLANCE ══════════════════════════════════════════════
-    ovxSectionHeader('This quarter at a glance', null)
-    + ovxQNav(selQ, hasPrev, hasNext)
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;margin-top:36px">'
+    +   '<span style="font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.2px">This quarter at a glance</span>'
+    +   ovxQNav(selQ, hasPrev, hasNext)
+    + '</div>'
 
     + '<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start">'
 
@@ -259,13 +261,13 @@ function ovxRender(initiatives, members) {
 function ovxQNav(label, hasPrev, hasNext) {
   function btn(dir, enabled) {
     var arrow = dir === -1 ? '&#8592;' : '&#8594;';
-    var base  = 'width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text);transition:background .12s';
-    var dis   = 'opacity:.3;cursor:default;pointer-events:none';
-    return '<button type="button" onclick="ovxChangeQ(' + dir + ')" style="' + base + (enabled ? '' : ';' + dis) + '">' + arrow + '</button>';
+    var base  = 'width:22px;height:22px;border-radius:5px;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:12px;line-height:1;color:var(--text)';
+    var dis   = ';opacity:.3;cursor:default;pointer-events:none';
+    return '<button type="button" onclick="ovxChangeQ(' + dir + ')" style="' + base + (enabled ? '' : dis) + '">' + arrow + '</button>';
   }
-  return '<div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:16px">'
+  return '<div style="display:inline-flex;align-items:center;gap:6px">'
     + btn(-1, hasPrev)
-    + '<span style="font-size:12px;font-weight:600;color:var(--text);min-width:60px;text-align:center">' + label + '</span>'
+    + '<span style="font-size:11px;font-weight:600;color:var(--text);min-width:56px;text-align:center">' + label + '</span>'
     + btn(1, hasNext)
     + '</div>';
 }
