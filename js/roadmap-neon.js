@@ -972,12 +972,12 @@ function rnxOpenModalOnStep3(id) {
   }, 60);
 }
 
-// Interpolates from Indigo (#6366F1) at 0% to Accent magenta (#ED005E) at 100%
+// Interpolates from a light accent tint (0%) to full accent #ED005E (100%)
 function rnxEpicBarColor(pct) {
   var t = Math.max(0, Math.min(100, pct)) / 100;
-  var r = Math.round(99  + (237 - 99)  * t);
-  var g = Math.round(102 + (0   - 102) * t);
-  var b = Math.round(241 + (94  - 241) * t);
+  var r = Math.round(252 + (237 - 252) * t);  // 252 → 237
+  var g = Math.round(210 + (0   - 210) * t);  // 210 → 0
+  var b = Math.round(228 + (94  - 228) * t);  // 228 → 94
   return 'rgb(' + r + ',' + g + ',' + b + ')';
 }
 
