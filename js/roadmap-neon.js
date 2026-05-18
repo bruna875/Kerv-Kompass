@@ -921,12 +921,12 @@ function rnxEpicsProgressCell(initiative) {
 function rnxEpicsProgressMini(initiative) {
   var keys = initiative.jiraEpics;
   if (!keys || !keys.length) return '';
-  return '<div class="rnx-epics-prog-mini" data-rnxepicsid="' + initiative.id + '" style="width:100%;min-width:0">'
+  return '<div class="rnx-epics-prog-mini" data-rnxepicsid="' + initiative.id + '" style="width:100%;min-width:0;margin-top:4px">'
     + '<div style="display:flex;align-items:center;gap:5px">'
-    +   '<div style="flex:1;height:3px;background:var(--border);border-radius:999px;overflow:hidden">'
-    +     '<div class="rnx-epic-bar" style="height:100%;width:0%;background:#CBD5E1;border-radius:999px;transition:width .5s ease"></div>'
+    +   '<div style="flex:1;height:3px;background:#E5E7EB;border-radius:999px;overflow:hidden">'
+    +     '<div class="rnx-epic-bar" style="height:100%;width:0%;background:#E5E7EB;border-radius:999px;transition:width .5s ease"></div>'
     +   '</div>'
-    +   '<span class="rnx-epic-pct" style="font-size:10px;color:var(--muted);min-width:24px;text-align:right">…</span>'
+    +   '<span class="rnx-epic-pct" style="font-size:10px;color:var(--faint);min-width:24px;text-align:right">…</span>'
     + '</div>'
     + '</div>';
 }
@@ -1414,10 +1414,20 @@ function rnxBuildGantt() {
       var c = statusColors[i.deliveryStatus] || '#8E8E93';
       var sLabel = statusLabels[i.deliveryStatus] || 'Not Started';
       var v1 = i[sk[0]] || '—', v2 = i[sk[1]] || '—';
+      var hasEpics = i.jiraEpics && i.jiraEpics.length;
       var nameCell = '<td class="gantt-name-cell">'
         + '<div class="gantt-name-title" title="' + i.title.replace(/"/g, '&quot;') + '">' + i.title + '</div>'
         + '<div class="gantt-name-meta">' + sl[0] + ': <span>' + v1 + '</span> · ' + sl[1] + ': <span>' + v2 + '</span></div>'
-        + rnxEpicsProgressMini(i)
+        + (hasEpics
+            ? '<div class="rnx-epics-prog-mini" data-rnxepicsid="' + i.id + '" style="width:100%;min-width:0;margin-top:4px">'
+            +   '<div style="display:flex;align-items:center;gap:5px">'
+            +     '<div style="flex:1;height:3px;background:#E5E7EB;border-radius:999px;overflow:hidden">'
+            +       '<div class="rnx-epic-bar" style="height:100%;width:0%;background:#E5E7EB;border-radius:999px;transition:width .5s ease"></div>'
+            +     '</div>'
+            +     '<span class="rnx-epic-pct" style="font-size:10px;color:var(--faint);min-width:24px;text-align:right">…</span>'
+            +   '</div>'
+            + '</div>'
+            : '')
         + '</td>';
 
       var qCells = qHeaders.map(function(q) {
