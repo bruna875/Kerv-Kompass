@@ -1692,7 +1692,7 @@ function rnxModalHtml() {
     + '</div>';
 
   // Step indicator — vertical sidebar, bg bleeds to card edges
-  var stepIndicator = '<div id="rnx-modal-step-indicator" style="display:flex;flex-direction:column;flex-shrink:0;background:var(--bg);padding:20px 20px 24px 24px">'
+  var stepIndicator = '<div id="rnx-modal-step-indicator" style="display:flex;flex-direction:column;flex-shrink:0;background:var(--bg);padding:20px 20px 24px 24px;border-radius:0 0 0 12px">'
     + '<div style="display:flex;align-items:center;gap:8px">'
     +   '<span id="rnx-step-dot-1" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;flex-shrink:0">1</span>'
     +   '<span id="rnx-step-label-1" style="font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap">Product Info</span>'
@@ -1786,7 +1786,7 @@ function rnxModalHtml() {
     +         '<span class="rnx-mdd-label" id="rnx-epic-picker-label"><span class="rnx-mdd-text" style="color:var(--muted)">Select epics…</span></span>'
     +         S3CHEV
     +       '</button>'
-    +       '<div class="rnx-mdd-panel" id="rnx-epic-picker-panel" style="overflow:hidden;padding:0">'
+    +       '<div class="rnx-mdd-panel" id="rnx-epic-picker-panel" style="overflow:visible;padding:0;max-height:none">'
     +         '<div style="padding:6px 6px 4px">'
     +           '<input id="rnx-epic-search" type="text" class="rnx-modal-inp" placeholder="Filter epics…" style="font-size:11px;padding:5px 8px;height:auto" oninput="rnxRenderEpicPicker()" />'
     +         '</div>'
@@ -1816,7 +1816,7 @@ function rnxModalHtml() {
     + '</div>';
 
   return '<div id="rnx-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto">'
-    + '<div style="background:var(--surface);border-radius:12px;padding:0;overflow:hidden;width:100%;max-width:780px;box-shadow:0 8px 40px rgba(0,0,0,.18);position:relative">'
+    + '<div style="background:var(--surface);border-radius:12px;padding:0;overflow:visible;width:100%;max-width:780px;box-shadow:0 8px 40px rgba(0,0,0,.18);position:relative">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)">'
     +   '<h3 id="rnx-modal-title" style="margin:0;font-size:16px;font-weight:600;color:var(--text)">Add Initiative</h3>'
     +   '<button onclick="rnxCloseModal()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;border-radius:4px;line-height:0">'
