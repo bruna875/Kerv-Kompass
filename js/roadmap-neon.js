@@ -1794,6 +1794,7 @@ function rnxModalHtml() {
     +       '</div>'
     +     '</div>'
     +   '</div>'
+    +   '<div id="rnx-linked-epic-list" style="display:flex;flex-direction:column;gap:6px;margin-top:8px"></div>'
     + '</div>'
     + '</div>';
 
@@ -1975,6 +1976,8 @@ function rnxOpenModal(id) {
   if (epicSearch) epicSearch.value = '';
   var pickerEl = document.getElementById('rnx-epic-picker');
   if (pickerEl) pickerEl.innerHTML = '';
+  var linkedListEl = document.getElementById('rnx-linked-epic-list');
+  if (linkedListEl) linkedListEl.innerHTML = '';
   var existingEl = document.getElementById('rnx-existing-epics');
   if (existingEl) { existingEl.style.display = 'none'; existingEl.innerHTML = ''; }
   // Reset epic picker label and close picker panel
@@ -2173,8 +2176,10 @@ function rnxRenderEpicList() {
     el.innerHTML = '<div style="padding:12px 0;font-size:12px;color:var(--muted);text-align:center">No epics added yet. Type a name above and click + Add.</div>';
     return;
   }
+  var proj = (document.getElementById('rnx-jira-project') || {}).value || 'SDT';
   el.innerHTML = _rnxJiraEpics.map(function(name, i) {
     return '<div id="rnx-epic-row-' + i + '" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px">'
+      + '<span style="font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0">' + proj + ' –</span>'
       + '<span style="flex:1;font-size:13px;color:var(--text);word-break:break-word">' + name.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>'
       + '<span id="rnx-epic-status-' + i + '" style="font-size:11px;color:var(--muted);flex-shrink:0"></span>'
       + '<button onclick="rnxRemoveJiraEpic(' + i + ')" style="flex-shrink:0;padding:2px 6px;font-size:13px;background:none;border:none;cursor:pointer;color:var(--muted);border-radius:4px;line-height:1" title="Remove">✕</button>'
@@ -2317,6 +2322,26 @@ function rnxToggleEpicLink(key) {
   if (idx === -1) _rnxLinkedEpics.push(key);
   else            _rnxLinkedEpics.splice(idx, 1);
   rnxRenderEpicPicker();
+  rnxRenderLinkedEpicList();
+}
+
+function rnxRenderLinkedEpicList() {
+  var el = document.getElementById('rnx-linked-epic-list');
+  if (!el) return;
+  if (!_rnxLinkedEpics.length) { el.innerHTML = ''; return; }
+  // Build key→summary map from cached project epics
+  var epicMap = {};
+  if (_rnxProjectEpics) {
+    _rnxProjectEpics.forEach(function(e) { epicMap[e.key] = e.summary; });
+  }
+  el.innerHTML = _rnxLinkedEpics.map(function(key) {
+    var name = (epicMap[key] || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px">'
+      + '<span style="font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0">' + key + '</span>'
+      + (name ? '<span style="flex:1;font-size:13px;color:var(--text);word-break:break-word">' + name + '</span>' : '<span style="flex:1"></span>')
+      + '<button onclick="rnxToggleEpicLink(\'' + key.replace(/'/g, "\\'") + '\')" style="flex-shrink:0;padding:2px 6px;font-size:13px;background:none;border:none;cursor:pointer;color:var(--muted);border-radius:4px;line-height:1" title="Remove">✕</button>'
+      + '</div>';
+  }).join('');
 }
 
 function rnxS3ProjectSet(val) {
