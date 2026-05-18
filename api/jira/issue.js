@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       if (!keys.length) return res.status(200).json({});
       try {
         const jql  = `issue in (${keys.join(',')}) ORDER BY key ASC`;
-        const data = await jiraPost('/rest/api/3/search', {
+        const data = await jiraPost('/rest/api/3/search/jql', {
           jql, fields: ['status', 'summary'], maxResults: 200
         });
         const result = {};

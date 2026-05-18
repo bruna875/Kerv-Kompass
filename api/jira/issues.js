@@ -43,7 +43,7 @@ export default async function handler(req, res) {
       // Use issuetype in ("Epic") to handle both classic and next-gen projects
       const jql  = `project = ${project} AND issuetype in ("Epic") ORDER BY key ASC`;
       console.log('[jira/issues] epics JQL:', jql);
-      const data = await jiraPost('/rest/api/3/search', {
+      const data = await jiraPost('/rest/api/3/search/jql', {
         jql, fields: ['summary', 'status'], maxResults: 200
       });
       console.log('[jira/issues] epics found:', data.total, 'issues:', data.issues?.length);
