@@ -1,7 +1,7 @@
 // api/jira/issues.js
 // GET ?sprintId=xxx → individual tickets for that sprint (called on-demand when user selects a sprint)
 
-import { jiraGet } from './_client.js';
+import { jiraGet, jiraPost } from './_client.js';
 
 const FIELDS = 'summary,issuetype,status,assignee,customfield_10016,customfield_10028,priority,parent,customfield_10014';
 
@@ -43,9 +43,9 @@ export default async function handler(req, res) {
       // Use issuetype in ("Epic") to handle both classic and next-gen projects
       const jql  = `project = ${project} AND issuetype in ("Epic") ORDER BY key ASC`;
       console.log('[jira/issues] epics JQL:', jql);
-      const data = await jiraGet(
-        `/rest/api/3/search?jql=${encodeURIComponent(jql)}&fields=summary,status&maxResults=200`
-      );
+      const data = await jiraPost('/rest/api/3/search', {
+        jql, fields: ['summary', 'status'], maxResults: 200
+      });
       console.log('[jira/issues] epics found:', data.total, 'issues:', data.issues?.length);
       const epics = (data.issues || []).map(i => ({
         key:            i.key,
