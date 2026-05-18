@@ -1740,20 +1740,31 @@ function rnxModalHtml() {
     + '</div>';
 
   // Step 3 — Create Jira Epics
+  var S3CHEV = '<svg width="10" height="6" viewBox="0 0 10 6" fill="none" style="flex-shrink:0;color:var(--muted)"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
   var step3 = '<div id="rnx-modal-step-3" style="display:none">'
-    // already-linked chips (shown when opening via pencil)
-    + '<div id="rnx-existing-epics" style="display:none;margin-bottom:14px"></div>'
-    // Project dropdown
+    + '<div id="rnx-existing-epics" style="display:none;margin-bottom:16px"></div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:16px">Add Jira Epics for this Initiative</div>'
+    // Project — custom dropdown reusing rnx-mdd-* styles
     + '<div style="' + GR + '">'
     +   '<label style="' + LB + '">Jira Project</label>'
-    +   '<select id="rnx-jira-project" class="rnx-modal-inp" style="cursor:pointer" onchange="rnxStep3OnProjectChange()">'
-    +     '<option value="SDT">SDT</option>'
-    +   '</select>'
+    +   '<div class="rnx-mdd-wrap">'
+    +     '<button type="button" class="rnx-mdd-btn" onclick="rnxMddToggle(\'rnx-jira-project\')">'
+    +       '<span class="rnx-mdd-label" id="rnx-jira-project-label"><span class="rnx-mdd-text">SDT</span></span>'
+    +       S3CHEV
+    +     '</button>'
+    +     '<input type="hidden" id="rnx-jira-project" value="SDT">'
+    +     '<div class="rnx-mdd-panel" id="rnx-jira-project-panel">'
+    +       '<div class="rnx-mdd-opt sel" data-val="SDT" onclick="rnxS3ProjectSet(\'SDT\')"><span class="rnx-mdd-text">SDT</span></div>'
+    +     '</div>'
+    +   '</div>'
     + '</div>'
-    // Mode toggle tabs
-    + '<div style="display:flex;margin-bottom:16px;border:1px solid var(--border);border-radius:7px;overflow:hidden;background:var(--bg)">'
-    +   '<button id="rnx-s3-tab-create" onclick="rnxStep3SetMode(\'create\')" style="flex:1;padding:7px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--accent);color:#fff;font-family:inherit;letter-spacing:.01em">Create New</button>'
-    +   '<button id="rnx-s3-tab-link"   onclick="rnxStep3SetMode(\'link\')"   style="flex:1;padding:7px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:transparent;color:var(--muted);font-family:inherit;letter-spacing:.01em">Link Existing</button>'
+    // Mode toggle — segmented pill (like screenshot)
+    + '<div style="' + GR + '">'
+    +   '<div style="display:flex;background:var(--bg);border-radius:9px;padding:3px">'
+    +     '<button id="rnx-s3-tab-create" onclick="rnxStep3SetMode(\'create\')" style="flex:1;padding:6px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;font-family:inherit;border-radius:6px;background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.10);transition:all .15s">Create New</button>'
+    +     '<button id="rnx-s3-tab-link"   onclick="rnxStep3SetMode(\'link\')"   style="flex:1;padding:6px 14px;font-size:12px;font-weight:400;border:none;cursor:pointer;font-family:inherit;border-radius:6px;background:transparent;color:var(--muted);box-shadow:none;transition:all .15s">Link Existing</button>'
+    +   '</div>'
     + '</div>'
     // ── Create New panel ──
     + '<div id="rnx-s3-panel-create">'
@@ -1761,15 +1772,28 @@ function rnxModalHtml() {
     +     '<label style="' + LB + '">Epic name</label>'
     +     '<div style="display:flex;gap:8px">'
     +       '<input id="rnx-epic-input" type="text" class="rnx-modal-inp" placeholder="Epic name…" style="flex:1" onkeydown="if(event.key===\'Enter\'){event.preventDefault();rnxAddJiraEpic();}" />'
-    +       '<button onclick="rnxAddJiraEpic()" style="flex-shrink:0;padding:7px 14px;font-size:13px;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">+ Add</button>'
+    +       '<button onclick="rnxAddJiraEpic()" style="flex-shrink:0;padding:7px 14px;font-size:12px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;font-weight:500">+ Add</button>'
     +     '</div>'
     +   '</div>'
     +   '<div id="rnx-epic-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto"></div>'
     + '</div>'
-    // ── Link Existing panel ──
+    // ── Link Existing panel — custom dropdown with checkboxes ──
     + '<div id="rnx-s3-panel-link" style="display:none">'
-    +   '<input id="rnx-epic-search" type="text" class="rnx-modal-inp" placeholder="Filter epics…" style="margin-bottom:8px" oninput="rnxRenderEpicPicker()" />'
-    +   '<div id="rnx-epic-picker" style="display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto"></div>'
+    +   '<div style="' + GR + '">'
+    +     '<label style="' + LB + '">Select Epics</label>'
+    +     '<div class="rnx-mdd-wrap">'
+    +       '<button type="button" class="rnx-mdd-btn" onclick="rnxToggleEpicPickerDd()">'
+    +         '<span class="rnx-mdd-label" id="rnx-epic-picker-label"><span class="rnx-mdd-text" style="color:var(--muted)">Select epics…</span></span>'
+    +         S3CHEV
+    +       '</button>'
+    +       '<div class="rnx-mdd-panel" id="rnx-epic-picker-panel" style="overflow:hidden;padding:0">'
+    +         '<div style="padding:6px 6px 4px">'
+    +           '<input id="rnx-epic-search" type="text" class="rnx-modal-inp" placeholder="Filter epics…" style="font-size:11px;padding:5px 8px;height:auto" oninput="rnxRenderEpicPicker()" />'
+    +         '</div>'
+    +         '<div id="rnx-epic-picker" style="max-height:196px;overflow-y:auto;padding:0 4px 4px"></div>'
+    +       '</div>'
+    +     '</div>'
+    +   '</div>'
     + '</div>'
     + '</div>';
 
@@ -1953,11 +1977,21 @@ function rnxOpenModal(id) {
   if (pickerEl) pickerEl.innerHTML = '';
   var existingEl = document.getElementById('rnx-existing-epics');
   if (existingEl) { existingEl.style.display = 'none'; existingEl.innerHTML = ''; }
-  // Reset toggle to "Create New"
+  // Reset epic picker label and close picker panel
+  var pickerLabelEl = document.getElementById('rnx-epic-picker-label');
+  if (pickerLabelEl) pickerLabelEl.innerHTML = '<span class="rnx-mdd-text" style="color:var(--muted)">Select epics…</span>';
+  var pickerPanel = document.getElementById('rnx-epic-picker-panel');
+  if (pickerPanel) pickerPanel.classList.remove('open');
+  // Reset project dropdown label
+  var projLabel = document.getElementById('rnx-jira-project-label');
+  if (projLabel) projLabel.innerHTML = '<span class="rnx-mdd-text">SDT</span>';
+  var projInp = document.getElementById('rnx-jira-project');
+  if (projInp) projInp.value = 'SDT';
+  // Reset toggle to "Create New" (segmented pill style)
   var tabCreate = document.getElementById('rnx-s3-tab-create');
   var tabLink   = document.getElementById('rnx-s3-tab-link');
-  var TAB_ACT  = 'flex:1;padding:7px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--accent);color:#fff;font-family:inherit;letter-spacing:.01em';
-  var TAB_IDLE = 'flex:1;padding:7px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:transparent;color:var(--muted);font-family:inherit;letter-spacing:.01em';
+  var TAB_ACT  = 'flex:1;padding:6px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;font-family:inherit;border-radius:6px;background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.10);transition:all .15s';
+  var TAB_IDLE = 'flex:1;padding:6px 14px;font-size:12px;font-weight:400;border:none;cursor:pointer;font-family:inherit;border-radius:6px;background:transparent;color:var(--muted);box-shadow:none;transition:all .15s';
   if (tabCreate) tabCreate.style.cssText = TAB_ACT;
   if (tabLink)   tabLink.style.cssText   = TAB_IDLE;
   var panelCreate = document.getElementById('rnx-s3-panel-create');
@@ -2174,8 +2208,8 @@ function rnxStep3SetMode(mode) {
   var panelLink   = document.getElementById('rnx-s3-panel-link');
   var saveBtn     = document.getElementById('rnx-create-epics-btn');
 
-  var TAB_ACT  = 'flex:1;padding:7px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--accent);color:#fff;font-family:inherit;letter-spacing:.01em';
-  var TAB_IDLE = 'flex:1;padding:7px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:transparent;color:var(--muted);font-family:inherit;letter-spacing:.01em';
+  var TAB_ACT  = 'flex:1;padding:6px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;font-family:inherit;border-radius:6px;background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.10);transition:all .15s';
+  var TAB_IDLE = 'flex:1;padding:6px 14px;font-size:12px;font-weight:400;border:none;cursor:pointer;font-family:inherit;border-radius:6px;background:transparent;color:var(--muted);box-shadow:none;transition:all .15s';
 
   if (mode === 'create') {
     if (tabCreate)   tabCreate.style.cssText   = TAB_ACT;
@@ -2189,18 +2223,18 @@ function rnxStep3SetMode(mode) {
     if (panelCreate) panelCreate.style.display = 'none';
     if (panelLink)   panelLink.style.display   = 'block';
     if (saveBtn)     saveBtn.textContent = 'Link Epics & Save';
-    // Trigger epic load for selected project
-    var project = (document.getElementById('rnx-jira-project') || {}).value || 'SDT';
-    rnxStep3LoadEpics(project);
+    // Epics load when the user opens the dropdown (rnxToggleEpicPickerDd)
   }
 }
 
 function rnxStep3OnProjectChange() {
   _rnxProjectEpics = null; // clear cache when project changes
-  if (_rnxStep3Mode === 'link') {
-    var project = (document.getElementById('rnx-jira-project') || {}).value || 'SDT';
-    rnxStep3LoadEpics(project);
-  }
+  _rnxLinkedEpics  = [];   // clear selection
+  // Reset picker label
+  var labelEl = document.getElementById('rnx-epic-picker-label');
+  if (labelEl) labelEl.innerHTML = '<span class="rnx-mdd-text" style="color:var(--muted)">Select epics…</span>';
+  var pickerEl = document.getElementById('rnx-epic-picker');
+  if (pickerEl) pickerEl.innerHTML = '';
 }
 
 function rnxStep3LoadEpics(project) {
@@ -2208,12 +2242,11 @@ function rnxStep3LoadEpics(project) {
   if (!pickerEl) return;
 
   if (_rnxProjectEpics !== null) {
-    // Already loaded — just re-render
     rnxRenderEpicPicker();
     return;
   }
 
-  pickerEl.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--muted)">Loading epics…</div>';
+  pickerEl.innerHTML = '<div style="padding:12px;text-align:center;font-size:12px;color:var(--muted)">Loading epics…</div>';
 
   fetch('/api/jira/issues?project=' + encodeURIComponent(project) + '&type=Epic')
     .then(function(r) { return r.json(); })
@@ -2222,7 +2255,7 @@ function rnxStep3LoadEpics(project) {
       rnxRenderEpicPicker();
     })
     .catch(function(e) {
-      if (pickerEl) pickerEl.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:#EF4444">Could not load epics: ' + (e.message || 'network error') + '</div>';
+      if (pickerEl) pickerEl.innerHTML = '<div style="padding:12px;text-align:center;font-size:12px;color:#EF4444">Could not load epics: ' + (e.message || 'network error') + '</div>';
     });
 }
 
@@ -2230,12 +2263,21 @@ function rnxRenderEpicPicker() {
   var el = document.getElementById('rnx-epic-picker');
   if (!el) return;
 
+  // Update button label with selection count
+  var n = _rnxLinkedEpics.length;
+  var labelEl = document.getElementById('rnx-epic-picker-label');
+  if (labelEl) {
+    labelEl.innerHTML = n
+      ? '<span class="rnx-mdd-text">' + n + ' epic' + (n > 1 ? 's' : '') + ' selected</span>'
+      : '<span class="rnx-mdd-text" style="color:var(--muted)">Select epics…</span>';
+  }
+
   if (!_rnxProjectEpics) {
-    el.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--muted)">Loading…</div>';
+    el.innerHTML = '<div style="padding:12px;text-align:center;font-size:12px;color:var(--muted)">Loading…</div>';
     return;
   }
   if (!_rnxProjectEpics.length) {
-    el.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--muted)">No epics found in this project.</div>';
+    el.innerHTML = '<div style="padding:12px;text-align:center;font-size:12px;color:var(--muted)">No epics found in this project.</div>';
     return;
   }
 
@@ -2245,26 +2287,18 @@ function rnxRenderEpicPicker() {
   });
 
   if (!filtered.length) {
-    el.innerHTML = '<div style="padding:12px;text-align:center;font-size:12px;color:var(--muted)">No epics match your filter.</div>';
+    el.innerHTML = '<div style="padding:10px;text-align:center;font-size:12px;color:var(--muted)">No epics match your filter.</div>';
     return;
   }
 
   el.innerHTML = filtered.map(function(epic) {
-    var sel = _rnxLinkedEpics.indexOf(epic.key) !== -1;
+    var sel    = _rnxLinkedEpics.indexOf(epic.key) !== -1;
     var sColor = epic.statusCategory === 'done' ? '#10B981' : epic.statusCategory === 'indeterminate' ? '#F59E0B' : 'var(--muted)';
-    var rowBg  = sel ? 'rgba(99,102,241,.06)' : 'var(--bg)';
-    var border = sel ? 'var(--accent)' : 'var(--border)';
-    var cbBorder = sel ? 'var(--accent)' : 'var(--border-md)';
-    var cbBg     = sel ? 'var(--accent)' : 'transparent';
-    var check    = sel
-      ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2 2 4-4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-      : '';
-    return '<div onclick="rnxToggleEpicLink(\'' + epic.key + '\')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid ' + border + ';background:' + rowBg + ';user-select:none">'
-      + '<div style="flex-shrink:0;width:16px;height:16px;border-radius:4px;border:1.5px solid ' + cbBorder + ';background:' + cbBg + ';display:flex;align-items:center;justify-content:center">' + check + '</div>'
-      + '<div style="flex:1;min-width:0">'
-      +   '<span style="font-size:11px;font-weight:600;color:var(--accent);margin-right:6px">' + epic.key + '</span>'
-      +   '<span style="font-size:12px;color:var(--text)">' + epic.summary.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>'
-      + '</div>'
+    var check  = sel ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2 2 4-4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+    return '<div class="rnx-mdd-opt' + (sel ? ' sel' : '') + '" onclick="rnxToggleEpicLink(\'' + epic.key.replace(/'/g, "\\'") + '\')" style="justify-content:flex-start;gap:8px">'
+      + '<div style="flex-shrink:0;width:15px;height:15px;border-radius:4px;border:1.5px solid ' + (sel ? 'var(--accent)' : 'var(--border-md)') + ';background:' + (sel ? 'var(--accent)' : 'transparent') + ';display:flex;align-items:center;justify-content:center">' + check + '</div>'
+      + '<span style="font-size:11px;font-weight:600;color:var(--accent);flex-shrink:0">' + epic.key + '</span>'
+      + '<span class="rnx-mdd-text" style="flex:1">' + epic.summary.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>'
       + '<span style="font-size:10px;color:' + sColor + ';flex-shrink:0;white-space:nowrap">' + epic.status + '</span>'
       + '</div>';
   }).join('');
@@ -2275,6 +2309,40 @@ function rnxToggleEpicLink(key) {
   if (idx === -1) _rnxLinkedEpics.push(key);
   else            _rnxLinkedEpics.splice(idx, 1);
   rnxRenderEpicPicker();
+}
+
+function rnxS3ProjectSet(val) {
+  var inp = document.getElementById('rnx-jira-project');
+  if (inp) inp.value = val;
+  var labelEl = document.getElementById('rnx-jira-project-label');
+  if (labelEl) labelEl.innerHTML = '<span class="rnx-mdd-text">' + val + '</span>';
+  var panel = document.getElementById('rnx-jira-project-panel');
+  if (panel) {
+    panel.querySelectorAll('.rnx-mdd-opt').forEach(function(o) {
+      o.classList.toggle('sel', o.dataset.val === val);
+    });
+    panel.classList.remove('open');
+  }
+  rnxStep3OnProjectChange();
+}
+
+function rnxToggleEpicPickerDd() {
+  var panel = document.getElementById('rnx-epic-picker-panel');
+  if (!panel) return;
+  var isOpen = panel.classList.contains('open');
+  // Close all mdd panels
+  document.querySelectorAll('.rnx-mdd-panel.open').forEach(function(p) { p.classList.remove('open'); });
+  if (!isOpen) {
+    panel.classList.add('open');
+    // Load epics if not cached yet
+    var project = (document.getElementById('rnx-jira-project') || {}).value || 'SDT';
+    rnxStep3LoadEpics(project);
+    // Focus search after panel opens
+    setTimeout(function() {
+      var s = document.getElementById('rnx-epic-search');
+      if (s) s.focus();
+    }, 50);
+  }
 }
 
 function rnxSaveWithEpics() {
