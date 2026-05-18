@@ -7,7 +7,7 @@
   s.textContent =
     '@keyframes kervFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}' +
     '@keyframes kervFadeIn{from{opacity:0}to{opacity:1}}' +
-    '.kerv-loader{display:flex;flex-direction:column;align-items:center;gap:10px;padding:28px 0 12px;animation:kervFadeIn .3s ease}' +
+    '.kerv-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 0 12px;animation:kervFadeIn .3s ease;min-height:calc(100vh - 120px)}' +
     '.kerv-loader-mark{width:28px;height:28px;border-radius:7px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.10);animation:kervFloat 2.4s ease-in-out infinite}' +
     '.kerv-loader-mark img{width:100%;height:100%;object-fit:contain;display:block}' +
     '.kerv-loader-text{font-size:10px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}';
@@ -52,15 +52,19 @@ var RNX_GREENS  = ['#7B2D8E','#9B59B6','#6C3483','#A569BD','#8E44AD','#BB8FCE','
 var rnxDriverColors = {}, rnxThemeColors = {};
 
 function rnxBuildColorMaps() {
-  var ds = [], ts = [];
-  rnxInitiatives.forEach(function(i) {
-    if (ds.indexOf(i.driver) === -1) ds.push(i.driver);
-    if (ts.indexOf(i.theme)  === -1) ts.push(i.theme);
+  // Build driver colors from the authoritative drivers table (not just what appears in initiatives)
+  rnxDriverColors = {};
+  rnxRefData.drivers.forEach(function(d) {
+    if (d.name) rnxDriverColors[d.name] = kervDriverColor(d.name);
   });
-  ds.sort(); ts.sort();
-  rnxDriverColors = {}; rnxThemeColors = {};
-  ds.forEach(function(d, i) { rnxDriverColors[d] = RNX_PALETTE[i % RNX_PALETTE.length]; });
-  ts.forEach(function(t, i) { rnxThemeColors[t]  = RNX_GREENS[i  % RNX_GREENS.length]; });
+  // Build theme colors from initiatives
+  var ts = [];
+  rnxInitiatives.forEach(function(i) {
+    if (i.theme && ts.indexOf(i.theme) === -1) ts.push(i.theme);
+  });
+  ts.sort();
+  rnxThemeColors = {};
+  ts.forEach(function(t, i) { rnxThemeColors[t] = RNX_GREENS[i % RNX_GREENS.length]; });
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -75,7 +79,33 @@ function rnxCurrentQLabel() {
   return 'Q' + (m < 3 ? 1 : m < 6 ? 2 : m < 9 ? 3 : 4) + ' ' + y;
 }
 
-var RNX_QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'];
+var RNX_QUARTERS      = ['Q1', 'Q2', 'Q3', 'Q4'];
+var rnxAllInitiatives = [];
+var rnxSelYear        = new Date().getFullYear();
+
+// ── Shared year-nav builder (used by roadmap + capacity) ───────────────────
+function rnxBuildYearNav(idPrefix, allInits, selYear) {
+  var years = {};
+  var cur   = new Date().getFullYear();
+  years[cur] = true;
+  allInits.forEach(function(i) { var y = parseInt(i.year); if (y) years[y] = true; });
+  var ys      = Object.keys(years).map(Number).sort();
+  var idx     = ys.indexOf(selYear);
+  var hasPrev = idx > 0;
+  var hasNext = idx < ys.length - 1;
+  var setFn   = idPrefix + 'SetYear';
+  function btn(dir, enabled) {
+    var arrow = dir === -1 ? '&#8592;' : '&#8594;';
+    var s = 'width:20px;height:20px;border-radius:5px;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:var(--text)';
+    if (!enabled) s += ';opacity:.3;cursor:default;pointer-events:none';
+    return '<button type="button" onclick="' + setFn + '(' + (selYear + dir) + ')" style="' + s + '">' + arrow + '</button>';
+  }
+  return '<div style="display:inline-flex;align-items:center;gap:5px">'
+    + btn(-1, hasPrev)
+    + '<span style="font-size:11px;font-weight:600;color:var(--text)">' + selYear + '</span>'
+    + btn(1, hasNext)
+    + '</div>';
+}
 
 function rnxFmtDollar(v) {
   if (!v && v !== 0) return '—';
@@ -99,10 +129,14 @@ function rnxRoiHtml(v, id) {
   var pct = '<span style="color:' + (p < 0 ? '#E5243B' : '#2EAD4B') + ';font-weight:500">' + p + '%</span>';
   if (!id) return pct;
   var eye = '<button onclick="rnxOpenRoiCalc(' + id + ')" title="View / edit ROI" class="rnx-roi-eye"'
-    + ' style="background:none;border:none;cursor:pointer;color:var(--muted);padding:0 0 0 9px;line-height:0;vertical-align:middle;opacity:.5">'
-    + '<svg width="13" height="13" viewBox="0 0 16 16" fill="none">'
-    + '<path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.4"/>'
-    + '<circle cx="8" cy="8" r="2.2" stroke="currentColor" stroke-width="1.4"/>'
+    + ' style="background:none;border:none;cursor:pointer;color:var(--muted);padding:0 0 0 9px;line-height:0;vertical-align:middle;opacity:.6;transition:color .12s,opacity .12s"'
+    + ' onmouseenter="this.style.color=\'var(--accent)\';this.style.opacity=\'1\'" onmouseleave="this.style.color=\'var(--muted)\';this.style.opacity=\'.6\'">'
+    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<rect x="4" y="2" width="16" height="20" rx="2"/>'
+    + '<line x1="8" y1="6" x2="16" y2="6"/>'
+    + '<line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/>'
+    + '<line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/>'
+    + '<line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/>'
     + '</svg></button>';
   return pct + eye;
 }
@@ -329,61 +363,159 @@ function rnxFilterOptions(key) {
   return v.map(function(x) { return '<option value="' + x + '">' + x + '</option>'; }).join('');
 }
 
+// ── Custom dropdown helpers ───────────────────────────────────────────────
+
+// Build <div class="rnx-dd-opt"> items from an initiative field
+function rnxDdOpts(field) {
+  var vals = [];
+  rnxInitiatives.forEach(function(i) {
+    var v = i[field]; if (v && vals.indexOf(v) === -1) vals.push(v);
+  });
+  vals.sort();
+  return vals.map(function(v) {
+    return '<div class="rnx-dd-opt" data-val="' + v.replace(/"/g, '&quot;') + '">' + v + '</div>';
+  }).join('');
+}
+
+// Build a full custom dropdown element
+function rnxDdHtml(id, placeholder, innerOpts, sfx) {
+  return '<div class="rnx-dd" id="' + id + '" data-rnxfilter="' + sfx + '" data-value="">'
+    + '<button class="rnx-dd-btn" type="button">' + placeholder + '</button>'
+    + '<div class="rnx-dd-menu">'
+    + '<div class="rnx-dd-opt sel" data-val="">' + placeholder + '</div>'
+    + innerOpts
+    + '</div></div>';
+}
+
+// Wire all un-initialised .rnx-dd elements (idempotent via data-dd-init)
+function rnxDdInit() {
+  document.querySelectorAll('.rnx-dd:not([data-dd-init])').forEach(function(dd) {
+    dd.setAttribute('data-dd-init', '1');
+    var btn  = dd.querySelector('.rnx-dd-btn');
+    var menu = dd.querySelector('.rnx-dd-menu');
+    if (!btn || !menu) return;
+
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var wasOpen = dd.classList.contains('open');
+      document.querySelectorAll('.rnx-dd.open').forEach(function(o) { o.classList.remove('open'); });
+      if (!wasOpen) {
+        // Use fixed positioning so the menu escapes overflow:hidden ancestors (e.g. .twrap)
+        var r = btn.getBoundingClientRect();
+        menu.style.position = 'fixed';
+        menu.style.top      = (r.bottom + 4) + 'px';
+        menu.style.left     = r.left + 'px';
+        menu.style.minWidth = r.width + 'px';
+        dd.classList.add('open');
+      }
+    });
+
+    menu.querySelectorAll('.rnx-dd-opt').forEach(function(opt) {
+      opt.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var val = opt.dataset.val;
+        dd.dataset.value = val;
+        btn.textContent  = opt.textContent;
+        menu.querySelectorAll('.rnx-dd-opt').forEach(function(o) { o.classList.remove('sel'); });
+        opt.classList.add('sel');
+        dd.classList.toggle('active', val !== '');
+        dd.classList.remove('open');
+        dd.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    });
+  });
+
+  // Single global click-outside handler (registered once)
+  if (!window._rnxDdOutsideWired) {
+    window._rnxDdOutsideWired = true;
+    document.addEventListener('click', function() {
+      document.querySelectorAll('.rnx-dd.open').forEach(function(dd) { dd.classList.remove('open'); });
+    });
+  }
+}
+
 function rnxFilterBar(sfx) {
   sfx = sfx || '';
-  var ds = rnxDeliveryOpts.map(function(o) { return '<option value="' + o.val + '">' + o.label + '</option>'; }).join('');
-  var searchBox = sfx === ''
-    ? '<input type="search" id="rnxf-search" placeholder="🔍 Search initiatives…" class="filterbar-search" data-rnxsearch>'
+  var statusOpts = rnxDeliveryOpts.map(function(o) {
+    return '<div class="rnx-dd-opt" data-val="' + o.val + '">' + o.label + '</div>';
+  }).join('');
+  var searchBox = (sfx === '' || sfx === 'bl')
+    ? '<input type="search" id="rnxf-search' + sfx + '" placeholder="🔍 Search initiatives…" class="filterbar-search" data-rnxsearch="' + sfx + '">'
     : '';
   return '<div class="filterbar">'
     + searchBox
-    + '<select id="rnxf-driver'  + sfx + '" data-rnxfilter="' + sfx + '"><option value="">All Drivers</option>'        + rnxFilterOptions('driver')       + '</select>'
-    + '<select id="rnxf-team'    + sfx + '" data-rnxfilter="' + sfx + '"><option value="">All Teams</option>'          + rnxFilterOptions('team')         + '</select>'
-    + '<select id="rnxf-theme'   + sfx + '" data-rnxfilter="' + sfx + '"><option value="">All Themes</option>'         + rnxFilterOptions('theme')        + '</select>'
-    + '<select id="rnxf-po'      + sfx + '" data-rnxfilter="' + sfx + '"><option value="">All Product Owners</option>' + rnxFilterOptions('productOwner') + '</select>'
-    + '<select id="rnxf-tl'      + sfx + '" data-rnxfilter="' + sfx + '"><option value="">All Tech Leads</option>'     + rnxFilterOptions('techLead')     + '</select>'
-    + '<select id="rnxf-status'  + sfx + '" data-rnxfilter="' + sfx + '"><option value="">All Statuses</option>'       + ds                               + '</select>'
+    + rnxDdHtml('rnxf-driver' + sfx, 'All Drivers',        rnxDdOpts('driver'),       sfx)
+    + rnxDdHtml('rnxf-team'   + sfx, 'All Teams',          rnxDdOpts('team'),         sfx)
+    + rnxDdHtml('rnxf-theme'  + sfx, 'All Themes',         rnxDdOpts('theme'),        sfx)
+    + rnxDdHtml('rnxf-po'     + sfx, 'All Product Owners', rnxDdOpts('productOwner'), sfx)
+    + rnxDdHtml('rnxf-tl'     + sfx, 'All Tech Leads',     rnxDdOpts('techLead'),     sfx)
+    + rnxDdHtml('rnxf-status' + sfx, 'All Statuses',       statusOpts,                sfx)
     + '<button class="filter-reset" data-rnxreset="' + sfx + '">Reset</button></div>';
 }
 
-function rnxApplyTableFilters() {
-  var fd = document.getElementById('rnxf-driver'), ft = document.getElementById('rnxf-team'),
-      fth = document.getElementById('rnxf-theme'), fpo = document.getElementById('rnxf-po'),
-      ftl = document.getElementById('rnxf-tl'),   fs = document.getElementById('rnxf-status');
-  var fsi = document.getElementById('rnxf-search');
-  var q = fsi ? fsi.value.trim().toLowerCase() : '';
-  document.querySelectorAll('#rnx-table-body tr').forEach(function(row) {
-    var id = parseInt(row.dataset.id);
-    var i = rnxInitiatives.filter(function(x) { return x.id === id; })[0];
-    if (!i) { row.style.display = 'none'; return; }
+// ── Generic filter engine ─────────────────────────────────────────────────
+// sfx      : ID suffix used in rnxFilterBar ('' | 'q' | 'bl' | any future)
+// selector : CSS selector for the elements to show/hide
+
+function rnxApplyFilters(sfx, selector) {
+  var g  = function(name) { return document.getElementById('rnxf-' + name + sfx); };
+  // Works for both native <select> (.value) and custom .rnx-dd (data-value)
+  var gv = function(name) {
+    var el = g(name); if (!el) return '';
+    return (el.classList.contains('rnx-dd') ? el.dataset.value : el.value) || '';
+  };
+  var si = g('search');
+  var q  = si ? si.value.trim().toLowerCase() : '';
+  document.querySelectorAll(selector).forEach(function(el) {
+    var i = rnxInitiatives.filter(function(x) { return x.id === parseInt(el.dataset.id); })[0];
+    if (!i) { el.style.display = 'none'; return; }
     var matchSearch = !q || [i.title, i.driver, i.team, i.theme, i.productOwner, i.techLead]
       .join(' ').toLowerCase().indexOf(q) !== -1;
-    row.style.display =
-      matchSearch &&
-      (!fd  || !fd.value  || i.driver       === fd.value)  &&
-      (!ft  || !ft.value  || i.team         === ft.value)  &&
-      (!fth || !fth.value || i.theme        === fth.value) &&
-      (!fpo || !fpo.value || i.productOwner === fpo.value) &&
-      (!ftl || !ftl.value || i.techLead     === ftl.value) &&
-      (!fs  || !fs.value  || i.deliveryStatus === fs.value) ? '' : 'none';
+    el.style.display = matchSearch
+      && (!gv('driver') || i.driver         === gv('driver'))
+      && (!gv('team')   || i.team           === gv('team'))
+      && (!gv('theme')  || i.theme          === gv('theme'))
+      && (!gv('po')     || i.productOwner   === gv('po'))
+      && (!gv('tl')     || i.techLead       === gv('tl'))
+      && (!gv('status') || i.deliveryStatus === gv('status')) ? '' : 'none';
   });
 }
 
-function rnxApplyKanbanFilters() {
-  var fd = document.getElementById('rnxf-driverq'), ft = document.getElementById('rnxf-teamq'),
-      fth = document.getElementById('rnxf-themeq'), fpo = document.getElementById('rnxf-poq'),
-      ftl = document.getElementById('rnxf-tlq'),    fs = document.getElementById('rnxf-statusq');
-  document.querySelectorAll('#rnx-kanban .kancard').forEach(function(card) {
-    var id = parseInt(card.dataset.id);
-    var i = rnxInitiatives.filter(function(x) { return x.id === id; })[0];
-    if (!i) { card.style.display = 'none'; return; }
-    card.style.display =
-      (!fd  || !fd.value  || i.driver       === fd.value)  &&
-      (!ft  || !ft.value  || i.team         === ft.value)  &&
-      (!fth || !fth.value || i.theme        === fth.value) &&
-      (!fpo || !fpo.value || i.productOwner === fpo.value) &&
-      (!ftl || !ftl.value || i.techLead     === ftl.value) &&
-      (!fs  || !fs.value  || i.deliveryStatus === fs.value) ? '' : 'none';
+// Thin wrappers — keep all existing call-sites working unchanged
+function rnxApplyTableFilters()   { rnxApplyFilters('',   '#rnx-table-body tr'); }
+function rnxApplyKanbanFilters()  { rnxApplyFilters('q',  '#rnx-kanban .kancard'); }
+function rnxApplyBacklogFilters() { rnxApplyFilters('bl', '#rnx-backlog-body tr'); }
+
+// ── Generic filter bar wiring ─────────────────────────────────────────────
+// Wires dropdowns, search input, and reset button for one filter bar suffix.
+// Adding a new view = one call: rnxWireFilterBar('xx', '#my-body tr')
+
+function rnxWireFilterBar(sfx, selector) {
+  var applyFn = function() { rnxApplyFilters(sfx, selector); };
+  document.querySelectorAll('[data-rnxfilter="' + sfx + '"]').forEach(function(sel) {
+    sel.addEventListener('change', applyFn);
+  });
+  var si = document.getElementById('rnxf-search' + sfx);
+  if (si) si.addEventListener('input', applyFn);
+  var rb = document.querySelector('[data-rnxreset="' + sfx + '"]');
+  if (rb) rb.addEventListener('click', function() {
+    document.querySelectorAll('[data-rnxfilter="' + sfx + '"]').forEach(function(el) {
+      if (el.classList.contains('rnx-dd')) {
+        el.dataset.value = '';
+        el.classList.remove('active');
+        var btn      = el.querySelector('.rnx-dd-btn');
+        var firstOpt = el.querySelector('.rnx-dd-opt');
+        if (btn && firstOpt) btn.textContent = firstOpt.textContent;
+        el.querySelectorAll('.rnx-dd-opt').forEach(function(o) {
+          o.classList.toggle('sel', o.dataset.val === '');
+        });
+      } else {
+        el.value = '';
+      }
+    });
+    var searchEl = document.getElementById('rnxf-search' + sfx);
+    if (searchEl) searchEl.value = '';
+    document.querySelectorAll(selector).forEach(function(el) { el.style.display = ''; });
   });
 }
 
@@ -392,9 +524,8 @@ function rnxApplyKanbanFilters() {
 function rnxQFilter(prefix, fn) {
   var cq = rnxCurrentQ();
   var opts = RNX_QUARTERS.concat(['all']);
-  if (prefix === 'rnx-roi') opts.push('backlog');
   return '<div class="qfilter">' + opts.map(function(q) {
-    var lbl = q === 'all' ? 'All' : q === 'backlog' ? 'Backlog' : q;
+    var lbl = q === 'all' ? 'All' : q;
     return '<button id="' + prefix + '-btn-' + q + '" class="qfilter-btn' + (q === cq ? ' act' : '') + '"'
       + ' data-rnxqfn="' + fn + '" data-q="' + q + '">' + lbl + '</button>';
   }).join('') + '</div>';
@@ -402,7 +533,6 @@ function rnxQFilter(prefix, fn) {
 
 function rnxSetQAct(prefix, q) {
   var opts = RNX_QUARTERS.concat(['all']);
-  if (prefix === 'rnx-roi') opts.push('backlog');
   opts.forEach(function(b) {
     var el = document.getElementById(prefix + '-btn-' + b);
     if (el) el.classList.toggle('act', b === q);
@@ -738,9 +868,11 @@ function rnxTableRows(subset) {
       + '<td style="min-width:140px">'  + rnxAvatarSel('rnx-t-tl-'  + i.id, tlMbrs,  i.techLead,        i.id) + '</td>'
       + '<td style="min-width:155px">'  + rnxCustomSel('rnx-t-th-'  + i.id, thItems, i.theme,           i.id) + '</td>'
       + '<td style="white-space:nowrap">' + roiCell + '</td>'
+      + '<td id="rnx-epics-prog-' + i.id + '" style="min-width:130px">' + rnxEpicsProgressCell(i) + '</td>'
       + '<td style="min-width:130px">'  + rnxCustomSel('rnx-t-ds-'  + i.id, dsItems, i.deliveryStatus || 'not-started', i.id) + '</td>'
       + '<td style="white-space:nowrap">'
-      +   '<button class="rnx-del-btn" data-rnxdel="' + i.id + '" title="Delete"'
+      +   '<button class="rnx-del-btn" title="Delete"'
+      +     ' onclick="event.stopPropagation();rnxDeleteInitiative(' + i.id + ')"'
       +     ' style="width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:6px;background:none;color:var(--faint);cursor:pointer;transition:color .12s,background .12s"'
       +     ' onmouseenter="this.style.color=\'#E5243B\';this.style.background=\'#FFF0F0\'"'
       +     ' onmouseleave="this.style.color=\'var(--faint)\';this.style.background=\'none\'">'
@@ -749,6 +881,134 @@ function rnxTableRows(subset) {
       + '</td>'
       + '</tr>';
   }).join('');
+}
+
+// ── Jira Epics progress bar ───────────────────────────────────────────────────
+
+var _PENCIL_SVG = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H3v-2L11.5 2.5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function _rnxPencilBtn(id) {
+  return '<button onclick="event.stopPropagation();rnxOpenModalOnStep3(' + id + ')"'
+    + ' title="Manage Jira Epics"'
+    + ' style="flex-shrink:0;padding:2px 5px;background:none;border:none;cursor:pointer;color:var(--muted);border-radius:4px;line-height:0;transition:color .12s"'
+    + ' onmouseenter="this.style.color=\'var(--accent)\'" onmouseleave="this.style.color=\'var(--muted)\'">'
+    + _PENCIL_SVG
+    + '</button>';
+}
+
+function rnxEpicsProgressCell(initiative) {
+  var keys = initiative.jiraEpics;
+  var pencil = _rnxPencilBtn(initiative.id);
+  if (!keys || !keys.length) {
+    return '<div style="display:flex;align-items:center;gap:4px">'
+      + '<span style="font-size:11px;color:var(--faint)">—</span>'
+      + pencil
+      + '</div>';
+  }
+  // Skeleton bar shown while live data loads
+  return '<div style="display:flex;flex-direction:column;gap:3px">'
+    + '<div style="display:flex;align-items:center;gap:6px">'
+    +   '<div style="flex:1;height:5px;background:var(--border);border-radius:999px;overflow:hidden">'
+    +     '<div class="rnx-epic-bar" style="height:100%;width:0%;background:#CBD5E1;border-radius:999px;transition:width .5s ease"></div>'
+    +   '</div>'
+    +   '<span class="rnx-epic-pct" style="font-size:11px;color:var(--muted);min-width:28px;text-align:right">…</span>'
+    +   pencil
+    + '</div>'
+    + '<span class="rnx-epic-lbl" style="font-size:10px;color:var(--faint)">' + keys.length + ' epic' + (keys.length !== 1 ? 's' : '') + '</span>'
+    + '</div>';
+}
+
+function rnxOpenModalOnStep3(id) {
+  rnxOpenModal(id);   // fills all fields + resets to step 1
+  setTimeout(function() {
+    // Jump directly to step 3 (skip validation, title already exists for saved initiative)
+    document.getElementById('rnx-modal-step-1').style.display  = 'none';
+    document.getElementById('rnx-modal-step-2').style.display  = 'none';
+    document.getElementById('rnx-modal-step-3').style.display  = 'block';
+    document.getElementById('rnx-modal-footer-1').style.display = 'none';
+    document.getElementById('rnx-modal-footer-2').style.display = 'none';
+    document.getElementById('rnx-modal-footer-3').style.display = 'flex';
+    // Dots: 1 idle, 2 idle, 3 active
+    var IDLE_DOT = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-md);background:transparent;color:var(--muted);font-size:11px;font-weight:600;flex-shrink:0';
+    var ACT_DOT  = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;flex-shrink:0';
+    var d1 = document.getElementById('rnx-step-dot-1');
+    var d2 = document.getElementById('rnx-step-dot-2');
+    var d3 = document.getElementById('rnx-step-dot-3');
+    if (d1) { d1.style.cssText = IDLE_DOT; d1.textContent = '1'; }
+    if (d2) { d2.style.cssText = IDLE_DOT; d2.textContent = '2'; }
+    if (d3) { d3.style.cssText = ACT_DOT;  d3.textContent = '3'; }
+    document.getElementById('rnx-step-label-1').style.cssText = 'font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap';
+    document.getElementById('rnx-step-label-2').style.cssText = 'font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap';
+    document.getElementById('rnx-step-label-3').style.cssText = 'font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap';
+    // Reset mode toggle
+    rnxStep3SetMode('create');
+    // Show already-linked epics as read-only info chips
+    var initiative = rnxAllInitiatives.filter(function(x) { return x.id === id; })[0];
+    var existing = initiative && initiative.jiraEpics && initiative.jiraEpics.length ? initiative.jiraEpics : [];
+    var existingEl = document.getElementById('rnx-existing-epics');
+    if (existingEl) {
+      if (existing.length) {
+        existingEl.style.display = 'block';
+        existingEl.innerHTML = '<div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#10B981;margin-bottom:8px">Already linked</div>'
+          + '<div style="display:flex;flex-wrap:wrap;gap:6px">'
+          + existing.map(function(k) {
+              return '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:20px;font-size:11px;font-weight:500;color:#10B981">'
+                + '<svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M2 5.5l2 2 4-4" stroke="#10B981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                + k
+                + '</span>';
+            }).join('')
+          + '</div>';
+      } else {
+        existingEl.style.display = 'none';
+        existingEl.innerHTML = '';
+      }
+    }
+    var inp = document.getElementById('rnx-epic-input');
+    if (inp) { inp.value = ''; inp.focus(); }
+  }, 60);
+}
+
+function rnxFetchJiraProgress() {
+  // Collect all initiatives that have linked epics (visible table rows)
+  var toFetch = rnxAllInitiatives.filter(function(i) { return i.jiraEpics && i.jiraEpics.length; });
+  if (!toFetch.length) return;
+
+  // Flatten all unique keys across all initiatives
+  var allKeys = [];
+  toFetch.forEach(function(i) {
+    i.jiraEpics.forEach(function(k) { if (allKeys.indexOf(k) === -1) allKeys.push(k); });
+  });
+
+  fetch('/api/jira/issue?keys=' + encodeURIComponent(allKeys.join(',')))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      // data = { "SDT-123": { pct: 100, status: "Done", statusCategory: "done" }, ... }
+      toFetch.forEach(function(initiative) {
+        var cell = document.getElementById('rnx-epics-prog-' + initiative.id);
+        if (!cell) return;
+        var keys = initiative.jiraEpics;
+        var total = keys.length;
+        var sum   = keys.reduce(function(acc, k) { return acc + ((data[k] ? data[k].pct : 0)); }, 0);
+        var pct   = total ? Math.round(sum / total) : 0;
+        var color = pct === 100 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#6366F1';
+        var bar   = cell.querySelector('.rnx-epic-bar');
+        var label = cell.querySelector('.rnx-epic-pct');
+        if (bar)   { bar.style.width = pct + '%'; bar.style.background = color; }
+        if (label) { label.textContent = pct + '%'; label.style.color = pct === 100 ? '#10B981' : 'var(--muted)'; }
+      });
+    })
+    .catch(function(e) { console.warn('rnxFetchJiraProgress:', e.message); });
+}
+
+function rnxUpdateBacklogBadge() {
+  var btn = document.querySelector('[data-rnxtab="backlog"]');
+  if (!btn) return;
+  var count = rnxInitiatives.filter(function(x) { return (x.quarter||'').toLowerCase() === 'backlog'; }).length;
+  var badge = btn.querySelector('span');
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? '' : 'none';
+  }
 }
 
 function rnxSaveInline(id) {
@@ -774,7 +1034,10 @@ function rnxSaveInline(id) {
     body: JSON.stringify(Object.assign({}, i, updated))
   })
   .then(function(r) { return r.json(); })
-  .then(function(res) { if (!res.ok) console.error('rnxSaveInline:', res.error); })
+  .then(function(res) {
+    if (!res.ok) { console.error('rnxSaveInline:', res.error); return; }
+    rnxUpdateBacklogBadge();
+  })
   .catch(function(e) { console.error('rnxSaveInline:', e.message); });
 }
 
@@ -987,10 +1250,10 @@ function rnxKanbanHtml() {
         + '<div><span class="kancard-title">' + i.title + '</span>'
         + '<div class="kancard-tags">' + (i.theme || '') + (i.theme && i.team ? ' · ' : '') + (i.team || '') + '</div></div>'
         + '<div class="kancard-leads">'
-        +   '<span class="kancard-lead-item">' + rnxLeadAv(i.productOwner) + '<span class="kancard-lead-label">PO</span> ' + (i.productOwner || '—') + '</span>'
-        +   '<span class="kancard-lead-item">' + rnxLeadAv(i.techLead)     + '<span class="kancard-lead-label">TL</span> ' + (i.techLead    || '—') + '</span>'
+        +   '<span class="kancard-lead-item"><span style="font-size:9px;font-weight:600;color:var(--muted);margin-right:3px">PL</span>' + rnxLeadAv(i.productOwner) + ((i.productOwner || '—').split(' ')[0]) + '</span>'
+        +   '<span class="kancard-lead-item"><span style="font-size:9px;font-weight:600;color:var(--muted);margin-right:3px">TL</span>' + rnxLeadAv(i.techLead)     + ((i.techLead    || '—').split(' ')[0]) + '</span>'
         + '</div>'
-        + '<div class="kancard-driver"><span class="kancard-lead-label">Driver</span> ' + (i.driver || '—') + '</div>'
+        + '<div class="kancard-driver">' + (i.driver ? rnxDriverBadge(i.driver) : '<span style="font-size:10px;color:var(--faint)">—</span>') + '</div>'
         + '<div class="kancard-footer">'
         +   '<div data-rnx-ds-id="' + i.id + '">'
         +     '<span class="pill ds-pill ' + opt.cls + '">' + opt.label + '</span>'
@@ -1185,11 +1448,12 @@ function rnxRoiCalcGroup(items) {
 
 function rnxRenderScatter(q) {
   var subset = rnxRoiSubset(q);
-  var drivers = [];
-  subset.forEach(function(i) { if (i.driver && drivers.indexOf(i.driver) === -1) drivers.push(i.driver); });
+  // Start from the authoritative drivers table, then add any in-data drivers not in the table
+  var drivers = rnxRefData.drivers.map(function(d) { return d.name; }).filter(Boolean);
+  rnxInitiatives.forEach(function(i) { if (i.driver && drivers.indexOf(i.driver) === -1) drivers.push(i.driver); });
   drivers.sort();
   var datasets = drivers.map(function(d) {
-    var color = rnxDriverColors[d] || '#8E8E93';
+    var color = kervDriverColor(d);
     var pts = subset.filter(function(i){return i.driver===d;}).map(function(i) {
       var av = parseFloat(i.addedValue), roi = parseFloat(i.roi);
       if (isNaN(av)||isNaN(roi)) return null;
@@ -1233,7 +1497,7 @@ function rnxRoiBarCard(subset, title, label, key) {
     var s = rnxRoiCalcGroup(subset.filter(function(i){return i[key]===k;}));
     var p = isNaN(s.roiAvg) ? 0 : Math.round(s.roiAvg*100);
     var tc = p < 0 ? '#E5243B' : '#2EAD4B';
-    var kHtml = colorMap ? rnxBadge(k, colorMap[k]||'#8E8E93') : key === 'team' ? rnxBadge(k, RNX_GREENS[ki%RNX_GREENS.length]) : '<span style="font-size:12px;color:var(--text)">'+k+'</span>';
+    var kHtml = key === 'driver' ? rnxBadge(k, kervDriverColor(k)) : '<span style="font-size:12px;color:var(--text)">'+k+'</span>';
     return '<div class="roi-bar-row"><div>'+kHtml+'</div><div class="roi-bar-val">'+rnxFmtAV(s.av)+'</div><div class="roi-bar-pct" style="color:'+tc+'">'+p+'%</div></div>';
   }).join('');
   return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">'
@@ -1257,10 +1521,10 @@ function rnxRoiContent(q) {
     + '<div><div class="roi-card-big" style="color:'+c+'">'+p+'%</div><div class="roi-card-small">avg ROI</div></div>'
     + '</div>';
   var tableRows = subset.map(function(i) {
-    return '<tr><td>'+i.quarter+'</td><td>'+i.title+'</td><td>'+rnxDriverBadge(i.driver)+'</td><td>'+(i.team||'—')+'</td><td>'+rnxThemeBadge(i.theme)+'</td><td>'+rnxFmtDollar(i.addedValue)+'</td><td>'+rnxRoiHtml(i.roi)+'</td></tr>';
+    return '<tr><td>'+i.quarter+'</td><td>'+i.title+'</td><td>'+rnxDriverBadge(i.driver)+'</td><td>'+(i.team||'—')+'</td><td>'+(i.theme||'—')+'</td><td>'+rnxFmtDollar(i.addedValue)+'</td><td>'+rnxRoiHtml(i.roi)+'</td></tr>';
   }).join('');
   var table = '<div class="twrap"><div class="thead-row">Initiatives</div>'
-    + '<table><thead><tr><th>Quarter</th><th>Initiative</th><th>Driver</th><th>Team</th><th>Theme</th><th>Added Value</th><th>ROI</th></tr></thead>'
+    + '<table class="rnx-table"><thead><tr><th>Quarter</th><th>Initiative</th><th>Driver</th><th>Team</th><th>Theme</th><th>Added Value</th><th>ROI</th></tr></thead>'
     + '<tbody>' + tableRows + '</tbody></table></div>';
 
   return '<div class="roi-chart-wrap"><div class="roi-chart-label">Added Value vs ROI &mdash; each point is an initiative &mdash; click legend to filter</div>'
@@ -1436,7 +1700,12 @@ function rnxModalHtml() {
     + '<div style="width:1px;height:26px;background:var(--border-md);margin:4px 0 4px 9px"></div>'
     + '<div style="display:flex;align-items:center;gap:8px">'
     +   '<span id="rnx-step-dot-2" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-md);background:transparent;color:var(--muted);font-size:11px;font-weight:600;flex-shrink:0">2</span>'
-    +   '<span id="rnx-step-label-2" style="font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap">ROI Calculator</span>'
+    +   '<span id="rnx-step-label-2" style="font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap">Estimate ROI and Effort</span>'
+    + '</div>'
+    + '<div style="width:1px;height:26px;background:var(--border-md);margin:4px 0 4px 9px"></div>'
+    + '<div style="display:flex;align-items:center;gap:8px">'
+    +   '<span id="rnx-step-dot-3" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-md);background:transparent;color:var(--muted);font-size:11px;font-weight:600;flex-shrink:0">3</span>'
+    +   '<span id="rnx-step-label-3" style="font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap">Create Jira Epics</span>'
     + '</div>'
     + '</div>';
 
@@ -1453,7 +1722,7 @@ function rnxModalHtml() {
     +   '<div>' + mddAv('rnxi-tl','Engineering Lead',tlMembers)   + '</div>'
     + '</div>'
     + '<div style="' + GR + '">'
-    +   '<label for="rnxi-link" style="' + LB + '">Link Initiative</label>'
+    +   '<label for="rnxi-link" style="' + LB + '">Link PRD for this Initiative</label>'
     +   '<input id="rnxi-link" type="url" class="rnx-modal-inp" />'
     + '</div>'
     + statusChips
@@ -1470,13 +1739,56 @@ function rnxModalHtml() {
     + '<button onclick="rnxModalNextStep()" style="padding:7px 18px;font-size:13px;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">Next →</button>'
     + '</div>';
 
+  // Step 3 — Create Jira Epics
+  var step3 = '<div id="rnx-modal-step-3" style="display:none">'
+    // already-linked chips (shown when opening via pencil)
+    + '<div id="rnx-existing-epics" style="display:none;margin-bottom:14px"></div>'
+    // Project dropdown
+    + '<div style="' + GR + '">'
+    +   '<label style="' + LB + '">Jira Project</label>'
+    +   '<select id="rnx-jira-project" class="rnx-modal-inp" style="cursor:pointer" onchange="rnxStep3OnProjectChange()">'
+    +     '<option value="SDT">SDT</option>'
+    +   '</select>'
+    + '</div>'
+    // Mode toggle tabs
+    + '<div style="display:flex;margin-bottom:16px;border:1px solid var(--border);border-radius:7px;overflow:hidden;background:var(--bg)">'
+    +   '<button id="rnx-s3-tab-create" onclick="rnxStep3SetMode(\'create\')" style="flex:1;padding:7px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--accent);color:#fff;font-family:inherit;letter-spacing:.01em">Create New</button>'
+    +   '<button id="rnx-s3-tab-link"   onclick="rnxStep3SetMode(\'link\')"   style="flex:1;padding:7px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:transparent;color:var(--muted);font-family:inherit;letter-spacing:.01em">Link Existing</button>'
+    + '</div>'
+    // ── Create New panel ──
+    + '<div id="rnx-s3-panel-create">'
+    +   '<div style="' + GR + '">'
+    +     '<label style="' + LB + '">Epic name</label>'
+    +     '<div style="display:flex;gap:8px">'
+    +       '<input id="rnx-epic-input" type="text" class="rnx-modal-inp" placeholder="Epic name…" style="flex:1" onkeydown="if(event.key===\'Enter\'){event.preventDefault();rnxAddJiraEpic();}" />'
+    +       '<button onclick="rnxAddJiraEpic()" style="flex-shrink:0;padding:7px 14px;font-size:13px;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">+ Add</button>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div id="rnx-epic-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto"></div>'
+    + '</div>'
+    // ── Link Existing panel ──
+    + '<div id="rnx-s3-panel-link" style="display:none">'
+    +   '<input id="rnx-epic-search" type="text" class="rnx-modal-inp" placeholder="Filter epics…" style="margin-bottom:8px" oninput="rnxRenderEpicPicker()" />'
+    +   '<div id="rnx-epic-picker" style="display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto"></div>'
+    + '</div>'
+    + '</div>';
+
   // Footer step 2
   var footer2 = '<div id="rnx-modal-footer-2" style="display:none;align-items:center;justify-content:space-between;gap:10px;padding-top:16px">'
     + '<div style="display:flex;gap:8px">'
     +   '<button onclick="rnxModalPrevStep()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">← Back</button>'
     +   '<button onclick="rnxRoiReset()" style="padding:7px 14px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--muted);cursor:pointer">Reset</button>'
     + '</div>'
-    + '<button id="rnx-modal-save-btn" onclick="rnxSaveInitiative()" style="padding:7px 18px;font-size:13px;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">Save</button>'
+    + '<button onclick="rnxModalGoToStep3()" style="padding:7px 18px;font-size:13px;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">Next →</button>'
+    + '</div>';
+
+  // Footer step 3
+  var footer3 = '<div id="rnx-modal-footer-3" style="display:none;align-items:center;justify-content:space-between;gap:10px;padding-top:16px">'
+    + '<button onclick="rnxModalPrevStep3()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">← Back</button>'
+    + '<div style="display:flex;gap:8px">'
+    +   '<button onclick="rnxSaveInitiative()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Save only</button>'
+    +   '<button id="rnx-create-epics-btn" onclick="rnxSaveWithEpics()" style="padding:7px 18px;font-size:13px;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">Create Epics & Save</button>'
+    + '</div>'
     + '</div>';
 
   return '<div id="rnx-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto">'
@@ -1493,8 +1805,10 @@ function rnxModalHtml() {
     +     '<div id="rnx-modal-err" style="display:none;color:#C0392B;font-size:12px;margin-bottom:10px;padding:8px 10px;background:rgba(192,57,43,.08);border-radius:5px"></div>'
     +     step1
     +     step2
+    +     step3
     +     footer1
     +     footer2
+    +     footer3
     +   '</div>'
     + '</div>'
     + '</div>'
@@ -1549,6 +1863,40 @@ function rnxModalPrevStep() {
   document.getElementById('rnx-step-label-2').style.cssText = 'font-size:12px;font-weight:500;color:var(--muted)';
 }
 
+function rnxModalGoToStep3() {
+  // Switch panels 2 → 3
+  document.getElementById('rnx-modal-step-2').style.display = 'none';
+  document.getElementById('rnx-modal-step-3').style.display = 'block';
+  document.getElementById('rnx-modal-footer-2').style.display = 'none';
+  document.getElementById('rnx-modal-footer-3').style.display = 'flex';
+  // Dot 2 back to idle, dot 3 active
+  document.getElementById('rnx-step-dot-2').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-md);background:transparent;color:var(--muted);font-size:11px;font-weight:600;flex-shrink:0';
+  document.getElementById('rnx-step-dot-2').textContent     = '2';
+  document.getElementById('rnx-step-label-2').style.cssText = 'font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap';
+  document.getElementById('rnx-step-dot-3').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;flex-shrink:0';
+  document.getElementById('rnx-step-dot-3').textContent     = '3';
+  document.getElementById('rnx-step-label-3').style.cssText = 'font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap';
+  // Reset mode toggle to "Create New"
+  rnxStep3SetMode('create');
+  var inp = document.getElementById('rnx-epic-input');
+  if (inp) setTimeout(function() { inp.focus(); }, 50);
+}
+
+function rnxModalPrevStep3() {
+  // Switch panels 3 → 2
+  document.getElementById('rnx-modal-step-3').style.display = 'none';
+  document.getElementById('rnx-modal-step-2').style.display = 'block';
+  document.getElementById('rnx-modal-footer-3').style.display = 'none';
+  document.getElementById('rnx-modal-footer-2').style.display = 'flex';
+  // Dot 2 active again, dot 3 idle
+  document.getElementById('rnx-step-dot-2').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;flex-shrink:0';
+  document.getElementById('rnx-step-dot-2').textContent     = '2';
+  document.getElementById('rnx-step-label-2').style.cssText = 'font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap';
+  document.getElementById('rnx-step-dot-3').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-md);background:transparent;color:var(--muted);font-size:11px;font-weight:600;flex-shrink:0';
+  document.getElementById('rnx-step-dot-3').textContent     = '3';
+  document.getElementById('rnx-step-label-3').style.cssText = 'font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap';
+}
+
 function rnxRoiReset() {
   // Clear stored ROI values so the template re-renders empty
   if (typeof rnxModalStep2Data !== 'undefined') {
@@ -1578,12 +1926,44 @@ function rnxOpenModal(id) {
   // Always reset to step 1
   document.getElementById('rnx-modal-step-1').style.display = 'block';
   document.getElementById('rnx-modal-step-2').style.display = 'none';
+  document.getElementById('rnx-modal-step-3').style.display = 'none';
   document.getElementById('rnx-modal-footer-1').style.display = 'flex';
   document.getElementById('rnx-modal-footer-2').style.display = 'none';
+  document.getElementById('rnx-modal-footer-3').style.display = 'none';
   document.getElementById('rnx-step-dot-1').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;flex-shrink:0';
   document.getElementById('rnx-step-label-1').style.cssText = 'font-size:12px;font-weight:600;color:var(--accent)';
   document.getElementById('rnx-step-dot-2').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-md);background:transparent;color:var(--muted);font-size:11px;font-weight:600;flex-shrink:0';
+  document.getElementById('rnx-step-dot-2').textContent     = '2';
   document.getElementById('rnx-step-label-2').style.cssText = 'font-size:12px;font-weight:500;color:var(--muted)';
+  document.getElementById('rnx-step-dot-3').style.cssText   = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-md);background:transparent;color:var(--muted);font-size:11px;font-weight:600;flex-shrink:0';
+  document.getElementById('rnx-step-dot-3').textContent     = '3';
+  document.getElementById('rnx-step-label-3').style.cssText = 'font-size:12px;font-weight:500;color:var(--muted)';
+  // Reset step-3 state
+  _rnxJiraEpics    = [];
+  _rnxLinkedEpics  = [];
+  _rnxProjectEpics = null;
+  _rnxStep3Mode    = 'create';
+  var epicList = document.getElementById('rnx-epic-list');
+  if (epicList) epicList.innerHTML = '';
+  var epicInput = document.getElementById('rnx-epic-input');
+  if (epicInput) epicInput.value = '';
+  var epicSearch = document.getElementById('rnx-epic-search');
+  if (epicSearch) epicSearch.value = '';
+  var pickerEl = document.getElementById('rnx-epic-picker');
+  if (pickerEl) pickerEl.innerHTML = '';
+  var existingEl = document.getElementById('rnx-existing-epics');
+  if (existingEl) { existingEl.style.display = 'none'; existingEl.innerHTML = ''; }
+  // Reset toggle to "Create New"
+  var tabCreate = document.getElementById('rnx-s3-tab-create');
+  var tabLink   = document.getElementById('rnx-s3-tab-link');
+  var TAB_ACT  = 'flex:1;padding:7px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--accent);color:#fff;font-family:inherit;letter-spacing:.01em';
+  var TAB_IDLE = 'flex:1;padding:7px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:transparent;color:var(--muted);font-family:inherit;letter-spacing:.01em';
+  if (tabCreate) tabCreate.style.cssText = TAB_ACT;
+  if (tabLink)   tabLink.style.cssText   = TAB_IDLE;
+  var panelCreate = document.getElementById('rnx-s3-panel-create');
+  var panelLink   = document.getElementById('rnx-s3-panel-link');
+  if (panelCreate) panelCreate.style.display = 'block';
+  if (panelLink)   panelLink.style.display   = 'none';
 
   var err = document.getElementById('rnx-modal-err');
   if (err) { err.style.display = 'none'; err.textContent = ''; }
@@ -1647,7 +2027,7 @@ function rnxCloseModal() {
   rnxEditId = null;
 }
 
-function rnxSaveInitiative() {
+function rnxSaveInitiative(afterSave) {
   var title = document.getElementById('rnxi-title').value.trim();
   if (!title) {
     var err = document.getElementById('rnx-modal-err');
@@ -1669,10 +2049,13 @@ function rnxSaveInitiative() {
     var el = document.getElementById(spanId);
     var v  = el ? parseFloat(el.textContent) : NaN;
     if (!isNaN(v) && v > 0) return v;
-    var fb = parseFloat(s2Val);
-    if (!isNaN(fb) && fb > 0) return fb;
+    // ri.des/eng/prd_days is updated by the live calc (including when size is cleared to 0).
+    // Must take priority over s2Val (initial DB snapshot) so that clearing a size saves 0.
     var rb = parseFloat(riVal);
-    return (!isNaN(rb) && rb > 0) ? rb : 0;
+    if (!isNaN(rb)) return rb;           // includes 0 (size explicitly cleared)
+    var fb = parseFloat(s2Val);
+    if (!isNaN(fb) && fb > 0) return fb; // fallback to DB value if calc never ran
+    return 0;
   }
   var dd = _readDays('rnxroi-des_days', s2.designDays,      ri.des_days);
   var ed = _readDays('rnxroi-eng_days', s2.engineeringDays, ri.eng_days);
@@ -1724,13 +2107,276 @@ function rnxSaveInitiative() {
   .then(function(r) { return r.json(); })
   .then(function(res) {
     if (!res.ok) throw new Error(res.error || 'Save failed');
+    if (typeof afterSave === 'function') {
+      afterSave(res);
+      return;
+    }
     rnxCloseModal();
     rnxLoadAndRender();
+    // Notify Team Capacity to refresh if it's the active view
+    if (typeof activeId !== 'undefined' && activeId === 'teamcapacity-neon'
+        && typeof cnxLoadAndRender === 'function') {
+      setTimeout(cnxLoadAndRender, 300);
+    }
   })
   .catch(function(e) {
     var err = document.getElementById('rnx-modal-err');
     if (err) { err.textContent = e.message; err.style.display = 'block'; }
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+  });
+}
+
+// ── Jira Epics (Step 3) ───────────────────────────────────────────────────────
+var _rnxJiraEpics    = [];   // names queued for creation (create mode)
+var _rnxStep3Mode    = 'create';  // 'create' | 'link'
+var _rnxLinkedEpics  = [];   // keys selected in link mode
+var _rnxProjectEpics = null; // cached epic list fetched from Jira (null = not loaded)
+
+function rnxRenderEpicList() {
+  var el = document.getElementById('rnx-epic-list');
+  if (!el) return;
+  if (!_rnxJiraEpics.length) {
+    el.innerHTML = '<div style="padding:12px 0;font-size:12px;color:var(--muted);text-align:center">No epics added yet. Type a name above and click + Add.</div>';
+    return;
+  }
+  el.innerHTML = _rnxJiraEpics.map(function(name, i) {
+    return '<div id="rnx-epic-row-' + i + '" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px">'
+      + '<span style="flex:1;font-size:13px;color:var(--text);word-break:break-word">' + name.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>'
+      + '<span id="rnx-epic-status-' + i + '" style="font-size:11px;color:var(--muted);flex-shrink:0"></span>'
+      + '<button onclick="rnxRemoveJiraEpic(' + i + ')" style="flex-shrink:0;padding:2px 6px;font-size:13px;background:none;border:none;cursor:pointer;color:var(--muted);border-radius:4px;line-height:1" title="Remove">✕</button>'
+      + '</div>';
+  }).join('');
+}
+
+function rnxAddJiraEpic() {
+  var inp = document.getElementById('rnx-epic-input');
+  if (!inp) return;
+  var val = inp.value.trim();
+  if (!val) return;
+  _rnxJiraEpics.push(val);
+  inp.value = '';
+  rnxRenderEpicList();
+  inp.focus();
+}
+
+function rnxRemoveJiraEpic(i) {
+  _rnxJiraEpics.splice(i, 1);
+  rnxRenderEpicList();
+}
+
+// ── Step 3 mode toggle ────────────────────────────────────────────────────────
+
+function rnxStep3SetMode(mode) {
+  _rnxStep3Mode = mode;
+  var tabCreate   = document.getElementById('rnx-s3-tab-create');
+  var tabLink     = document.getElementById('rnx-s3-tab-link');
+  var panelCreate = document.getElementById('rnx-s3-panel-create');
+  var panelLink   = document.getElementById('rnx-s3-panel-link');
+  var saveBtn     = document.getElementById('rnx-create-epics-btn');
+
+  var TAB_ACT  = 'flex:1;padding:7px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--accent);color:#fff;font-family:inherit;letter-spacing:.01em';
+  var TAB_IDLE = 'flex:1;padding:7px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:transparent;color:var(--muted);font-family:inherit;letter-spacing:.01em';
+
+  if (mode === 'create') {
+    if (tabCreate)   tabCreate.style.cssText   = TAB_ACT;
+    if (tabLink)     tabLink.style.cssText     = TAB_IDLE;
+    if (panelCreate) panelCreate.style.display = 'block';
+    if (panelLink)   panelLink.style.display   = 'none';
+    if (saveBtn)     saveBtn.textContent = 'Create Epics & Save';
+  } else {
+    if (tabCreate)   tabCreate.style.cssText   = TAB_IDLE;
+    if (tabLink)     tabLink.style.cssText     = TAB_ACT;
+    if (panelCreate) panelCreate.style.display = 'none';
+    if (panelLink)   panelLink.style.display   = 'block';
+    if (saveBtn)     saveBtn.textContent = 'Link Epics & Save';
+    // Trigger epic load for selected project
+    var project = (document.getElementById('rnx-jira-project') || {}).value || 'SDT';
+    rnxStep3LoadEpics(project);
+  }
+}
+
+function rnxStep3OnProjectChange() {
+  _rnxProjectEpics = null; // clear cache when project changes
+  if (_rnxStep3Mode === 'link') {
+    var project = (document.getElementById('rnx-jira-project') || {}).value || 'SDT';
+    rnxStep3LoadEpics(project);
+  }
+}
+
+function rnxStep3LoadEpics(project) {
+  var pickerEl = document.getElementById('rnx-epic-picker');
+  if (!pickerEl) return;
+
+  if (_rnxProjectEpics !== null) {
+    // Already loaded — just re-render
+    rnxRenderEpicPicker();
+    return;
+  }
+
+  pickerEl.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--muted)">Loading epics…</div>';
+
+  fetch('/api/jira/issues?project=' + encodeURIComponent(project) + '&type=Epic')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      _rnxProjectEpics = (data.epics || []);
+      rnxRenderEpicPicker();
+    })
+    .catch(function(e) {
+      if (pickerEl) pickerEl.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:#EF4444">Could not load epics: ' + (e.message || 'network error') + '</div>';
+    });
+}
+
+function rnxRenderEpicPicker() {
+  var el = document.getElementById('rnx-epic-picker');
+  if (!el) return;
+
+  if (!_rnxProjectEpics) {
+    el.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--muted)">Loading…</div>';
+    return;
+  }
+  if (!_rnxProjectEpics.length) {
+    el.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--muted)">No epics found in this project.</div>';
+    return;
+  }
+
+  var q = ((document.getElementById('rnx-epic-search') || {}).value || '').toLowerCase();
+  var filtered = _rnxProjectEpics.filter(function(e) {
+    return !q || e.summary.toLowerCase().indexOf(q) !== -1 || e.key.toLowerCase().indexOf(q) !== -1;
+  });
+
+  if (!filtered.length) {
+    el.innerHTML = '<div style="padding:12px;text-align:center;font-size:12px;color:var(--muted)">No epics match your filter.</div>';
+    return;
+  }
+
+  el.innerHTML = filtered.map(function(epic) {
+    var sel = _rnxLinkedEpics.indexOf(epic.key) !== -1;
+    var sColor = epic.statusCategory === 'done' ? '#10B981' : epic.statusCategory === 'indeterminate' ? '#F59E0B' : 'var(--muted)';
+    var rowBg  = sel ? 'rgba(99,102,241,.06)' : 'var(--bg)';
+    var border = sel ? 'var(--accent)' : 'var(--border)';
+    var cbBorder = sel ? 'var(--accent)' : 'var(--border-md)';
+    var cbBg     = sel ? 'var(--accent)' : 'transparent';
+    var check    = sel
+      ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2 2 4-4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      : '';
+    return '<div onclick="rnxToggleEpicLink(\'' + epic.key + '\')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid ' + border + ';background:' + rowBg + ';user-select:none">'
+      + '<div style="flex-shrink:0;width:16px;height:16px;border-radius:4px;border:1.5px solid ' + cbBorder + ';background:' + cbBg + ';display:flex;align-items:center;justify-content:center">' + check + '</div>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<span style="font-size:11px;font-weight:600;color:var(--accent);margin-right:6px">' + epic.key + '</span>'
+      +   '<span style="font-size:12px;color:var(--text)">' + epic.summary.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>'
+      + '</div>'
+      + '<span style="font-size:10px;color:' + sColor + ';flex-shrink:0;white-space:nowrap">' + epic.status + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+function rnxToggleEpicLink(key) {
+  var idx = _rnxLinkedEpics.indexOf(key);
+  if (idx === -1) _rnxLinkedEpics.push(key);
+  else            _rnxLinkedEpics.splice(idx, 1);
+  rnxRenderEpicPicker();
+}
+
+function rnxSaveWithEpics() {
+  var btn = document.getElementById('rnx-create-epics-btn');
+
+  // ── LINK mode: no Jira creation, just persist selected keys ────────────────
+  if (_rnxStep3Mode === 'link') {
+    if (!_rnxLinkedEpics.length) {
+      rnxSaveInitiative();
+      return;
+    }
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    rnxSaveInitiative(function(saveRes) {
+      var initiativeId = (saveRes && saveRes.id) ? saveRes.id : (rnxEditId || null);
+      var existing = (rnxAllInitiatives.filter(function(x) { return x.id === initiativeId; })[0] || {}).jiraEpics || [];
+      var merged   = existing.concat(_rnxLinkedEpics.filter(function(k) { return existing.indexOf(k) === -1; }));
+      fetch('/api/neon/initiatives', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: initiativeId, jiraEpics: merged })
+      })
+      .catch(function(e) { console.warn('jiraEpics patch failed:', e.message); })
+      .then(function() {
+        if (btn) { btn.disabled = false; btn.textContent = 'Link Epics & Save'; }
+        rnxCloseModal();
+        rnxLoadAndRender();
+        if (typeof activeId !== 'undefined' && activeId === 'teamcapacity-neon'
+            && typeof cnxLoadAndRender === 'function') {
+          setTimeout(cnxLoadAndRender, 300);
+        }
+      });
+    });
+    return;
+  }
+
+  // ── CREATE mode: create epics in Jira then persist keys ────────────────────
+  var epics = _rnxJiraEpics.slice();
+  if (!epics.length) {
+    rnxSaveInitiative();
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  var project = (document.getElementById('rnx-jira-project') || {}).value || 'SDT';
+
+  rnxSaveInitiative(function(saveRes) {
+    var initiativeId = (saveRes && saveRes.id) ? saveRes.id : (rnxEditId || null);
+    var createdKeys = [];
+    var i = 0;
+
+    function finish() {
+      function done() {
+        rnxCloseModal();
+        rnxLoadAndRender();
+        if (typeof activeId !== 'undefined' && activeId === 'teamcapacity-neon'
+            && typeof cnxLoadAndRender === 'function') {
+          setTimeout(cnxLoadAndRender, 300);
+        }
+      }
+      if (createdKeys.length && initiativeId) {
+        var existing = (rnxAllInitiatives.filter(function(x) { return x.id === initiativeId; })[0] || {}).jiraEpics || [];
+        var merged = existing.concat(createdKeys.filter(function(k) { return existing.indexOf(k) === -1; }));
+        fetch('/api/neon/initiatives', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: initiativeId, jiraEpics: merged })
+        }).catch(function(e) { console.warn('jiraEpics patch failed:', e.message); }).then(done);
+      } else {
+        done();
+      }
+    }
+
+    function next() {
+      if (i >= epics.length) { finish(); return; }
+      var name     = epics[i];
+      var statusEl = document.getElementById('rnx-epic-status-' + i);
+      if (btn) btn.textContent = 'Creating epic ' + (i + 1) + '/' + epics.length + '…';
+      if (statusEl) { statusEl.textContent = '⏳'; statusEl.style.color = 'var(--muted)'; }
+      fetch('/api/jira/issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: name, type: 'Epic', project: project })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (statusEl) {
+          if (r.ok) {
+            statusEl.textContent = '✓ ' + (r.key || '');
+            statusEl.style.color = '#10B981';
+            if (r.key) createdKeys.push(r.key);
+          } else {
+            statusEl.textContent = '✗ ' + (r.error || 'failed');
+            statusEl.style.color = '#EF4444';
+          }
+        }
+        i++; setTimeout(next, 120);
+      })
+      .catch(function(e) {
+        if (statusEl) { statusEl.textContent = '✗ error'; statusEl.style.color = '#EF4444'; }
+        i++; setTimeout(next, 120);
+      });
+    }
+    next();
   });
 }
 
@@ -1798,14 +2444,19 @@ function rnxLoadAndRender() {
     fetch('/api/neon/assumptions').then(function(r) { return r.json(); })
   ])
   .then(function(results) {
-    rnxInitiatives            = (Array.isArray(results[0]) ? results[0] : []).map(function(i) {
+    rnxAllInitiatives         = (Array.isArray(results[0]) ? results[0] : []).map(function(i) {
       // Hydrate virtual fields from roi_inputs JSON (roi & engineeringSize no longer DB columns)
       var ri = {};
       try { if (i.roiInputs) ri = JSON.parse(i.roiInputs); } catch(e) {}
       i._ri             = ri;
       i.roi             = (ri.roi != null) ? ri.roi : null;
       i.engineeringSize = ri.eng_size || '';
+      // Hydrate jiraEpics from JSON string
+      try { i.jiraEpics = i.jiraEpics ? JSON.parse(i.jiraEpics) : []; } catch(e) { i.jiraEpics = []; }
       return i;
+    });
+    rnxInitiatives            = rnxAllInitiatives.filter(function(i) {
+      return (parseInt(i.year) || new Date().getFullYear()) === rnxSelYear;
     });
     rnxRefData.teams          = Array.isArray(results[1]) ? results[1] : [];
     rnxRefData.drivers        = Array.isArray(results[2]) ? results[2] : [];
@@ -1814,9 +2465,12 @@ function rnxLoadAndRender() {
     rnxRefData.assumptions    = Array.isArray(results[5]) ? results[5] : [];
     rnxBuildColorMaps();
     container.innerHTML = rnxBuildInner(activeTab);
+    var rnxYnEl = document.getElementById('rnx-year-nav');
+    if (rnxYnEl) rnxYnEl.innerHTML = rnxBuildYearNav('rnx', rnxAllInitiatives, rnxSelYear);
     rnxInitEvents();
     if (activeTab === 'gantt') setTimeout(rnxGanttTooltipInit, 50);
     if (activeTab === 'roi')   setTimeout(function() { rnxRenderScatter(rnxCurrentQ()); }, 50);
+    if (activeTab === 'table' || activeTab === 'backlog') setTimeout(rnxFetchJiraProgress, 0);
     // Render grouped chart after paint (subset = current quarter filter)
     var initSubset = rnxInitiatives.filter(function(i) { return i.quarter === rnxCurrentQ(); });
     setTimeout(function() { rnxRenderGroupChart(rnxGroupKey, initSubset); rnxWireGroupTabs(initSubset); }, 0);
@@ -1832,6 +2486,64 @@ function rnxLoadAndRender() {
   });
 }
 
+// ── Backlog content ────────────────────────────────────────────────────────
+
+function rnxBacklogContent() {
+  var items = rnxInitiatives
+    .filter(function(i) { return (i.quarter || '').toLowerCase() === 'backlog'; });
+
+  if (!items.length) {
+    return '<div style="padding:48px 0;text-align:center;color:var(--faint);font-size:13px">'
+      + '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" style="display:block;margin:0 auto 12px;opacity:.3"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 12h8M8 8h5M8 16h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+      + 'No items in the backlog yet.<br>'
+      + '<span style="font-size:12px">Assign an initiative to "Backlog" to see it here.</span>'
+      + '</div>';
+  }
+
+  var tableRows = rnxTableRows(items);
+
+  return '<div class="twrap" style="margin-top:0">'
+    + '<div class="thead-row">Backlog <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:4px">— ' + items.length + ' initiative' + (items.length !== 1 ? 's' : '') + '</span></div>'
+    + '<div style="padding:12px 18px 4px">' + rnxFilterBar('bl') + '</div>'
+    + '<div style="overflow-x:auto">'
+    + '<table class="rnx-table" style="min-width:1100px"><thead><tr>'
+    +   '<th>Quarter</th><th>Initiative</th><th>Driver</th><th>Team</th>'
+    +   '<th>Product Owner</th><th>Tech Lead</th><th>Theme</th>'
+    +   '<th>ROI</th><th>Epics</th><th>Status</th><th></th>'
+    + '</tr></thead>'
+    + '<tbody id="rnx-backlog-body">' + tableRows + '</tbody>'
+    + '</table>'
+    + '</div>'
+    + '</div>';
+}
+
+function rnxAssignFromBacklog(id, quarter) {
+  if (!quarter) return;
+  var i = rnxInitiatives.filter(function(x) { return x.id === id; })[0];
+  if (!i) return;
+  i.quarter = quarter;
+  fetch('/api/neon/initiatives', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign({}, i))
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (!res.ok) throw new Error(res.error || 'Save failed');
+    // Re-render the backlog panel with the item removed
+    var panel = document.getElementById('rnx-rt-backlog');
+    if (panel) panel.innerHTML = rnxBacklogContent();
+    // Update badge count in the backlog button
+    var backlogBtn = document.querySelector('[data-rnxtab="backlog"]');
+    if (backlogBtn) {
+      var remaining = rnxInitiatives.filter(function(x) { return (x.quarter||'').toLowerCase() === 'backlog'; }).length;
+      var badge = backlogBtn.querySelector('span');
+      if (badge) badge.textContent = remaining;
+    }
+  })
+  .catch(function(e) { alert('Save failed: ' + e.message); });
+}
+
 // ── Build inner HTML ───────────────────────────────────────────────────────
 
 function rnxBuildInner(activeTab) {
@@ -1844,11 +2556,24 @@ function rnxBuildInner(activeTab) {
 
   var tableRows = rnxTableRows(subset);
 
-  return '<div class="tabnav">'
-    + tab('gantt',     'Gantt')
-    + tab('table',     'Table View')
-    + tab('quarterly', 'Quarterly Kanban')
-    + tab('roi',       'By ROI')
+  var backlogCount = rnxInitiatives.filter(function(i) { return (i.quarter||'').toLowerCase() === 'backlog'; }).length;
+  var backlogBadge = backlogCount > 0
+    ? '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font-size:10px;font-weight:600;background:var(--border-md);color:var(--muted);margin-left:5px;line-height:1">' + backlogCount + '</span>'
+    : '';
+
+  return '<div style="display:flex;align-items:center;gap:0;margin-bottom:20px">'
+    + '<div class="tabnav" style="margin-bottom:0">'
+    +   tab('gantt',     'Gantt')
+    +   tab('table',     'Table View')
+    +   tab('quarterly', 'Quarterly Kanban')
+    +   tab('roi',       'By ROI')
+    + '</div>'
+    + '<div style="width:1px;height:24px;background:var(--border);margin:0 10px;flex-shrink:0"></div>'
+    + '<div class="tabnav" style="margin-bottom:0">'
+    +   '<button class="tabitem rnx-tabitem' + (activeTab==='backlog'?' act':'') + '" data-rnxtab="backlog">'
+    +     'Backlog' + backlogBadge
+    +   '</button>'
+    + '</div>'
     + '</div>'
 
     // ── Gantt ──
@@ -1891,6 +2616,11 @@ function rnxBuildInner(activeTab) {
     +   '<div id="rnx-roi-content">' + rnxRoiContent(cq) + '</div>'
     + '</div>'
 
+    // ── Backlog ──
+    + '<div id="rnx-rt-backlog" class="tabpanel' + (activeTab==='backlog'?' act':'') + '">'
+    +   rnxBacklogContent()
+    + '</div>'
+
     // ── Modal (rendered here so rnxRefData is already populated) ──
     + rnxModalHtml();
 }
@@ -1907,6 +2637,23 @@ function rnxWireGanttGroup() {
   });
 }
 
+// ── Backlog event wiring (called on each backlog tab open) ────────────────
+
+function rnxWireBacklogEvents() {
+  rnxWireFilterBar('bl', '#rnx-backlog-body tr');
+  rnxDdInit();
+  document.querySelectorAll('#rnx-rt-backlog [data-rnxedit]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation(); rnxOpenModal(parseInt(btn.dataset.rnxedit));
+    });
+  });
+  document.querySelectorAll('#rnx-rt-backlog [data-rnxdel]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation(); rnxDeleteInitiative(parseInt(btn.dataset.rnxdel));
+    });
+  });
+}
+
 // ── Event wiring (delegated, scoped to #content) ───────────────────────────
 
 function rnxInitEvents() {
@@ -1916,12 +2663,16 @@ function rnxInitEvents() {
       var id = btn.dataset.rnxtab;
       document.querySelectorAll('.rnx-tabitem').forEach(function(b) { b.classList.remove('act'); });
       btn.classList.add('act');
-      ['gantt','table','quarterly','roi'].forEach(function(t) {
+      ['gantt','table','quarterly','roi','backlog'].forEach(function(t) {
         var el = document.getElementById('rnx-rt-' + t);
         if (el) el.classList.toggle('act', t === id);
       });
-      if (id === 'gantt') setTimeout(rnxGanttTooltipInit, 50);
-      if (id === 'roi')   setTimeout(function() { rnxRenderScatter(rnxCurrentQ()); }, 50);
+      if (id === 'gantt')   setTimeout(rnxGanttTooltipInit, 50);
+      if (id === 'roi')     setTimeout(function() { rnxRenderScatter(rnxCurrentQ()); }, 50);
+      if (id === 'backlog') {
+        var bp = document.getElementById('rnx-rt-backlog');
+        if (bp) { bp.innerHTML = rnxBacklogContent(); rnxWireBacklogEvents(); }
+      }
     });
   });
 
@@ -1938,32 +2689,10 @@ function rnxInitEvents() {
     });
   });
 
-  // Filter dropdowns
-  document.querySelectorAll('[data-rnxfilter]').forEach(function(sel) {
-    sel.addEventListener('change', function() {
-      var sfx = sel.dataset.rnxfilter;
-      if (sfx === 'q') rnxApplyKanbanFilters(); else rnxApplyTableFilters();
-    });
-  });
-
-  // Search input
-  var rnxSearchEl = document.getElementById('rnxf-search');
-  if (rnxSearchEl) rnxSearchEl.addEventListener('input', rnxApplyTableFilters);
-
-  // Filter reset
-  document.querySelectorAll('[data-rnxreset]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var sfx = btn.dataset.rnxreset;
-      if (sfx === 'q') {
-        document.querySelectorAll('[data-rnxfilter="q"]').forEach(function(s) { s.value = ''; });
-        document.querySelectorAll('#rnx-kanban .kancard').forEach(function(c) { c.style.display = ''; });
-      } else {
-        document.querySelectorAll('[data-rnxfilter=""]').forEach(function(s) { s.value = ''; });
-        var si = document.getElementById('rnxf-search'); if (si) si.value = '';
-        document.querySelectorAll('#rnx-table-body tr').forEach(function(r) { r.style.display = ''; });
-      }
-    });
-  });
+  // Filter bars — one call per view (suffix, selector)
+  rnxWireFilterBar('',  '#rnx-table-body tr');
+  rnxWireFilterBar('q', '#rnx-kanban .kancard');
+  rnxDdInit();
 
   // Edit buttons
   document.querySelectorAll('[data-rnxedit]').forEach(function(btn) {
@@ -2014,444 +2743,203 @@ function rnxInitEvents() {
 }
 
 // ── Main render (called by app.js PAGES map) ───────────────────────────────
+// CSV import logic lives in js/csv-import.js
 
-var _RNX_CSV_BTN = '<button onclick="rnxTriggerCsvUpload()" title="Import CSV"'
-  + ' style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s"'
-  + ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
-  + ' onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
-  + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
-  +   '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>'
-  +   '<path d="M14 2v4a2 2 0 0 0 2 2h4"/>'
-  +   '<path d="M8 13h2"/><path d="M14 13h2"/>'
-  +   '<path d="M8 17h2"/><path d="M14 17h2"/>'
-  + '</svg>'
-  + '</button>'
-  + '<div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>';
+// ── Tools menu ─────────────────────────────────────────────────────────────
 
-var _RNX_CSV_HEADERS = ['quarter','title','driver','team','theme','productOwner','techLead','link'];
-var _RNX_CSV_SAMPLE_ROW = ['Q3 2025','Improve checkout conversion','Revenue Generating','Engineering','Growth','Alice Rossi','Marco Bianchi','https://notion.so/example'];
+function rnxToolsMenuHtml() {
+  var CHEV = '<svg width="10" height="6" viewBox="0 0 10 6" fill="none" style="flex-shrink:0;margin-left:2px">'
+    + '<path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-function rnxTriggerCsvUpload() {
-  if (document.getElementById('rnx-csv-modal-overlay')) return;
+  var ICON_CSV = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>'
+    + '<path d="M14 2v4a2 2 0 0 0 2 2h4"/>'
+    + '<path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/>'
+    + '</svg>';
+
+  var ICON_CALC = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+    + '<rect x="4" y="2" width="16" height="20" rx="2"/>'
+    + '<line x1="8" y1="6" x2="16" y2="6"/>'
+    + '<line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/>'
+    + '<line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/>'
+    + '<line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/>'
+    + '</svg>';
+
+  return '<div style="position:relative" id="rnx-tools-wrap">'
+    + '<button id="rnx-tools-btn" onclick="rnxToggleToolsMenu(event)"'
+    +   ' style="display:flex;align-items:center;gap:6px;padding:7px 12px;font-size:13px;font-weight:500;font-family:inherit;border:1px solid var(--border-md);border-radius:7px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,background .15s"'
+    +   ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
+    +   ' onmouseleave="if(!document.getElementById(\'rnx-tools-menu\'))return;if(document.getElementById(\'rnx-tools-menu\').style.display===\'none\'){this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'}">'
+    +   'Tools' + CHEV
+    + '</button>'
+    + '<div id="rnx-tools-menu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--border-md);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);min-width:180px;z-index:500;overflow:hidden;padding:4px 0">'
+    +   (typeof _kervCan === 'function' && _kervCan('roadmap-neon', 'editor')
+    ?     '<div onclick="rnxCloseToolsMenu();rnxTriggerCsvUpload()"'
+    +       ' style="display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:13px;color:var(--text);cursor:pointer;transition:background .1s"'
+    +       ' onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'transparent\'">'
+    +       '<span style="color:var(--muted);line-height:0">' + ICON_CSV + '</span>'
+    +       'Upload CSV'
+    +     '</div>'
+    :     '')
+    +   '<div onclick="rnxCloseToolsMenu();rnxOpenRoiCalcTool()"'
+    +     ' style="display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:13px;color:var(--text);cursor:pointer;transition:background .1s"'
+    +     ' onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'transparent\'">'
+    +     '<span style="color:var(--muted);line-height:0">' + ICON_CALC + '</span>'
+    +     'ROI Calculator'
+    +   '</div>'
+    + '</div>'
+    + '</div>'
+    + '<div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>';
+}
+
+function rnxToggleToolsMenu(e) {
+  if (e) e.stopPropagation();
+  var menu = document.getElementById('rnx-tools-menu');
+  var btn  = document.getElementById('rnx-tools-btn');
+  if (!menu) return;
+  var opening = menu.style.display === 'none';
+  menu.style.display = opening ? 'block' : 'none';
+  if (btn) {
+    btn.style.borderColor = opening ? 'var(--accent)' : 'var(--border-md)';
+    btn.style.color       = opening ? 'var(--accent)' : 'var(--text)';
+  }
+  if (opening) {
+    // Close on outside click
+    function outsideClick(ev) {
+      var wrap = document.getElementById('rnx-tools-wrap');
+      if (wrap && !wrap.contains(ev.target)) {
+        rnxCloseToolsMenu();
+        document.removeEventListener('click', outsideClick, true);
+      }
+    }
+    setTimeout(function() { document.addEventListener('click', outsideClick, true); }, 0);
+  }
+}
+
+function rnxCloseToolsMenu() {
+  var menu = document.getElementById('rnx-tools-menu');
+  var btn  = document.getElementById('rnx-tools-btn');
+  if (menu) menu.style.display = 'none';
+  if (btn) { btn.style.borderColor = 'var(--border-md)'; btn.style.color = 'var(--text)'; }
+}
+
+// ── Standalone ROI Calculator ───────────────────────────────────────────────
+
+function rnxOpenRoiCalcTool() {
+  if (document.getElementById('rnx-roi-tool-overlay')) return;
+
+  // If ref data not yet loaded (e.g. opened from Team Capacity), fetch drivers first
+  if (!rnxRefData.drivers.length) {
+    Promise.all([
+      fetch('/api/neon/lookup?t=drivers').then(function(r) { return r.json(); }),
+      fetch('/api/neon/lookup?t=teams').then(function(r) { return r.json(); }),
+      fetch('/api/neon/team-members').then(function(r) { return r.json(); }),
+      fetch('/api/neon/lookup?t=themes').then(function(r) { return r.json(); }),
+      fetch('/api/neon/assumptions').then(function(r) { return r.json(); })
+    ]).then(function(res) {
+      rnxRefData.drivers     = Array.isArray(res[0]) ? res[0] : [];
+      rnxRefData.teams       = Array.isArray(res[1]) ? res[1] : [];
+      rnxRefData.members     = Array.isArray(res[2]) ? res[2] : [];
+      rnxRefData.themes      = Array.isArray(res[3]) ? res[3] : [];
+      rnxRefData.assumptions = Array.isArray(res[4]) ? res[4] : [];
+      rnxOpenRoiCalcTool();
+    }).catch(function() { rnxOpenRoiCalcTool(); });
+    return;
+  }
+
+  // Build the step-2 panel (same HTML as in the Add Initiative modal)
+  // Make it visible from the start (step-2 normally starts hidden)
+  var step2Html = (typeof rnxRoiBuildStep2 === 'function')
+    ? rnxRoiBuildStep2(rnxRefData.drivers).replace(
+        'id="rnx-modal-step-2" style="display:none"',
+        'id="rnx-modal-step-2" style="display:block"'
+      )
+    : '<p style="color:var(--muted);font-size:13px">ROI templates not loaded.</p>';
 
   var overlay = document.createElement('div');
-  overlay.id = 'rnx-csv-modal-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center';
+  overlay.id = 'rnx-roi-tool-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto';
 
   overlay.innerHTML =
-    '<div style="background:var(--surface);border-radius:14px;padding:0;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(0,0,0,.18);overflow:hidden">'
+    '<div style="background:var(--surface);border-radius:12px;width:100%;max-width:680px;box-shadow:0 8px 40px rgba(0,0,0,.18);overflow:hidden">'
 
-    // header
-    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)">'
-    +   '<span style="font-size:14px;font-weight:600;color:var(--text)">Import CSV</span>'
-    +   '<button onclick="rnxCloseCsvModal()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;line-height:1;font-size:18px;font-family:inherit">×</button>'
+    // Header
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)">'
+    +   '<div>'
+    +     '<h3 style="margin:0;font-size:16px;font-weight:600;color:var(--text)">ROI Calculator</h3>'
+    +     '<div style="font-size:12px;color:var(--muted);margin-top:2px">Estimate ROI for any initiative — nothing is saved</div>'
+    +   '</div>'
+    +   '<button onclick="document.getElementById(\'rnx-roi-tool-overlay\').remove()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;border-radius:4px;line-height:0">'
+    +     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+    +   '</button>'
     + '</div>'
 
-    // body
-    + '<div style="padding:20px">'
-
-    // drop zone
-    +   '<div id="rnx-csv-dropzone"'
-    +     ' onclick="document.getElementById(\'rnx-csv-file-inp\').click()"'
-    +     ' ondragover="event.preventDefault();this.style.borderColor=\'var(--accent)\';this.style.background=\'rgba(237,0,94,.04)\'"'
-    +     ' ondragleave="this.style.borderColor=\'var(--border-md)\';this.style.background=\'transparent\'"'
-    +     ' ondrop="event.preventDefault();this.style.borderColor=\'var(--border-md)\';this.style.background=\'transparent\';rnxHandleCsvUpload(event.dataTransfer.files[0])"'
-    +     ' style="border:2px dashed var(--border-md);border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s">'
-    +     '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="color:var(--muted);margin-bottom:10px"><path d="M12 15V3M8 7l4-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
-    +     '<div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px">Drag your CSV here</div>'
-    +     '<div style="font-size:12px;color:var(--muted)">or click to browse</div>'
-    +   '</div>'
-    +   '<input type="file" id="rnx-csv-file-inp" accept=".csv" style="display:none" onchange="rnxHandleCsvUpload(this.files[0])">'
-
-    // status
-    +   '<div id="rnx-csv-status" style="min-height:18px;margin-top:12px;font-size:12px;color:var(--muted);text-align:center"></div>'
-
-    // footer
-    +   '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">'
-    +     '<button onclick="rnxDownloadCsvSample()" style="display:flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;padding:0;transition:color .15s" onmouseenter="this.style.color=\'var(--accent)\'" onmouseleave="this.style.color=\'var(--muted)\'">'
-    +       '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 8l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 13h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
-    +       'Download sample CSV'
-    +     '</button>'
-    +     '<button onclick="rnxCloseCsvModal()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Cancel</button>'
-    +   '</div>'
-
+    // Body — step 2 panel
+    + '<div style="padding:20px 24px 28px">'
+    +   step2Html
     + '</div>'
+
+    // Footer
+    + '<div style="display:flex;justify-content:flex-end;padding:0 24px 20px">'
+    +   '<button onclick="document.getElementById(\'rnx-roi-tool-overlay\').remove()"'
+    +     ' style="padding:7px 18px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Close</button>'
+    + '</div>'
+
     + '</div>';
 
   overlay.addEventListener('click', function(e) {
-    if (e.target === overlay) rnxCloseCsvModal();
+    if (e.target === overlay) overlay.remove();
   });
 
   document.body.appendChild(overlay);
 }
 
-function rnxCloseCsvModal() {
-  var el = document.getElementById('rnx-csv-modal-overlay');
-  if (el) el.remove();
-}
-
-function rnxDownloadCsvSample() {
-  var rows = [_RNX_CSV_HEADERS, _RNX_CSV_SAMPLE_ROW];
-  var csv = rows.map(function(r) {
-    return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(',');
-  }).join('\r\n');
-  var blob = new Blob([csv], { type: 'text/csv' });
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'initiatives_sample.csv';
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-// ── CSV parsing ────────────────────────────────────────────────────────────
-
-function rnxParseCsvText(text) {
-  var lines = text.split(/\r?\n/).filter(function(l) { return l.trim(); });
-  if (lines.length < 2) return { headers: [], rows: [] };
-
-  function parseRow(line) {
-    var cells = [], cur = '', inQ = false;
-    for (var i = 0; i < line.length; i++) {
-      var ch = line[i];
-      if (inQ) {
-        if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-        else if (ch === '"') inQ = false;
-        else cur += ch;
-      } else {
-        if (ch === '"') inQ = true;
-        else if (ch === ',') { cells.push(cur.trim()); cur = ''; }
-        else cur += ch;
-      }
-    }
-    cells.push(cur.trim());
-    return cells;
-  }
-
-  var headers = parseRow(lines[0]).map(function(h) { return h.trim(); }); // keep original for display
-  var rows = [];
-  for (var i = 1; i < lines.length; i++) {
-    var cells = parseRow(lines[i]);
-    if (cells.every(function(c) { return !c; })) continue;
-    var obj = {};
-    headers.forEach(function(h, idx) { obj[h] = (cells[idx] || '').trim(); });
-    rows.push(obj);
-  }
-  return { headers: headers, rows: rows };
-}
-
-function rnxCsvFuzzyMatch(val, list, key) {
-  if (!val) return { value: '', ok: true };
-  var lc = val.toLowerCase();
-  // 1. exact
-  var m = list.filter(function(x) { return (x[key] || '').toLowerCase() === lc; })[0];
-  if (m) return { value: m[key], ok: true };
-  // 2. DB value starts with input  ("Cody" → "Cody Howard")
-  m = list.filter(function(x) { return (x[key] || '').toLowerCase().indexOf(lc) === 0; })[0];
-  if (m) return { value: m[key], ok: true };
-  // 3. DB value contains input
-  m = list.filter(function(x) { return (x[key] || '').toLowerCase().indexOf(lc) !== -1; })[0];
-  if (m) return { value: m[key], ok: true };
-  // 4. input contains DB value  ("Cody Howard" → "Cody")
-  m = list.filter(function(x) { return lc.indexOf((x[key] || '').toLowerCase()) !== -1; })[0];
-  if (m) return { value: m[key], ok: true };
-  // 5. every word of input appears in DB value  ("Howard Cody" → "Cody Howard")
-  var words = lc.split(/\s+/).filter(Boolean);
-  if (words.length > 1) {
-    m = list.filter(function(x) {
-      var v = (x[key] || '').toLowerCase();
-      return words.every(function(w) { return v.indexOf(w) !== -1; });
-    })[0];
-    if (m) return { value: m[key], ok: true };
-  }
-  return { value: val, ok: false };
-}
-
-function rnxParseQuarter(raw) {
-  if (!raw) return { q: '', year: new Date().getFullYear() };
-  var s = raw.trim();
-  var m = s.match(/^(\d{4})[-\/\s]?(Q[1-4]|Backlog)$/i);
-  if (m) return { q: m[2].toUpperCase().replace('BACKLOG','Backlog'), year: parseInt(m[1]) };
-  m = s.match(/^(Q[1-4]|Backlog)[-\/\s]?(\d{4})?$/i);
-  if (m) return { q: m[1].toUpperCase().replace('BACKLOG','Backlog'), year: m[2] ? parseInt(m[2]) : new Date().getFullYear() };
-  if (/backlog/i.test(s)) return { q: 'Backlog', year: new Date().getFullYear() };
-  return { q: s, year: new Date().getFullYear() };
-}
-
-// Rows already have canonical keys (set by the mapping step)
-function rnxMatchCsvRows(rows) {
-  var drivers = rnxRefData.drivers || [];
-  var teams   = rnxRefData.teams   || [];
-  var themes  = rnxRefData.themes  || [];
-  var members = rnxRefData.members || [];
-
-  return rows.map(function(row) {
-    var qp        = rnxParseQuarter(row.quarter || '');
-    var quarter   = qp.q;
-    var year      = qp.year;
-    var quarterOk = !quarter || /^(Q[1-4]|Backlog)$/i.test(quarter);
-    var title     = (row.title || '').trim();
-
-    var driverM = rnxCsvFuzzyMatch(row.driver,       drivers, 'name');
-    var teamM   = rnxCsvFuzzyMatch(row.team,         teams,   'name');
-    var themeM  = rnxCsvFuzzyMatch(row.theme,        themes,  'name');
-    var ownerM  = rnxCsvFuzzyMatch(row.productowner, members, 'name');
-    var leadM   = rnxCsvFuzzyMatch(row.techlead,     members, 'name');
-
-    return {
-      quarter:      { value: quarter,       ok: quarterOk },
-      year:         year,
-      title:        { value: title,         ok: !!title   },
-      driver:       driverM,
-      team:         teamM,
-      theme:        themeM,
-      productOwner: ownerM,
-      techLead:     leadM,
-      link:         { value: row.link || '', ok: true      },
-      rowOk:        quarterOk && !!title && driverM.ok && teamM.ok
-    };
+function rnxSetYear(y) {
+  rnxSelYear     = y;
+  rnxInitiatives = rnxAllInitiatives.filter(function(i) {
+    return (parseInt(i.year) || new Date().getFullYear()) === rnxSelYear;
   });
-}
-
-// ── Column mapper UI ───────────────────────────────────────────────────────
-
-var _RNX_CSV_APP_FIELDS = [
-  { key: 'quarter',      label: 'Quarter',      required: true,  hints: ['quarter','period','sprint','q'] },
-  { key: 'title',        label: 'Title',         required: true,  hints: ['title','initiative','name','feature','item','description'] },
-  { key: 'driver',       label: 'Driver',        required: false, hints: ['driver','type','category','pillar'] },
-  { key: 'team',         label: 'Team',          required: false, hints: ['team','squad','group'] },
-  { key: 'theme',        label: 'Theme',         required: false, hints: ['theme','workstream','area'] },
-  { key: 'productowner', label: 'Product Owner', required: false, hints: ['owner','po','product'] },
-  { key: 'techlead',     label: 'Tech Lead',     required: false, hints: ['lead','tech','engineer','eng'] },
-  { key: 'link',         label: 'Link',          required: false, hints: ['link','url','jira','ticket','notion'] }
-];
-
-function rnxCsvAutoSuggest(hints, headers) {
-  for (var k = 0; k < hints.length; k++) {
-    var kw = hints[k].toLowerCase();
-    for (var i = 0; i < headers.length; i++) {
-      if (headers[i].toLowerCase().indexOf(kw) !== -1) return headers[i];
-    }
+  var activeTab = 'gantt';
+  var tb = document.querySelector('.rnx-tabitem.act');
+  if (tb) activeTab = tb.dataset.rnxtab || 'gantt';
+  var container = document.getElementById('rnx-content');
+  if (container) {
+    container.innerHTML = rnxBuildInner(activeTab);
+    rnxInitEvents();
+    if (activeTab === 'gantt') setTimeout(rnxGanttTooltipInit, 50);
+    if (activeTab === 'roi')   setTimeout(function() { rnxRenderScatter(rnxCurrentQ()); }, 50);
+    var sub = rnxInitiatives.filter(function(i) { return i.quarter === rnxCurrentQ(); });
+    setTimeout(function() { rnxRenderGroupChart(rnxGroupKey, sub); rnxWireGroupTabs(sub); }, 0);
   }
-  return '';
-}
-
-function rnxShowCsvColumnMapper(headers, rawRows) {
-  var overlay = document.getElementById('rnx-csv-modal-overlay');
-  if (!overlay) return;
-
-  function ddOpts(suggested) {
-    return '<option value="">— not mapped —</option>'
-      + headers.map(function(h) {
-          return '<option value="' + h + '"' + (h === suggested ? ' selected' : '') + '>' + h + '</option>';
-        }).join('');
-  }
-
-  var SEL = 'width:100%;padding:5px 8px;font-size:12px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit;outline:none';
-
-  var tableRows = _RNX_CSV_APP_FIELDS.map(function(f) {
-    var suggested = rnxCsvAutoSuggest(f.hints, headers);
-    return '<tr>'
-      + '<td style="padding:7px 12px;font-size:12px;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border)">'
-      +   f.label + (f.required ? '&thinsp;<span style="color:var(--accent);font-size:10px">*</span>' : '')
-      + '</td>'
-      + '<td style="padding:4px 12px;border-bottom:1px solid var(--border)">'
-      +   '<select id="rnx-csv-map-' + f.key + '" style="' + SEL + '">' + ddOpts(suggested) + '</select>'
-      + '</td>'
-      + '</tr>';
-  }).join('');
-
-  overlay.querySelector('div').innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)">'
-    +   '<div>'
-    +     '<div style="font-size:14px;font-weight:600;color:var(--text)">Map columns</div>'
-    +     '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + rawRows.length + ' rows — match each app field to a CSV column</div>'
-    +   '</div>'
-    +   '<button onclick="rnxCloseCsvModal()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;font-family:inherit;line-height:1;padding:2px">×</button>'
-    + '</div>'
-    + '<div style="padding:20px">'
-    +   '<table style="width:100%;border-collapse:collapse">'
-    +     '<thead><tr style="background:var(--bg)">'
-    +       '<th style="padding:6px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:left;border-bottom:1px solid var(--border);width:40%">App field</th>'
-    +       '<th style="padding:6px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:left;border-bottom:1px solid var(--border)">CSV column</th>'
-    +     '</tr></thead>'
-    +     '<tbody>' + tableRows + '</tbody>'
-    +   '</table>'
-    +   '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">'
-    +     '<button onclick="rnxCloseCsvModal()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Cancel</button>'
-    +     '<button onclick="rnxConfirmCsvMapping()" style="padding:7px 16px;font-size:13px;font-weight:500;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer">Preview →</button>'
-    +   '</div>'
-    + '</div>';
-
-  overlay.querySelector('div').style.maxWidth = '500px';
-  overlay._csvRawRows = rawRows;
-}
-
-function rnxConfirmCsvMapping() {
-  var overlay = document.getElementById('rnx-csv-modal-overlay');
-  if (!overlay) return;
-  var rawRows = overlay._csvRawRows || [];
-
-  var mapping = {};
-  _RNX_CSV_APP_FIELDS.forEach(function(f) {
-    var el = document.getElementById('rnx-csv-map-' + f.key);
-    mapping[f.key] = el ? el.value : '';
-  });
-
-  var normalised = rawRows.map(function(row) {
-    var obj = {};
-    _RNX_CSV_APP_FIELDS.forEach(function(f) {
-      obj[f.key] = mapping[f.key] ? (row[mapping[f.key]] || '') : '';
-    });
-    return obj;
-  });
-
-  var matched = rnxMatchCsvRows(normalised);
-  rnxShowCsvPreview(matched);
-}
-
-function rnxHandleCsvUpload(file) {
-  if (!file) return;
-  var status = document.getElementById('rnx-csv-status');
-  if (status) status.textContent = 'Reading file…';
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var parsed = rnxParseCsvText(e.target.result);
-    if (!parsed.rows.length) {
-      if (status) status.textContent = 'No data rows found.';
-      return;
-    }
-    rnxShowCsvColumnMapper(parsed.headers, parsed.rows);
-  };
-  reader.onerror = function() {
-    if (status) { status.textContent = 'Error reading file.'; status.style.color = '#C0392B'; }
-  };
-  reader.readAsText(file);
-}
-
-// ── CSV preview modal ──────────────────────────────────────────────────────
-
-function rnxShowCsvPreview(rows) {
-  var overlay = document.getElementById('rnx-csv-modal-overlay');
-  if (!overlay) return;
-
-  var okCount  = rows.filter(function(r) { return r.rowOk; }).length;
-  var errCount = rows.length - okCount;
-
-  function cell(f) {
-    var ok  = f.ok;
-    var val = f.value || '—';
-    var col = ok ? 'var(--text)' : '#ea580c';
-    var bg  = ok ? 'transparent' : 'rgba(234,88,12,.07)';
-    return '<td style="padding:4px 8px;font-size:11px;white-space:nowrap;color:' + col + ';background:' + bg + ';border-bottom:1px solid var(--border)">' + val + '</td>';
-  }
-
-  var thead = '<tr style="background:var(--bg)">'
-    + ['Quarter','Title','Driver','Team','Theme','Product Owner','Tech Lead','Link'].map(function(h) {
-        return '<th style="padding:5px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border)">' + h + '</th>';
-      }).join('')
-    + '</tr>';
-
-  var tbody = rows.map(function(r) {
-    return '<tr>'
-      + cell(r.quarter) + cell(r.title) + cell(r.driver) + cell(r.team)
-      + cell(r.theme) + cell(r.productOwner) + cell(r.techLead) + cell(r.link)
-      + '</tr>';
-  }).join('');
-
-  var summary = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:12px">'
-    + '<span style="color:#16a34a;font-weight:500">✓ ' + okCount + ' ready</span>'
-    + (errCount ? '<span style="color:#ea580c;font-weight:500">⚠ ' + errCount + ' with warnings</span>' : '')
-    + '<span style="color:var(--faint);margin-left:auto">Orange = no match found — will be imported as-is</span>'
-    + '</div>';
-
-  var tableHtml = '<div style="overflow-x:auto;border:1px solid var(--border);border-radius:8px;max-height:320px;overflow-y:auto">'
-    + '<table style="width:100%;border-collapse:collapse"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>'
-    + '</div>';
-
-  var footer = '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">'
-    + '<button onclick="rnxCloseCsvModal()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Cancel</button>'
-    + '<button onclick="rnxImportCsvRows()" style="padding:7px 16px;font-size:13px;font-weight:500;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer">Import ' + rows.length + ' initiative' + (rows.length !== 1 ? 's' : '') + '</button>'
-    + '</div>';
-
-  // Replace modal body with preview
-  overlay.querySelector('div').innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)">'
-    +   '<span style="font-size:14px;font-weight:600;color:var(--text)">Preview import</span>'
-    +   '<button onclick="rnxCloseCsvModal()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;line-height:1;font-size:18px;font-family:inherit">×</button>'
-    + '</div>'
-    + '<div style="padding:20px">'
-    + summary + tableHtml + footer
-    + '</div>';
-
-  // Widen modal for the table
-  overlay.querySelector('div').style.maxWidth = '860px';
-
-  // Store matched rows for import
-  overlay._csvRows = rows;
-}
-
-// ── CSV import ─────────────────────────────────────────────────────────────
-
-function rnxImportCsvRows() {
-  var overlay = document.getElementById('rnx-csv-modal-overlay');
-  var rows = overlay && overlay._csvRows;
-  if (!rows || !rows.length) return;
-
-  var btn = overlay.querySelector('button[onclick="rnxImportCsvRows()"]');
-  if (btn) { btn.disabled = true; btn.textContent = 'Importing…'; }
-
-  var q = rnxCurrentQ();
-
-  var promises = rows.map(function(r) {
-    var body = {
-      quarter:      r.quarter.value      || q,
-      title:        r.title.value        || '',
-      driver:       r.driver.value       || '',
-      team:         r.team.value         || '',
-      theme:        r.theme.value        || '',
-      productOwner: r.productOwner.value || '',
-      techLead:     r.techLead.value     || '',
-      link:         r.link.value         || '',
-      year:         r.year               || new Date().getFullYear(),
-      deliveryStatus: 'not-started',
-      sortOrder:    0
-    };
-    return fetch('/api/neon/initiatives', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-  });
-
-  Promise.all(promises)
-    .then(function() {
-      rnxCloseCsvModal();
-      rnxLoadAndRender();
-    })
-    .catch(function(err) {
-      if (btn) { btn.disabled = false; btn.textContent = 'Retry'; }
-      console.error('[CSV import]', err);
-    });
+  var rnxYnEl = document.getElementById('rnx-year-nav');
+  if (rnxYnEl) rnxYnEl.innerHTML = rnxBuildYearNav('rnx', rnxAllInitiatives, rnxSelYear);
 }
 
 function renderRoadmapNeon() {
   var html = '<div class="page-header">'
     + '<div>'
-    +   '<div class="ptitle">Product Roadmap</div>'
-    +   '<div class="psub">Quarterly initiatives and progress status — powered by Neon DB</div>'
+    +   '<div style="display:flex;align-items:center;gap:12px">'
+    +     '<div class="ptitle">Product Roadmap</div>'
+    +     '<div id="rnx-year-nav" style="display:inline-block"></div>'
+    +   '</div>'
+    +   '<div class="psub">Quarterly initiatives and progress status</div>'
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:8px">'
-    +   '<button onclick="rnxOpenModal(null)" style="display:flex;align-items:center;gap:6px;padding:7px 14px;font-size:13px;font-weight:500;border:none;border-radius:7px;background:var(--accent);color:#fff;cursor:pointer">'
-    +     '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
-    +     'Add Initiative'
-    +   '</button>'
-    +   _RNX_CSV_BTN
-    +   '<button onclick="rnxOpenSettings()" title="Settings"'
-    +     ' style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s"'
-    +     ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
-    +     ' onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
-    +     '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M16.2 12.5a1.5 1.5 0 00.3 1.65l.05.05a1.8 1.8 0 010 2.55 1.8 1.8 0 01-2.55 0l-.05-.05a1.5 1.5 0 00-1.65-.3 1.5 1.5 0 00-.91 1.37V18a1.8 1.8 0 01-3.6 0v-.08A1.5 1.5 0 007 16.55a1.5 1.5 0 00-1.65.3l-.05.05a1.8 1.8 0 01-2.55-2.55l.05-.05A1.5 1.5 0 003.1 12.65a1.5 1.5 0 00-1.37-.91H1.67a1.8 1.8 0 010-3.6h.08A1.5 1.5 0 003.45 7.3a1.5 1.5 0 00-.3-1.65l-.05-.05a1.8 1.8 0 012.55-2.55l.05.05A1.5 1.5 0 007 3.1a1.5 1.5 0 00.91-1.37V1.67a1.8 1.8 0 013.6 0v.08A1.5 1.5 0 0013 3.45a1.5 1.5 0 001.65-.3l.05-.05a1.8 1.8 0 012.55 2.55l-.05.05A1.5 1.5 0 0016.9 7.3a1.5 1.5 0 001.37.91H18.33a1.8 1.8 0 010 3.6h-.08a1.5 1.5 0 00-1.37.91l-.68-.22z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-    +   '</button>'
+    + (typeof _kervCan === 'function' && _kervCan('roadmap-neon', 'editor')
+        ? '<button onclick="rnxOpenModal(null)" style="padding:7px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;transition:opacity .15s" onmouseenter="this.style.opacity=\'.85\'" onmouseleave="this.style.opacity=\'1\'">'
+        +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+        +   'Add Initiative'
+        + '</button>'
+        : '')
+    +   rnxToolsMenuHtml()
+    + (typeof _kervCan === 'function' && _kervCan('roadmap-neon', 'editor')
+        ? '<button onclick="rnxOpenSettings()" title="Settings"'
+        +   ' style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s"'
+        +   ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
+        +   ' onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
+        +   '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><circle cx="12" cy="4" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="14" cy="20" r="2"/></svg>'
+        + '</button>'
+        : '')
     + '</div>'
     + '</div>'
     + '<div id="rnx-content"></div>';
