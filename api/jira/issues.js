@@ -40,10 +40,13 @@ export default async function handler(req, res) {
   const type    = req.query?.type;
   if (project && type === 'Epic') {
     try {
-      const jql  = `project = "${project}" AND issuetype = Epic ORDER BY created DESC`;
+      // Use issuetype in ("Epic") to handle both classic and next-gen projects
+      const jql  = `project = ${project} AND issuetype in ("Epic") ORDER BY key ASC`;
+      console.log('[jira/issues] epics JQL:', jql);
       const data = await jiraGet(
         `/rest/api/3/search?jql=${encodeURIComponent(jql)}&fields=summary,status&maxResults=200`
       );
+      console.log('[jira/issues] epics found:', data.total, 'issues:', data.issues?.length);
       const epics = (data.issues || []).map(i => ({
         key:            i.key,
         summary:        i.fields.summary || i.key,
@@ -52,6 +55,7 @@ export default async function handler(req, res) {
       }));
       return res.status(200).json({ ok: true, epics });
     } catch (e) {
+      console.error('[jira/issues] epics error:', e.message);
       return res.status(500).json({ ok: false, error: e.message });
     }
   }

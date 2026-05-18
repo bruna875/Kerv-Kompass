@@ -2251,11 +2251,19 @@ function rnxStep3LoadEpics(project) {
   fetch('/api/jira/issues?project=' + encodeURIComponent(project) + '&type=Epic')
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      console.log('[rnxStep3LoadEpics] response:', data);
+      if (data.error || (data.ok === false)) {
+        var msg = data.error || 'Jira error';
+        console.error('[rnxStep3LoadEpics] Jira error:', msg);
+        if (pickerEl) pickerEl.innerHTML = '<div style="padding:12px;font-size:12px;color:#EF4444;word-break:break-word">Jira error: ' + msg + '</div>';
+        return;
+      }
       _rnxProjectEpics = (data.epics || []);
       rnxRenderEpicPicker();
     })
     .catch(function(e) {
-      if (pickerEl) pickerEl.innerHTML = '<div style="padding:12px;text-align:center;font-size:12px;color:#EF4444">Could not load epics: ' + (e.message || 'network error') + '</div>';
+      console.error('[rnxStep3LoadEpics] fetch error:', e);
+      if (pickerEl) pickerEl.innerHTML = '<div style="padding:12px;font-size:12px;color:#EF4444">Network error: ' + (e.message || 'unknown') + '</div>';
     });
 }
 
