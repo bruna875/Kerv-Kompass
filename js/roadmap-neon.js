@@ -982,22 +982,26 @@ function rnxFetchJiraProgress() {
   fetch('/api/jira/issue?keys=' + encodeURIComponent(allKeys.join(',')))
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      // data = { "SDT-123": { pct: 100, status: "Done", statusCategory: "done" }, ... }
       toFetch.forEach(function(initiative) {
         var cell = document.getElementById('rnx-epics-prog-' + initiative.id);
         if (!cell) return;
-        var keys = initiative.jiraEpics;
+        var keys  = initiative.jiraEpics;
         var total = keys.length;
         var sum   = keys.reduce(function(acc, k) { return acc + ((data[k] ? data[k].pct : 0)); }, 0);
         var pct   = total ? Math.round(sum / total) : 0;
         var color = pct === 100 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#6366F1';
-        var bar   = cell.querySelector('.rnx-epic-bar');
+        // If cell was rendered with the dash (stale or missing bar), replace with bar HTML first
+        var bar = cell.querySelector('.rnx-epic-bar');
+        if (!bar) {
+          cell.innerHTML = rnxEpicsProgressCell(initiative);
+          bar = cell.querySelector('.rnx-epic-bar');
+        }
         var label = cell.querySelector('.rnx-epic-pct');
         if (bar)   { bar.style.width = pct + '%'; bar.style.background = color; }
         if (label) { label.textContent = pct + '%'; label.style.color = pct === 100 ? '#10B981' : 'var(--muted)'; }
       });
     })
-    .catch(function(e) { console.warn('rnxFetchJiraProgress:', e.message); });
+    .catch(function(e) { console.warn('[rnxFetchJiraProgress] error:', e.message); });
 }
 
 function rnxUpdateBacklogBadge() {
@@ -1227,6 +1231,7 @@ function rnxSwitchTableQuarter(q) {
   if (tbody) tbody.innerHTML = rnxTableRows(subset);
   rnxRefreshCards(subset, label);
   rnxSetQAct('rnx-tbl', q);
+  setTimeout(rnxFetchJiraProgress, 0);
 }
 
 // ── Kanban ─────────────────────────────────────────────────────────────────
