@@ -129,8 +129,8 @@ function rnxRoiHtml(v, id) {
   var pct = '<span style="color:' + (p < 0 ? '#E5243B' : '#2EAD4B') + ';font-weight:500">' + p + '%</span>';
   if (!id) return pct;
   var eye = '<button onclick="rnxOpenRoiCalc(' + id + ')" title="View / edit ROI" class="rnx-roi-eye"'
-    + ' style="background:none;border:none;cursor:pointer;color:var(--muted);padding:0 0 0 9px;line-height:0;vertical-align:middle;opacity:.6;transition:color .12s,opacity .12s"'
-    + ' onmouseenter="this.style.color=\'var(--accent)\';this.style.opacity=\'1\'" onmouseleave="this.style.color=\'var(--muted)\';this.style.opacity=\'.6\'">'
+    + ' style="background:none;border:none;cursor:pointer;color:var(--faint);padding:0 0 0 9px;line-height:0;vertical-align:middle;transition:color .12s"'
+    + ' onmouseenter="this.style.color=\'var(--accent)\';" onmouseleave="this.style.color=\'var(--faint)\'">'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
     + '<rect x="4" y="2" width="16" height="20" rx="2"/>'
     + '<line x1="8" y1="6" x2="16" y2="6"/>'
@@ -862,13 +862,13 @@ function rnxTableRows(subset) {
     return '<tr data-id="' + i.id + '">'
       + '<td style="min-width:65px">'   + rnxCustomSel('rnx-t-q-'  + i.id, qItems,  i.quarter,         i.id) + '</td>'
       + '<td style="min-width:280px" class="rnx-title-cell">' + iinp('rnx-t-ttl-' + i.id, i.title, i.id) + linkBtn + '</td>'
+      + '<td id="rnx-epics-prog-' + i.id + '" style="min-width:130px">' + rnxEpicsProgressCell(i) + '</td>'
       + '<td style="min-width:150px">'  + rnxCustomSel('rnx-t-drv-' + i.id, dItems,  i.driver,          i.id) + '</td>'
       + '<td style="min-width:120px">'  + rnxCustomSel('rnx-t-tm-'  + i.id, tItems,  i.team,            i.id) + '</td>'
       + '<td style="min-width:140px">'  + rnxAvatarSel('rnx-t-po-'  + i.id, poMbrs,  i.productOwner,    i.id) + '</td>'
       + '<td style="min-width:140px">'  + rnxAvatarSel('rnx-t-tl-'  + i.id, tlMbrs,  i.techLead,        i.id) + '</td>'
       + '<td style="min-width:155px">'  + rnxCustomSel('rnx-t-th-'  + i.id, thItems, i.theme,           i.id) + '</td>'
       + '<td style="white-space:nowrap">' + roiCell + '</td>'
-      + '<td id="rnx-epics-prog-' + i.id + '" style="min-width:130px">' + rnxEpicsProgressCell(i) + '</td>'
       + '<td style="min-width:130px">'  + rnxCustomSel('rnx-t-ds-'  + i.id, dsItems, i.deliveryStatus || 'not-started', i.id) + '</td>'
       + '<td style="white-space:nowrap">'
       +   '<button class="rnx-del-btn" title="Delete"'
@@ -890,8 +890,8 @@ var _PENCIL_SVG = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none"><
 function _rnxPencilBtn(id) {
   return '<button onclick="event.stopPropagation();rnxOpenModalOnStep3(' + id + ')"'
     + ' title="Manage Jira Epics"'
-    + ' style="flex-shrink:0;padding:2px 5px;background:none;border:none;cursor:pointer;color:var(--muted);border-radius:4px;line-height:0;transition:color .12s"'
-    + ' onmouseenter="this.style.color=\'var(--accent)\'" onmouseleave="this.style.color=\'var(--muted)\'">'
+    + ' style="flex-shrink:0;padding:2px 5px;background:none;border:none;cursor:pointer;color:var(--faint);border-radius:4px;line-height:0;transition:color .12s"'
+    + ' onmouseenter="this.style.color=\'var(--accent)\'" onmouseleave="this.style.color=\'var(--faint)\'">'
     + _PENCIL_SVG
     + '</button>';
 }
@@ -918,6 +918,19 @@ function rnxEpicsProgressCell(initiative) {
     + '</div>';
 }
 
+function rnxEpicsProgressMini(initiative) {
+  var keys = initiative.jiraEpics;
+  if (!keys || !keys.length) return '';
+  return '<div class="rnx-epics-prog-mini" data-rnxepicsid="' + initiative.id + '" style="width:100%;min-width:0">'
+    + '<div style="display:flex;align-items:center;gap:5px">'
+    +   '<div style="flex:1;height:3px;background:var(--border);border-radius:999px;overflow:hidden">'
+    +     '<div class="rnx-epic-bar" style="height:100%;width:0%;background:#CBD5E1;border-radius:999px;transition:width .5s ease"></div>'
+    +   '</div>'
+    +   '<span class="rnx-epic-pct" style="font-size:10px;color:var(--muted);min-width:24px;text-align:right">…</span>'
+    + '</div>'
+    + '</div>';
+}
+
 function rnxOpenModalOnStep3(id) {
   rnxOpenModal(id);   // fills all fields + resets to step 1
   setTimeout(function() {
@@ -940,32 +953,32 @@ function rnxOpenModalOnStep3(id) {
     document.getElementById('rnx-step-label-1').style.cssText = 'font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap';
     document.getElementById('rnx-step-label-2').style.cssText = 'font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap';
     document.getElementById('rnx-step-label-3').style.cssText = 'font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap';
-    // Reset mode toggle
-    rnxStep3SetMode('create');
-    // Show already-linked epics as read-only info chips
+    // Pre-populate existing linked epics as rows in link mode
     var initiative = rnxAllInitiatives.filter(function(x) { return x.id === id; })[0];
     var existing = initiative && initiative.jiraEpics && initiative.jiraEpics.length ? initiative.jiraEpics : [];
+    // Hide the old chips section (no longer used)
     var existingEl = document.getElementById('rnx-existing-epics');
-    if (existingEl) {
-      if (existing.length) {
-        existingEl.style.display = 'block';
-        existingEl.innerHTML = '<div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#10B981;margin-bottom:8px">Already linked</div>'
-          + '<div style="display:flex;flex-wrap:wrap;gap:6px">'
-          + existing.map(function(k) {
-              return '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:20px;font-size:11px;font-weight:500;color:#10B981">'
-                + '<svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M2 5.5l2 2 4-4" stroke="#10B981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-                + k
-                + '</span>';
-            }).join('')
-          + '</div>';
-      } else {
-        existingEl.style.display = 'none';
-        existingEl.innerHTML = '';
-      }
+    if (existingEl) { existingEl.style.display = 'none'; existingEl.innerHTML = ''; }
+    if (existing.length) {
+      // Switch to link mode and pre-populate rows
+      _rnxLinkedEpics = existing.slice(); // copy existing keys
+      rnxStep3SetMode('link');
+      rnxRenderLinkedEpicList();
+    } else {
+      rnxStep3SetMode('create');
     }
     var inp = document.getElementById('rnx-epic-input');
     if (inp) { inp.value = ''; inp.focus(); }
   }, 60);
+}
+
+// Interpolates from Indigo (#6366F1) at 0% to Accent magenta (#ED005E) at 100%
+function rnxEpicBarColor(pct) {
+  var t = Math.max(0, Math.min(100, pct)) / 100;
+  var r = Math.round(99  + (237 - 99)  * t);
+  var g = Math.round(102 + (0   - 102) * t);
+  var b = Math.round(241 + (94  - 241) * t);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
 }
 
 function rnxFetchJiraProgress() {
@@ -983,22 +996,32 @@ function rnxFetchJiraProgress() {
     .then(function(r) { return r.json(); })
     .then(function(data) {
       toFetch.forEach(function(initiative) {
-        var cell = document.getElementById('rnx-epics-prog-' + initiative.id);
-        if (!cell) return;
         var keys  = initiative.jiraEpics;
         var total = keys.length;
         var sum   = keys.reduce(function(acc, k) { return acc + ((data[k] ? data[k].pct : 0)); }, 0);
         var pct   = total ? Math.round(sum / total) : 0;
-        var color = pct === 100 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#6366F1';
-        // If cell was rendered with the dash (stale or missing bar), replace with bar HTML first
-        var bar = cell.querySelector('.rnx-epic-bar');
-        if (!bar) {
-          cell.innerHTML = rnxEpicsProgressCell(initiative);
-          bar = cell.querySelector('.rnx-epic-bar');
+        var color = rnxEpicBarColor(pct);
+
+        // Update table cell (full version)
+        var cell = document.getElementById('rnx-epics-prog-' + initiative.id);
+        if (cell) {
+          var bar = cell.querySelector('.rnx-epic-bar');
+          if (!bar) {
+            cell.innerHTML = rnxEpicsProgressCell(initiative);
+            bar = cell.querySelector('.rnx-epic-bar');
+          }
+          var label = cell.querySelector('.rnx-epic-pct');
+          if (bar)   { bar.style.width = pct + '%'; bar.style.background = color; }
+          if (label) { label.textContent = pct + '%'; label.style.color = color; }
         }
-        var label = cell.querySelector('.rnx-epic-pct');
-        if (bar)   { bar.style.width = pct + '%'; bar.style.background = color; }
-        if (label) { label.textContent = pct + '%'; label.style.color = pct === 100 ? '#10B981' : 'var(--muted)'; }
+
+        // Update mini bars in Gantt and Kanban
+        document.querySelectorAll('.rnx-epics-prog-mini[data-rnxepicsid="' + initiative.id + '"]').forEach(function(mini) {
+          var bar   = mini.querySelector('.rnx-epic-bar');
+          var label = mini.querySelector('.rnx-epic-pct');
+          if (bar)   { bar.style.width = pct + '%'; bar.style.background = color; }
+          if (label) { label.textContent = pct + '%'; label.style.color = color; }
+        });
       });
     })
     .catch(function(e) { console.warn('[rnxFetchJiraProgress] error:', e.message); });
@@ -1251,25 +1274,35 @@ function rnxKanbanHtml() {
     var items = rnxInitiatives.filter(function(i) { return i.quarter === q; });
     var cards = items.map(function(i) {
       var opt = rnxDeliveryOpts.filter(function(o) { return o.val === i.deliveryStatus; })[0] || rnxDeliveryOpts[0];
-      return '<div class="kancard" data-id="' + i.id + '">'
+      return '<div class="kancard" data-id="' + i.id + '" style="position:relative">'
+        + '<button class="rnx-edit-btn" data-rnxedit="' + i.id + '" title="Edit" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--faint);border-radius:4px;transition:color .12s" onmouseenter="this.style.color=\'var(--accent)\'" onmouseleave="this.style.color=\'var(--faint)\'">'
+        +   '<svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5l2 2-9 9H2.5v-2l9-9z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>'
+        + '</button>'
         + '<div><span class="kancard-title">' + i.title + '</span>'
         + '<div class="kancard-tags">' + (i.theme || '') + (i.theme && i.team ? ' · ' : '') + (i.team || '') + '</div></div>'
-        + '<div class="kancard-leads">'
-        +   '<span class="kancard-lead-item"><span style="font-size:9px;font-weight:600;color:var(--muted);margin-right:3px">PL</span>' + rnxLeadAv(i.productOwner) + ((i.productOwner || '—').split(' ')[0]) + '</span>'
-        +   '<span class="kancard-lead-item"><span style="font-size:9px;font-weight:600;color:var(--muted);margin-right:3px">TL</span>' + rnxLeadAv(i.techLead)     + ((i.techLead    || '—').split(' ')[0]) + '</span>'
+        + (i.jiraEpics && i.jiraEpics.length
+            ? '<div style="display:flex;align-items:center;gap:8px">'
+            +   '<span style="font-size:9px;font-weight:500;letter-spacing:.3px;text-transform:uppercase;color:var(--faint);flex-shrink:0;width:52px">Progress</span>'
+            +   '<div style="flex:1;min-width:0">' + rnxEpicsProgressMini(i) + '</div>'
+            + '</div>'
+            : '')
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        +   '<span style="font-size:9px;font-weight:500;letter-spacing:.3px;text-transform:uppercase;color:var(--faint);flex-shrink:0;width:20px">PL</span>'
+        +   rnxLeadAv(i.productOwner) + '<span style="font-size:11px;color:var(--muted)">' + ((i.productOwner || '—').split(' ')[0]) + '</span>'
+        +   '<span style="font-size:9px;font-weight:500;letter-spacing:.3px;text-transform:uppercase;color:var(--faint);flex-shrink:0;margin-left:8px">TL</span>'
+        +   rnxLeadAv(i.techLead) + '<span style="font-size:11px;color:var(--muted)">' + ((i.techLead || '—').split(' ')[0]) + '</span>'
         + '</div>'
-        + '<div class="kancard-driver">' + (i.driver ? rnxDriverBadge(i.driver) : '<span style="font-size:10px;color:var(--faint)">—</span>') + '</div>'
-        + '<div class="kancard-footer">'
-        +   '<div data-rnx-ds-id="' + i.id + '">'
-        +     '<span class="pill ds-pill ' + opt.cls + '">' + opt.label + '</span>'
-        +   '</div>'
-        +   '<div style="display:flex;gap:4px;align-items:center">'
-        +     '<span style="font-size:11px;font-weight:500">' + rnxRoiHtml(i.roi) + '</span>'
-        +     '<button class="rnx-edit-btn" data-rnxedit="' + i.id + '" title="Edit" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--muted);border-radius:4px">'
-        +       '<svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5l2 2-9 9H2.5v-2l9-9z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>'
-        +     '</button>'
-        +   '</div>'
-        + '</div></div>';
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        +   '<span style="font-size:9px;font-weight:500;letter-spacing:.3px;text-transform:uppercase;color:var(--faint);flex-shrink:0;width:52px">Driver</span>'
+        +   (i.driver ? rnxDriverBadge(i.driver) : '<span style="font-size:10px;color:var(--faint)">—</span>')
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        +   '<span style="font-size:9px;font-weight:500;letter-spacing:.3px;text-transform:uppercase;color:var(--faint);flex-shrink:0;width:52px">Status</span>'
+        +   '<div data-rnx-ds-id="' + i.id + '" style="flex:1"><span class="badge ' + opt.cls + '">' + opt.label + '</span></div>'
+        +   '<span style="font-size:9px;font-weight:500;letter-spacing:.3px;text-transform:uppercase;color:var(--faint);flex-shrink:0;margin-left:4px">ROI</span>'
+        +   '<span style="font-size:11px;font-weight:500;margin-left:6px">' + rnxRoiHtml(i.roi) + '</span>'
+        + '</div>'
+        + '</div>';
     }).join('');
     return '<div class="kancol" data-kanq="' + q + '">'
       + '<div class="kancol-head"><span>' + q + '</span><span class="kancol-count">' + items.length + '</span></div>'
@@ -1383,7 +1416,9 @@ function rnxBuildGantt() {
       var v1 = i[sk[0]] || '—', v2 = i[sk[1]] || '—';
       var nameCell = '<td class="gantt-name-cell">'
         + '<div class="gantt-name-title" title="' + i.title.replace(/"/g, '&quot;') + '">' + i.title + '</div>'
-        + '<div class="gantt-name-meta">' + sl[0] + ': <span>' + v1 + '</span> · ' + sl[1] + ': <span>' + v2 + '</span></div></td>';
+        + '<div class="gantt-name-meta">' + sl[0] + ': <span>' + v1 + '</span> · ' + sl[1] + ': <span>' + v2 + '</span></div>'
+        + rnxEpicsProgressMini(i)
+        + '</td>';
 
       var qCells = qHeaders.map(function(q) {
         var isCurrent = q === cq;
@@ -1816,8 +1851,7 @@ function rnxModalHtml() {
   var footer3 = '<div id="rnx-modal-footer-3" style="display:none;align-items:center;justify-content:space-between;gap:10px;padding-top:16px">'
     + '<button onclick="rnxModalPrevStep3()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">← Back</button>'
     + '<div style="display:flex;gap:8px">'
-    +   '<button onclick="rnxSaveInitiative()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Save only</button>'
-    +   '<button id="rnx-create-epics-btn" onclick="rnxSaveWithEpics()" style="padding:7px 18px;font-size:13px;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">Create Epics & Save</button>'
+    +   '<button id="rnx-create-epics-btn" onclick="rnxSaveWithEpics()" style="padding:7px 18px;font-size:13px;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">Save</button>'
     + '</div>'
     + '</div>';
 
@@ -2140,7 +2174,17 @@ function rnxSaveInitiative(afterSave) {
     })()
   };
   if (rnxEditId) payload.id = rnxEditId;
-
+  // Inject pending jiraEpics if set by rnxSaveWithEpics (link mode)
+  if (_rnxPendingEpicsSave !== undefined) {
+    // New epics to save (set by rnxSaveWithEpics)
+    payload.jiraEpics    = _rnxPendingEpicsSave;
+    _rnxPendingEpicsSave = undefined;
+  } else if (rnxEditId) {
+    // Preserve existing jiraEpics on plain saves (so server never overwrites with null)
+    var _cur = rnxAllInitiatives.filter(function(x) { return x.id === rnxEditId; })[0];
+    if (_cur) payload.jiraEpics = _cur.jiraEpics || [];
+  }
+  console.error('[rnxSaveInitiative] POST id:', payload.id, '| jiraEpics:', JSON.stringify(payload.jiraEpics));
   fetch('/api/neon/initiatives', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -2148,6 +2192,7 @@ function rnxSaveInitiative(afterSave) {
   })
   .then(function(r) { return r.json(); })
   .then(function(res) {
+    console.error('[rnxSaveInitiative] server response:', JSON.stringify(res));
     if (!res.ok) throw new Error(res.error || 'Save failed');
     if (typeof afterSave === 'function') {
       afterSave(res);
@@ -2169,10 +2214,11 @@ function rnxSaveInitiative(afterSave) {
 }
 
 // ── Jira Epics (Step 3) ───────────────────────────────────────────────────────
-var _rnxJiraEpics    = [];   // names queued for creation (create mode)
-var _rnxStep3Mode    = 'create';  // 'create' | 'link'
-var _rnxLinkedEpics  = [];   // keys selected in link mode
-var _rnxProjectEpics = null; // cached epic list fetched from Jira (null = not loaded)
+var _rnxJiraEpics       = [];       // names queued for creation (create mode)
+var _rnxStep3Mode       = 'create'; // 'create' | 'link'
+var _rnxLinkedEpics     = [];       // keys selected in link mode
+var _rnxProjectEpics    = null;     // cached epic list fetched from Jira (null = not loaded)
+var _rnxPendingEpicsSave = undefined; // when set, injected into next rnxSaveInitiative POST payload
 
 function rnxRenderEpicList() {
   var el = document.getElementById('rnx-epic-list');
@@ -2385,105 +2431,92 @@ function rnxToggleEpicPickerDd() {
 
 function rnxSaveWithEpics() {
   var btn = document.getElementById('rnx-create-epics-btn');
+  console.error('[rnxSaveWithEpics] called — mode:', _rnxStep3Mode, '| rnxEditId:', rnxEditId, '| linked:', _rnxLinkedEpics, '| create:', _rnxJiraEpics);
 
-  // ── LINK mode: no Jira creation, just persist selected keys ────────────────
+  // ── LINK mode: no Jira creation, persist selected keys via POST payload ────
   if (_rnxStep3Mode === 'link') {
-    if (!_rnxLinkedEpics.length) {
-      rnxSaveInitiative();
-      return;
-    }
+    // _rnxLinkedEpics is the authoritative final state:
+    // pre-populated with existing epics on open, then updated as user adds/removes.
+    // Do NOT merge with DB state — that would ignore removals.
+    _rnxPendingEpicsSave = _rnxLinkedEpics.slice();
     if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
-    rnxSaveInitiative(function(saveRes) {
-      var initiativeId = (saveRes && saveRes.id) ? saveRes.id : (rnxEditId || null);
-      var existing = (rnxAllInitiatives.filter(function(x) { return x.id === initiativeId; })[0] || {}).jiraEpics || [];
-      var merged   = existing.concat(_rnxLinkedEpics.filter(function(k) { return existing.indexOf(k) === -1; }));
-      fetch('/api/neon/initiatives', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: initiativeId, jiraEpics: merged })
-      })
-      .catch(function(e) { console.warn('jiraEpics patch failed:', e.message); })
-      .then(function() {
-        if (btn) { btn.disabled = false; btn.textContent = 'Link Epics & Save'; }
-        rnxCloseModal();
-        rnxLoadAndRender();
-        if (typeof activeId !== 'undefined' && activeId === 'teamcapacity-neon'
-            && typeof cnxLoadAndRender === 'function') {
-          setTimeout(cnxLoadAndRender, 300);
-        }
-      });
+    rnxSaveInitiative(function() {
+      if (btn) { btn.disabled = false; btn.textContent = 'Link Epics & Save'; }
+      rnxCloseModal();
+      rnxLoadAndRender();
+      if (typeof activeId !== 'undefined' && activeId === 'teamcapacity-neon'
+          && typeof cnxLoadAndRender === 'function') {
+        setTimeout(cnxLoadAndRender, 300);
+      }
     });
     return;
   }
 
-  // ── CREATE mode: create epics in Jira then persist keys ────────────────────
+  // ── CREATE mode: create epics in Jira first, then save everything atomically ─
   var epics = _rnxJiraEpics.slice();
   if (!epics.length) {
     rnxSaveInitiative();
     return;
   }
-  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating epics…'; }
   var project = (document.getElementById('rnx-jira-project') || {}).value || 'SDT';
+  var createdKeys = [];
+  var idx = 0;
 
-  rnxSaveInitiative(function(saveRes) {
-    var initiativeId = (saveRes && saveRes.id) ? saveRes.id : (rnxEditId || null);
-    var createdKeys = [];
-    var i = 0;
-
-    function finish() {
-      function done() {
+  function createNext() {
+    if (idx >= epics.length) {
+      // All Jira epics processed — now save initiative with the collected keys
+      var existingEpics = [];
+      if (rnxEditId) {
+        var foundI = rnxAllInitiatives.filter(function(x) { return x.id === rnxEditId; })[0];
+        existingEpics = (foundI && foundI.jiraEpics) || [];
+      }
+      _rnxPendingEpicsSave = existingEpics.concat(
+        createdKeys.filter(function(k) { return existingEpics.indexOf(k) === -1; })
+      );
+      if (btn) { btn.textContent = 'Saving…'; }
+      rnxSaveInitiative(function() {
+        if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
         rnxCloseModal();
         rnxLoadAndRender();
         if (typeof activeId !== 'undefined' && activeId === 'teamcapacity-neon'
             && typeof cnxLoadAndRender === 'function') {
           setTimeout(cnxLoadAndRender, 300);
         }
-      }
-      if (createdKeys.length && initiativeId) {
-        var existing = (rnxAllInitiatives.filter(function(x) { return x.id === initiativeId; })[0] || {}).jiraEpics || [];
-        var merged = existing.concat(createdKeys.filter(function(k) { return existing.indexOf(k) === -1; }));
-        fetch('/api/neon/initiatives', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: initiativeId, jiraEpics: merged })
-        }).catch(function(e) { console.warn('jiraEpics patch failed:', e.message); }).then(done);
-      } else {
-        done();
-      }
+      });
+      return;
     }
 
-    function next() {
-      if (i >= epics.length) { finish(); return; }
-      var name     = epics[i];
-      var statusEl = document.getElementById('rnx-epic-status-' + i);
-      if (btn) btn.textContent = 'Creating epic ' + (i + 1) + '/' + epics.length + '…';
-      if (statusEl) { statusEl.textContent = '⏳'; statusEl.style.color = 'var(--muted)'; }
-      fetch('/api/jira/issue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: name, type: 'Epic', project: project })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(r) {
-        if (statusEl) {
-          if (r.ok) {
-            statusEl.textContent = '✓ ' + (r.key || '');
-            statusEl.style.color = '#10B981';
-            if (r.key) createdKeys.push(r.key);
-          } else {
-            statusEl.textContent = '✗ ' + (r.error || 'failed');
-            statusEl.style.color = '#EF4444';
-          }
+    var name     = epics[idx];
+    var statusEl = document.getElementById('rnx-epic-status-' + idx);
+    if (btn) btn.textContent = 'Creating ' + (idx + 1) + '/' + epics.length + '…';
+    if (statusEl) { statusEl.textContent = '⏳'; statusEl.style.color = 'var(--muted)'; }
+
+    fetch('/api/jira/issue', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: name, type: 'Epic', project: project })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (statusEl) {
+        if (r.ok) {
+          statusEl.textContent = '✓ ' + (r.key || '');
+          statusEl.style.color = '#10B981';
+          if (r.key) createdKeys.push(r.key);
+        } else {
+          statusEl.textContent = '✗ ' + (r.error || 'failed');
+          statusEl.style.color = '#EF4444';
         }
-        i++; setTimeout(next, 120);
-      })
-      .catch(function(e) {
-        if (statusEl) { statusEl.textContent = '✗ error'; statusEl.style.color = '#EF4444'; }
-        i++; setTimeout(next, 120);
-      });
-    }
-    next();
-  });
+      }
+      idx++; setTimeout(createNext, 120);
+    })
+    .catch(function(e) {
+      if (statusEl) { statusEl.textContent = '✗ error'; statusEl.style.color = '#EF4444'; }
+      idx++; setTimeout(createNext, 120);
+    });
+  }
+  createNext();
 }
 
 function rnxDeleteInitiative(id) {
@@ -2521,8 +2554,15 @@ function rnxUpdateStatus(id, val) {
     i.deliveryStatus = val;
     // Update all DS pills for this id in DOM
     document.querySelectorAll('[data-rnx-ds-id="' + id + '"]').forEach(function(el) {
-      el.className = (el.tagName === 'SPAN' ? 'pill ds-pill ' : 'pill ds-pill ') + opt.cls;
-      el.textContent = opt.label;
+      if (el.tagName === 'SPAN') {
+        // Table/backlog: span is the pill directly
+        el.className = 'pill ds-pill ' + opt.cls;
+        el.textContent = opt.label;
+      } else {
+        // Kanban: div wrapper, span inside uses badge class
+        var span = el.querySelector('span');
+        if (span) { span.className = 'badge ' + opt.cls; span.textContent = opt.label; }
+      }
     });
   })
   .catch(function(e) { console.warn('Status update failed', e); });
@@ -2576,7 +2616,7 @@ function rnxLoadAndRender() {
     rnxInitEvents();
     if (activeTab === 'gantt') setTimeout(rnxGanttTooltipInit, 50);
     if (activeTab === 'roi')   setTimeout(function() { rnxRenderScatter(rnxCurrentQ()); }, 50);
-    if (activeTab === 'table' || activeTab === 'backlog') setTimeout(rnxFetchJiraProgress, 0);
+    setTimeout(rnxFetchJiraProgress, 0);
     // Render grouped chart after paint (subset = current quarter filter)
     var initSubset = rnxInitiatives.filter(function(i) { return i.quarter === rnxCurrentQ(); });
     setTimeout(function() { rnxRenderGroupChart(rnxGroupKey, initSubset); rnxWireGroupTabs(initSubset); }, 0);
@@ -2613,9 +2653,9 @@ function rnxBacklogContent() {
     + '<div style="padding:12px 18px 4px">' + rnxFilterBar('bl') + '</div>'
     + '<div style="overflow-x:auto">'
     + '<table class="rnx-table" style="min-width:1100px"><thead><tr>'
-    +   '<th>Quarter</th><th>Initiative</th><th>Driver</th><th>Team</th>'
+    +   '<th>Quarter</th><th>Initiative</th><th>Progress</th><th>Driver</th><th>Team</th>'
     +   '<th>Product Owner</th><th>Tech Lead</th><th>Theme</th>'
-    +   '<th>ROI</th><th>Epics</th><th>Status</th><th></th>'
+    +   '<th>ROI</th><th>Status</th><th></th>'
     + '</tr></thead>'
     + '<tbody id="rnx-backlog-body">' + tableRows + '</tbody>'
     + '</table>'
@@ -2699,7 +2739,7 @@ function rnxBuildInner(activeTab) {
     +     '<div style="padding:12px 18px 4px">' + rnxFilterBar() + '</div>'
     +     '<div style="overflow-x:auto">'
     +     '<table class="rnx-table" style="min-width:1100px"><thead><tr>'
-    +       '<th>Quarter</th><th>Initiative</th><th>Driver</th><th>Team</th>'
+    +       '<th>Quarter</th><th>Initiative</th><th>Progress</th><th>Driver</th><th>Team</th>'
     +       '<th>Product Owner</th><th>Tech Lead</th><th>Theme</th>'
     +       '<th>ROI</th><th>Status</th><th></th>'
     +     '</tr></thead>'
@@ -2773,11 +2813,14 @@ function rnxInitEvents() {
         var el = document.getElementById('rnx-rt-' + t);
         if (el) el.classList.toggle('act', t === id);
       });
-      if (id === 'gantt')   setTimeout(rnxGanttTooltipInit, 50);
+      if (id === 'gantt')   { setTimeout(rnxGanttTooltipInit, 50); setTimeout(rnxFetchJiraProgress, 80); }
       if (id === 'roi')     setTimeout(function() { rnxRenderScatter(rnxCurrentQ()); }, 50);
+      if (id === 'table')   setTimeout(rnxFetchJiraProgress, 0);
+      if (id === 'quarterly') setTimeout(rnxFetchJiraProgress, 0);
       if (id === 'backlog') {
         var bp = document.getElementById('rnx-rt-backlog');
         if (bp) { bp.innerHTML = rnxBacklogContent(); rnxWireBacklogEvents(); }
+        setTimeout(rnxFetchJiraProgress, 0);
       }
     });
   });

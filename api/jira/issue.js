@@ -29,18 +29,63 @@ export default async function handler(req, res) {
       const keys = req.query.keys.split(',').map(k => k.trim()).filter(Boolean);
       if (!keys.length) return res.status(200).json({});
       try {
-        const jql  = `issue in (${keys.join(',')}) ORDER BY key ASC`;
-        const data = await jiraPost('/rest/api/3/search/jql', {
-          jql, fields: ['status', 'summary'], maxResults: 200
-        });
+        // Fetch CHILD tickets under each epic.
+        // Next-gen projects use the `parent` field; classic projects use the
+        // "Epic Link" custom field (customfield_10014).  We cover both with one
+        // JQL OR clause and read whichever field is populated per issue.
+        const keyList = keys.join(',');
+        const epicStats = {};
+        keys.forEach(k => { epicStats[k] = { total: 0, done: 0 }; });
+
+        // Helper: tally issues into epicStats
+        function tallyIssues(issues) {
+          (issues || []).forEach(issue => {
+            // next-gen: parent.key
+            // classic:  customfield_10014 is a string key
+            const parentKey = issue.fields?.parent?.key
+                           || (typeof issue.fields?.customfield_10014 === 'string'
+                                 ? issue.fields.customfield_10014 : null);
+            if (!parentKey || !epicStats[parentKey]) return;
+            epicStats[parentKey].total++;
+            if (issue.fields?.status?.statusCategory?.key === 'done') {
+              epicStats[parentKey].done++;
+            }
+          });
+        }
+
+        // Query 1 — next-gen projects: parent in (keys)
+        try {
+          const d1 = await jiraPost('/rest/api/3/search/jql', {
+            jql:    `parent in (${keyList}) AND issuetype not in ("Epic") ORDER BY key ASC`,
+            fields: ['status', 'parent'],
+            maxResults: 500
+          });
+          tallyIssues(d1.issues);
+        } catch (_) { /* field not supported — skip */ }
+
+        // Query 2 — classic projects: Epic Link (cf[10014]) in (keys)
+        try {
+          const d2 = await jiraPost('/rest/api/3/search/jql', {
+            jql:    `cf[10014] in (${keyList}) AND issuetype not in ("Epic") ORDER BY key ASC`,
+            fields: ['status', 'customfield_10014'],
+            maxResults: 500
+          });
+          tallyIssues(d2.issues);
+        } catch (_) { /* field not supported — skip */ }
+
         const result = {};
-        (data.issues || []).forEach(issue => {
-          const cat = issue.fields?.status?.statusCategory?.key || 'new';
-          result[issue.key] = {
-            status:         issue.fields?.status?.name || 'Unknown',
-            statusCategory: cat,
-            pct:            cat === 'done' ? 100 : cat === 'indeterminate' ? 50 : 0
-          };
+        keys.forEach(key => {
+          const s = epicStats[key];
+          if (!s || s.total === 0) {
+            result[key] = { status: 'No tickets', statusCategory: 'new', pct: 0 };
+          } else {
+            const pct = Math.round((s.done / s.total) * 100);
+            result[key] = {
+              status:         `${s.done}/${s.total} done`,
+              statusCategory: pct === 100 ? 'done' : s.done > 0 ? 'indeterminate' : 'new',
+              pct
+            };
+          }
         });
         return res.status(200).json(result);
       } catch (e) {
