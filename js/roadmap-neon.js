@@ -2762,8 +2762,8 @@ function rnxBuildInner(activeTab) {
 
   return '<div style="display:flex;align-items:center;gap:0;margin-bottom:20px">'
     + '<div class="tabnav" style="margin-bottom:0">'
-    +   tab('gantt',     'Gantt')
     +   tab('table',     'Table View')
+    +   tab('gantt',     'Gantt')
     +   tab('quarterly', 'Quarterly Kanban')
     +   tab('roi',       'By ROI')
     + '</div>'
