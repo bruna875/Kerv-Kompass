@@ -161,7 +161,7 @@ function buildNav() {
 
       // Add Sprint Dashboard button
       if (canManage) {
-        items += '<div onclick="_sdOpenAddModal()" style="margin:4px 12px;padding:5px 10px;border:1.5px dashed var(--accent);border-radius:7px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s,opacity .15s" onmouseenter="this.style.background=\'rgba(237,0,94,.06)\'" onmouseleave="this.style.background=\'transparent\'">'
+        items += '<div onclick="_sdOpenAddModal()" style="margin:4px 12px;padding:5px 10px;border:1.5px solid var(--accent);border-radius:7px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s,opacity .15s" onmouseenter="this.style.background=\'rgba(237,0,94,.06)\'" onmouseleave="this.style.background=\'transparent\'">'
           + '<svg width="11" height="11" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;color:var(--accent)"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
           + '<span style="font-size:11px;font-weight:500;color:var(--accent);letter-spacing:.1px">Add Sprint Dashboard</span>'
           + '</div>';
