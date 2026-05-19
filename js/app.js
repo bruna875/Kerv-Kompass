@@ -17,8 +17,14 @@ var KERV_DRIVER_PALETTE = [
   '#A855F7'  // purple
 ];
 
+// Explicit overrides — take priority over the hash when two drivers land on similar colours
+var KERV_DRIVER_OVERRIDES = {
+  'Retention / Upsell': '#E85D26' // warm reddish-orange, distinct from violet/indigo neighbours
+};
+
 function kervDriverColor(name) {
   if (!name || name === '—') return '#8E8E93';
+  if (KERV_DRIVER_OVERRIDES[name]) return KERV_DRIVER_OVERRIDES[name];
   var h = 0;
   for (var i = 0; i < name.length; i++) { h = (h * 31 + name.charCodeAt(i)) >>> 0; }
   return KERV_DRIVER_PALETTE[h % KERV_DRIVER_PALETTE.length];
