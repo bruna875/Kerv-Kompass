@@ -85,7 +85,7 @@ var PAGES = {
   'roadmap-neon':        renderRoadmapNeon,
   'teamcapacity-neon':   renderTeamCapacityNeon,
   'settings-neon':       renderSettingsNeon,
-  'sdt-sprint-analysis': function() { return xtsAnalysis.render(); },
+  'sdt-sprint-analysis': renderXtsTeam,
   'admin-users':         renderAdminUsers
 };
 
@@ -170,7 +170,7 @@ function setPage(id, label, noPush) {
   buildNav();
   if (id === 'overview')            setTimeout(ovxLoad, 0);
   if (id === 'roadmap-neon')        setTimeout(rnxGanttTooltipInit, 50);
-  if (id === 'sdt-sprint-analysis') setTimeout(function() { xtsAnalysis.init(); }, 50);
+  if (id === 'sdt-sprint-analysis') setTimeout(xtsInit, 50);
   if (id === 'admin-users')         setTimeout(auLoad, 0);
   if (!noPush) history.pushState({ id: id, label: label }, '', '/' + id);
 }
