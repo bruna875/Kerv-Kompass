@@ -19,7 +19,7 @@ var KERV_DRIVER_PALETTE = [
 
 // Explicit overrides — take priority over the hash when two drivers land on similar colours
 var KERV_DRIVER_OVERRIDES = {
-  'Retention / Upsell': '#E85D26' // warm reddish-orange, distinct from violet/indigo neighbours
+  'Retention / Upsell': '#C9910A' // ochre yellow — distinct from orange (Strategic) and violet (Operational)
 };
 
 function kervDriverColor(name) {
