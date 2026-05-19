@@ -79,6 +79,10 @@ function initSprintDashboard(dbId) {
 }
 
 // Render top bar (chips + edit pencil) + SA instance
+function _sdSlug(name) {
+  return (name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 function _sdRenderInner(dbId, projObjs, activeKey) {
   var outer = document.getElementById('sd-outer-' + dbId);
   if (!outer) return;
@@ -86,15 +90,7 @@ function _sdRenderInner(dbId, projObjs, activeKey) {
   var canManage = typeof _kervUser !== 'undefined' && _kervUser &&
     (_kervUser.superAdmin || (_kervUser.permissions && _kervUser.permissions['settings-neon'] === 'editor'));
 
-  var editBtn = '<button onclick="_sdOpenEditModal(' + dbId + ')" title="Edit dashboard" style="'
-    + 'width:32px;height:32px;border:none;border-radius:8px;background:none;'
-    + 'color:var(--faint);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;'
-    + 'flex-shrink:0;transition:color .15s,background .15s" '
-    + 'onmouseenter="this.style.color=\'var(--accent)\';this.style.background=\'rgba(237,0,94,.08)\'" '
-    + 'onmouseleave="this.style.color=\'var(--faint)\';this.style.background=\'none\'">'
-    + '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>'
-    + '</button>';
-
+  // Multi-project chips row (no edit button here — injected into SA header below)
   var topBar = '';
   if (projObjs.length > 1) {
     var chips = projObjs.map(function(p) {
@@ -110,12 +106,7 @@ function _sdRenderInner(dbId, projObjs, activeKey) {
         + '<span style="' + (act ? 'opacity:.85' : '') + '">' + p.team_name + '</span>'
         + '</button>';
     }).join('');
-    topBar = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px">'
-      + chips
-      + (canManage ? editBtn : '')
-      + '</div>';
-  } else if (canManage) {
-    topBar = '<div style="display:flex;justify-content:flex-end;margin-bottom:12px">' + editBtn + '</div>';
+    topBar = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px">' + chips + '</div>';
   }
 
   var activeProj = null;
@@ -126,6 +117,25 @@ function _sdRenderInner(dbId, projObjs, activeKey) {
 
   var inst = _sdSaInstance(dbId, activeProj);
   outer.innerHTML = topBar + '<div id="sd-inner-' + dbId + '">' + inst.render() + '</div>';
+
+  // Inject edit button inline into the SA page header (next to pin button)
+  if (canManage) {
+    var pinBtn = outer.querySelector('button[id$="-pin-btn"]');
+    if (pinBtn && pinBtn.parentNode) {
+      var sep = document.createElement('div');
+      sep.style.cssText = 'width:1px;height:20px;background:var(--border-md);flex-shrink:0';
+      var editEl = document.createElement('button');
+      editEl.title = 'Edit dashboard';
+      editEl.setAttribute('onclick', '_sdOpenEditModal(' + dbId + ')');
+      editEl.style.cssText = 'width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--faint);cursor:pointer;transition:border-color .15s,color .15s;flex-shrink:0';
+      editEl.setAttribute('onmouseenter', "this.style.borderColor='var(--accent)';this.style.color='var(--accent)'");
+      editEl.setAttribute('onmouseleave', "this.style.borderColor='var(--border-md)';this.style.color='var(--faint)'");
+      editEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+      pinBtn.parentNode.insertBefore(sep, pinBtn);
+      pinBtn.parentNode.insertBefore(editEl, sep);
+    }
+  }
+
   setTimeout(function() { inst.init(); }, 50);
 }
 

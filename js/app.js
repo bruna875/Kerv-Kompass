@@ -141,6 +141,8 @@ function buildNav() {
       var sprintItems = _kervDashboards.filter(function(d) {
         if (!_kervUser) return false;
         if (_kervUser.superAdmin) return true;
+        // settings editors manage dashboards → see all
+        if (_kervUser.permissions && _kervUser.permissions['settings-neon'] === 'editor') return true;
         return !!(_kervUser.permissions && _kervUser.permissions['sprint-db-' + d.id]);
       });
 
@@ -205,7 +207,16 @@ function setPage(id, label, noPush) {
     content.innerHTML = '<div id="content-bc" class="content-bc">' + label + '</div>' + renderSprintDashboard(_sdDbId);
     buildNav();
     setTimeout(function() { initSprintDashboard(_sdDbId); }, 50);
-    if (!noPush) history.pushState({ id: id, label: label }, '', '/' + id);
+    if (!noPush) {
+      var _sdDashForSlug = null;
+      for (var _sdi = 0; _sdi < _kervDashboards.length; _sdi++) {
+        if (_kervDashboards[_sdi].id === _sdDbId) { _sdDashForSlug = _kervDashboards[_sdi]; break; }
+      }
+      var _sdSlugUrl = _sdDashForSlug
+        ? _sdDashForSlug.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+        : String(_sdDbId);
+      history.pushState({ id: id, label: label }, '', '/sprint-' + _sdSlugUrl);
+    }
     return;
   }
 
@@ -236,14 +247,21 @@ function _kervFirstAccessiblePage() {
 function pageFromPath() {
   var path = location.pathname.replace(/^\//, '').replace(/\/$/, '') || 'overview';
 
-  // Handle sprint-db-{id} paths
+  // Handle slug-based sprint URLs: /sprint-xts-team → sprint-db-{id}
+  if (path.startsWith('sprint-') && !path.startsWith('sprint-db-')) {
+    var slug = path.replace(/^sprint-/, '');
+    for (var si = 0; si < (_kervDashboards || []).length; si++) {
+      var sd = _kervDashboards[si];
+      var sdSlug = sd.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      if (sdSlug === slug) return { id: 'sprint-db-' + sd.id, label: sd.name };
+    }
+  }
+  // Handle direct sprint-db-{id} paths (fallback)
   if (path.startsWith('sprint-db-')) {
     var dbId = parseInt(path.replace('sprint-db-', ''), 10);
-    var dash = null;
     for (var di = 0; di < (_kervDashboards || []).length; di++) {
-      if (_kervDashboards[di].id === dbId) { dash = _kervDashboards[di]; break; }
+      if (_kervDashboards[di].id === dbId) return { id: path, label: _kervDashboards[di].name };
     }
-    if (dash) return { id: path, label: dash.name };
   }
 
   // find matching nav item (including children)
