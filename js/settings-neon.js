@@ -1314,18 +1314,28 @@ function snxNotifyCapacity() {
 
 // ── Tab: Jira Projects ─────────────────────────────────────────────────────
 
+function _jpTypeSel(elId, current, onChange) {
+  var SEL = 'font-size:12px;font-family:inherit;font-weight:500;border:1px solid var(--border-md);border-radius:7px;background:var(--surface);color:var(--text);padding:4px 8px;outline:none;cursor:pointer;transition:border-color .15s;-webkit-appearance:none;appearance:none;width:100%';
+  return '<select id="' + elId + '" onchange="' + onChange + '" style="' + SEL + '">'
+    + '<option value="scrum"'  + (current !== 'kanban' ? ' selected' : '') + '>Scrum</option>'
+    + '<option value="kanban"' + (current === 'kanban' ? ' selected' : '') + '>Kanban</option>'
+    + '</select>';
+}
+
 function snxJiraProjectsHtml() {
   var items = snxData.jiraProjects || [];
 
   var rows = items.map(function(item) {
-    var sfJiraId   = 'snxSaveJiraProject(' + item.id + ')';
-    var sfTeamName = 'snxSaveJiraProject(' + item.id + ')';
+    var sf = 'snxSaveJiraProject(' + item.id + ')';
     return '<tr onmouseenter="this.style.background=\'#FAFAF8\'" onmouseleave="this.style.background=\'\'">'
       + '<td style="' + _S.TD + '">'
-      +   _autoTI('snx-jp-jira-id-' + item.id, item.jira_id, 'e.g. SDT', sfJiraId)
+      +   _autoTI('snx-jp-jira-id-' + item.id, item.jira_id, 'e.g. SDT', sf)
       + '</td>'
       + '<td style="' + _S.TD + '">'
-      +   _autoTI('snx-jp-team-name-' + item.id, item.team_name, 'e.g. Platform', sfTeamName)
+      +   _autoTI('snx-jp-team-name-' + item.id, item.team_name, 'e.g. Platform', sf)
+      + '</td>'
+      + '<td style="' + _S.TD + ';width:110px">'
+      +   _jpTypeSel('snx-jp-type-' + item.id, item.board_type || 'scrum', sf)
       + '</td>'
       + '<td style="' + _S.TD + ';text-align:right;width:44px">'
       +   _trashBtn('snxDeleteJiraProject(' + item.id + ')')
@@ -1339,32 +1349,39 @@ function snxJiraProjectsHtml() {
     + '<td style="' + _S.TD + '">'
     +   '<input type="text" id="snx-jp-new-team-name" placeholder="e.g. Platform" style="' + _S.INPs + '" ' + _SOL_FOCUS + ' ' + _SOL_BLUR + ' />'
     + '</td>'
+    + '<td style="' + _S.TD + ';width:110px">'
+    +   _jpTypeSel('snx-jp-new-type', 'scrum', '')
+    + '</td>'
     + '<td style="' + _S.TD + ';text-align:right">' + _saveBtn('snxAddJiraProject()') + '</td>'
     + '</tr>';
 
-  var headers = _th('Jira ID', 'Team Name', '');
+  var headers = _th('Jira ID', 'Team Name', 'Type', '');
   return _scrollCard('<tr>' + headers + '</tr>', rows, newRow);
 }
 
 function snxSaveJiraProject(id) {
   var jiraIdEl   = document.getElementById('snx-jp-jira-id-' + id);
   var teamNameEl = document.getElementById('snx-jp-team-name-' + id);
-  var jiraId   = jiraIdEl   ? jiraIdEl.value.trim()   : '';
-  var teamName = teamNameEl ? teamNameEl.value.trim() : '';
+  var typeEl     = document.getElementById('snx-jp-type-' + id);
+  var jiraId    = jiraIdEl   ? jiraIdEl.value.trim()   : '';
+  var teamName  = teamNameEl ? teamNameEl.value.trim() : '';
+  var boardType = typeEl     ? typeEl.value            : 'scrum';
   if (!jiraId || !teamName) return;
-  snxApi('/api/neon/lookup', 'POST', { t: 'jira-projects', id: id, jira_id: jiraId, team_name: teamName }).then(function() {
+  snxApi('/api/neon/lookup', 'POST', { t: 'jira-projects', id: id, jira_id: jiraId, team_name: teamName, board_type: boardType }).then(function() {
     var item = (snxData.jiraProjects || []).filter(function(x) { return x.id === id; })[0];
-    if (item) { item.jira_id = jiraId; item.team_name = teamName; }
+    if (item) { item.jira_id = jiraId; item.team_name = teamName; item.board_type = boardType; }
   });
 }
 
 function snxAddJiraProject() {
   var jiraIdEl   = document.getElementById('snx-jp-new-jira-id');
   var teamNameEl = document.getElementById('snx-jp-new-team-name');
-  var jiraId   = jiraIdEl   ? jiraIdEl.value.trim()   : '';
-  var teamName = teamNameEl ? teamNameEl.value.trim() : '';
+  var typeEl     = document.getElementById('snx-jp-new-type');
+  var jiraId    = jiraIdEl   ? jiraIdEl.value.trim()   : '';
+  var teamName  = teamNameEl ? teamNameEl.value.trim() : '';
+  var boardType = typeEl     ? typeEl.value            : 'scrum';
   if (!jiraId || !teamName) return;
-  snxApi('/api/neon/lookup', 'POST', { t: 'jira-projects', jira_id: jiraId, team_name: teamName }).then(function() {
+  snxApi('/api/neon/lookup', 'POST', { t: 'jira-projects', jira_id: jiraId, team_name: teamName, board_type: boardType }).then(function() {
     snxRefreshTab('jira-projects');
   });
 }
