@@ -163,9 +163,9 @@ function buildNav() {
 
       // Add Sprint Dashboard button
       if (canManage) {
-        items += '<div onclick="_sdOpenAddModal()" style="margin:2px 12px;padding:4px 10px;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;transition:opacity .15s;border-radius:6px" onmouseenter="this.style.opacity=\'.65\'" onmouseleave="this.style.opacity=\'1\'">'
-          + '<svg width="11" height="11" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;color:var(--accent)"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
-          + '<span style="font-size:11px;font-weight:500;color:var(--accent);letter-spacing:.1px">Add Sprint Dashboard</span>'
+        items += '<div onclick="_sdOpenAddModal()" style="margin:2px 12px;padding:4px 10px;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;border-radius:6px;color:var(--faint);transition:color .15s" onmouseenter="this.style.color=\'var(--accent)\'" onmouseleave="this.style.color=\'var(--faint)\'">'
+          + '<svg width="11" height="11" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+          + '<span style="font-size:11px;font-weight:500;letter-spacing:.1px">Add Sprint Dashboard</span>'
           + '</div>';
       }
 
