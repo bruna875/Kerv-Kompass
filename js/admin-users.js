@@ -11,12 +11,6 @@ var AU_MODULES = [
   { id: 'roadmap-neon',        label: 'Product Roadmap'           },
   { id: 'settings-neon',       label: 'Assumptions', parent: 'roadmap-neon' },
   { id: 'teamcapacity-neon',   label: 'Team Capacity'             },
-  { id: 'api-team',            label: 'Content (VOD, Live)'       },
-  { id: 'ads-team',            label: 'Ads (Radius, Ads, Tags)'   },
-  { id: 'kervone-team',        label: 'KERV One Team'             },
-  { id: 'shared-team',         label: 'Security / DevOps'         },
-  { id: 'reporting-team',      label: 'Data'                      },
-  { id: 'product-ideas',       label: 'Product Req / Ideas'       },
   { id: 'admin-users',         label: 'Admin — User & Permissions'}
 ];
 

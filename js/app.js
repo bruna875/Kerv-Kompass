@@ -67,14 +67,8 @@ var NAV_CONFIG = [
   {
     section: 'Product',
     items: [
-      { id: 'roadmap-neon',        label: 'Product Roadmap', icon: ico.roadmap  },
-      { id: 'teamcapacity-neon',   label: 'Team Capacity',   icon: ico.capacity },
-      { id: 'api-team',            label: 'Content (VOD, Live)',    icon: ico.api,       disabled: true, dividerBefore: true },
-      { id: 'ads-team',            label: 'Ads (Radius, Ads, Tags)',icon: ico.ads,       disabled: true },
-      { id: 'kervone-team',        label: 'KERV One Team',          icon: ico.kervone,   disabled: true },
-      { id: 'shared-team',         label: 'Security / DevOps',      icon: ico.shared,    disabled: true },
-      { id: 'reporting-team',      label: 'Data',                   icon: ico.reporting, disabled: true },
-      { id: 'product-ideas',       label: 'Product Req / Ideas',      icon: ico.ideas,   disabled: true, dividerBefore: true }
+      { id: 'roadmap-neon',      label: 'Product Roadmap', icon: ico.roadmap  },
+      { id: 'teamcapacity-neon', label: 'Team Capacity',   icon: ico.capacity }
     ]
   },
 ];
@@ -162,9 +156,9 @@ function buildNav() {
         });
       }
       if (canManage) {
-        items += '<div class="nitem" onclick="_sdOpenAddModal()" style="cursor:pointer;opacity:.65" onmouseenter="this.style.opacity=\'1\'" onmouseleave="this.style.opacity=\'.65\'">'
-          + '<div class="nico"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>'
-          + '<span class="nlabel" style="color:var(--muted);font-size:12px">Add Dashboard</span>'
+        items += '<div class="nitem" onclick="_sdOpenAddModal()" style="cursor:pointer;color:var(--accent)" onmouseenter="this.style.opacity=\'.75\'" onmouseleave="this.style.opacity=\'1\'">'
+          + '<div class="nico" style="color:var(--accent)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>'
+          + '<span class="nlabel" style="color:var(--accent);font-weight:500">Add Dashboard</span>'
           + '</div>';
       }
     }
