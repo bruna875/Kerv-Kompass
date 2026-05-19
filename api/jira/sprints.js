@@ -159,7 +159,18 @@ export default async function handler(req, res) {
       return res.status(404).json({ ok: false, error: `No board found for project ${project}` });
     }
 
-    // 2 — Fetch active + last 3 closed + 1 future sprint in parallel
+    // 2 — Kanban boards don't have sprints — return early with a clear flag
+    if ((board.type || '').toLowerCase() === 'kanban') {
+      return res.status(200).json({
+        ok:        true,
+        boardType: 'kanban',
+        boardId:   board.id,
+        boardName: board.name,
+        sprints:   []
+      });
+    }
+
+    // 4 — Fetch active + last 3 closed + 1 future sprint in parallel
     const [activeRes, closedRes, futureRes] = await Promise.all([
       jiraGet(`/rest/agile/1.0/board/${board.id}/sprint?state=active&maxResults=5`),
       jiraGet(`/rest/agile/1.0/board/${board.id}/sprint?state=closed&maxResults=${maxSprints}`),

@@ -289,6 +289,27 @@ function createSprintAnalysis(config) {
       .then(function(data) {
         if (!data.ok) throw new Error(data.error || 'Jira API error');
 
+        // Kanban board — show a friendly message instead of hanging forever
+        if (data.boardType === 'kanban') {
+          var root = document.getElementById(_p('root'));
+          if (root) root.innerHTML = ''
+            + '<div style="padding:32px 0">'
+            +   '<div style="font-size:20px;font-weight:600;color:var(--text);letter-spacing:-.3px;margin-bottom:16px">' + _esc(config.teamName) + '</div>'
+            +   '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 24px;max-width:480px;display:flex;gap:16px;align-items:flex-start">'
+            +     '<div style="flex-shrink:0;width:36px;height:36px;border-radius:8px;background:rgba(99,102,241,.1);display:flex;align-items:center;justify-content:center">'
+            +       '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="11" rx="1"/></svg>'
+            +     '</div>'
+            +     '<div>'
+            +       '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Kanban board detected</div>'
+            +       '<div style="font-size:12px;color:var(--muted);line-height:1.6">Sprint Analysis is designed for Scrum boards.<br>This project (<strong style="color:var(--text)">' + _esc(config.projectKey) + '</strong>) uses a Kanban board, which does not have sprints.</div>'
+            +     '</div>'
+            +   '</div>'
+            + '</div>';
+          var strip = document.getElementById(_p('strip'));
+          if (strip) strip.innerHTML = '';
+          return;
+        }
+
         // Populate closure vars from Jira data
         sprints  = data.sprints || [];
         capacity = {};
