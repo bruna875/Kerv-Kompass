@@ -71,6 +71,18 @@ var NAV_CONFIG = [
       { id: 'teamcapacity-neon', label: 'Team Capacity',   icon: ico.capacity }
     ]
   },
+  {
+    section: 'OKRs',
+    items: []
+  },
+  {
+    section: 'Finance',
+    items: []
+  },
+  {
+    section: 'Sales',
+    items: []
+  },
 ];
 
 // ── Pages map ──
