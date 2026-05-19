@@ -1801,10 +1801,10 @@ function rnxModalHtml() {
     +   '<label style="' + LB + '">Jira Project</label>'
     +   '<div class="rnx-mdd-wrap">'
     +     '<button type="button" class="rnx-mdd-btn" onclick="rnxMddToggle(\'rnx-jira-project\')">'
-    +       '<span class="rnx-mdd-label" id="rnx-jira-project-label"><span class="rnx-mdd-text"><span style="color:var(--accent);font-weight:600">' + (_rnxJiraProjects[0] ? _rnxJiraProjects[0].jira_id : 'SDT') + '</span>' + (_rnxJiraProjects[0] ? ' ' + _rnxJiraProjects[0].team_name : '') + '</span></span>'
+    +       '<span class="rnx-mdd-label" id="rnx-jira-project-label"><span class="rnx-mdd-text" style="color:var(--faint)">Select project…</span></span>'
     +       S3CHEV
     +     '</button>'
-    +     '<input type="hidden" id="rnx-jira-project" value="' + (_rnxJiraProjects[0] ? _rnxJiraProjects[0].jira_id : 'SDT') + '">'
+    +     '<input type="hidden" id="rnx-jira-project" value="">'
     +     '<div class="rnx-mdd-panel" id="rnx-jira-project-panel">'
     +       rnxBuildProjectOptions()
     +     '</div>'
@@ -2035,12 +2035,11 @@ function rnxOpenModal(id) {
   if (pickerLabelEl) pickerLabelEl.innerHTML = '<span class="rnx-mdd-text" style="color:var(--muted)">Select epics…</span>';
   var pickerPanel = document.getElementById('rnx-epic-picker-panel');
   if (pickerPanel) pickerPanel.classList.remove('open');
-  // Reset project dropdown label to first project in list (or SDT fallback)
-  var _rnxFirstProj = _rnxJiraProjects[0];
+  // Reset project dropdown to empty (no default selection)
   var projLabel = document.getElementById('rnx-jira-project-label');
-  if (projLabel) projLabel.innerHTML = '<span class="rnx-mdd-text"><span style="color:var(--accent);font-weight:600">' + (_rnxFirstProj ? _rnxFirstProj.jira_id : 'SDT') + '</span>' + (_rnxFirstProj ? ' ' + _rnxFirstProj.team_name : '') + '</span>';
+  if (projLabel) projLabel.innerHTML = '<span class="rnx-mdd-text" style="color:var(--faint)">Select project…</span>';
   var projInp = document.getElementById('rnx-jira-project');
-  if (projInp) projInp.value = _rnxFirstProj ? _rnxFirstProj.jira_id : 'SDT';
+  if (projInp) projInp.value = '';
   var projPanel = document.getElementById('rnx-jira-project-panel');
   if (projPanel) {
     projPanel.innerHTML = rnxBuildProjectOptions();
