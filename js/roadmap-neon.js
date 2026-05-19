@@ -3155,11 +3155,12 @@ function rnxOpenSettings() {
   if (document.getElementById('rnx-settings-overlay')) return;
 
   var SNX_TABS_LOCAL = [
-    { id: 'teams',       label: 'Teams & Capacity' },
-    { id: 'members',     label: 'Team Members'     },
-    { id: 'drivers',     label: 'Drivers'          },
-    { id: 'themes',      label: 'Themes'           },
-    { id: 'assumptions', label: 'Assumptions'      }
+    { id: 'teams',         label: 'Teams & Capacity' },
+    { id: 'members',       label: 'Team Members'     },
+    { id: 'drivers',       label: 'Drivers'          },
+    { id: 'themes',        label: 'Themes'           },
+    { id: 'assumptions',   label: 'Assumptions'      },
+    { id: 'jira-projects', label: 'Jira Projects'    }
   ];
 
   // Backdrop
