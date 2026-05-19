@@ -118,21 +118,23 @@ function _sdRenderInner(dbId, projObjs, activeKey) {
   var inst = _sdSaInstance(dbId, activeProj);
   outer.innerHTML = topBar + '<div id="sd-inner-' + dbId + '">' + inst.render() + '</div>';
 
-  // Inject edit button inline into the SA page header (next to pin button)
+  // Inject small edit pencil next to the dashboard title
   if (canManage) {
-    var pinBtn = outer.querySelector('button[id$="-pin-btn"]');
-    if (pinBtn && pinBtn.parentNode) {
-      var sep = document.createElement('div');
-      sep.style.cssText = 'width:1px;height:20px;background:var(--border-md);flex-shrink:0';
+    var titleEl = outer.querySelector('[style*="font-size:20px"]');
+    if (titleEl && titleEl.parentNode) {
+      // Wrap title + pencil in a flex row
+      var wrapper = document.createElement('div');
+      wrapper.style.cssText = 'display:flex;align-items:center;gap:6px';
+      titleEl.parentNode.insertBefore(wrapper, titleEl);
+      wrapper.appendChild(titleEl);
       var editEl = document.createElement('button');
       editEl.title = 'Edit dashboard';
       editEl.setAttribute('onclick', '_sdOpenEditModal(' + dbId + ')');
-      editEl.style.cssText = 'width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--faint);cursor:pointer;transition:border-color .15s,color .15s;flex-shrink:0';
-      editEl.setAttribute('onmouseenter', "this.style.borderColor='var(--accent)';this.style.color='var(--accent)'");
-      editEl.setAttribute('onmouseleave', "this.style.borderColor='var(--border-md)';this.style.color='var(--faint)'");
-      editEl.innerHTML = '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
-      pinBtn.parentNode.insertBefore(sep, pinBtn);
-      pinBtn.parentNode.insertBefore(editEl, sep);
+      editEl.style.cssText = 'padding:0;border:none;background:none;color:var(--faint);cursor:pointer;display:inline-flex;align-items:center;transition:color .15s;flex-shrink:0';
+      editEl.setAttribute('onmouseenter', "this.style.color='var(--accent)'");
+      editEl.setAttribute('onmouseleave', "this.style.color='var(--faint)'");
+      editEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+      wrapper.appendChild(editEl);
     }
   }
 
