@@ -31,6 +31,7 @@ var collapsed = false;
 // ── Auth state ──────────────────────────────────────────────────────────────
 var _kervToken = null;
 var _kervUser  = null; // { userId, email, firstName, lastName, permissions, superAdmin }
+var _kervDashboards = []; // sprint dashboards loaded from DB
 
 // Check if current user can access a module at a given level ('viewer'|'editor')
 function _kervCan(moduleId, level) {
@@ -68,8 +69,7 @@ var NAV_CONFIG = [
     items: [
       { id: 'roadmap-neon',        label: 'Product Roadmap', icon: ico.roadmap  },
       { id: 'teamcapacity-neon',   label: 'Team Capacity',   icon: ico.capacity },
-      { id: 'sdt-sprint-analysis', label: 'XTS Team',               icon: ico.sprint,    dividerBefore: true },
-      { id: 'api-team',            label: 'Content (VOD, Live)',    icon: ico.api,       disabled: true },
+      { id: 'api-team',            label: 'Content (VOD, Live)',    icon: ico.api,       disabled: true, dividerBefore: true },
       { id: 'ads-team',            label: 'Ads (Radius, Ads, Tags)',icon: ico.ads,       disabled: true },
       { id: 'kervone-team',        label: 'KERV One Team',          icon: ico.kervone,   disabled: true },
       { id: 'shared-team',         label: 'Security / DevOps',      icon: ico.shared,    disabled: true },
@@ -81,12 +81,11 @@ var NAV_CONFIG = [
 
 // ── Pages map ──
 var PAGES = {
-  'overview':            renderOverview,
-  'roadmap-neon':        renderRoadmapNeon,
-  'teamcapacity-neon':   renderTeamCapacityNeon,
-  'settings-neon':       renderSettingsNeon,
-  'sdt-sprint-analysis': renderXtsTeam,
-  'admin-users':         renderAdminUsers
+  'overview':          renderOverview,
+  'roadmap-neon':      renderRoadmapNeon,
+  'teamcapacity-neon': renderTeamCapacityNeon,
+  'settings-neon':     renderSettingsNeon,
+  'admin-users':       renderAdminUsers
 };
 
 // ── Nav ──
@@ -142,6 +141,34 @@ function buildNav() {
       return html;
     }).join('');
 
+    // Inject sprint dashboard nav items into Product section
+    if (sec.section === 'Product') {
+      var canManage = _kervUser && (_kervUser.superAdmin || (_kervUser.permissions && _kervUser.permissions['settings-neon'] === 'editor'));
+      var sprintItems = _kervDashboards.filter(function(d) {
+        if (!_kervUser) return false;
+        if (_kervUser.superAdmin) return true;
+        return !!(_kervUser.permissions && _kervUser.permissions['sprint-db-' + d.id]);
+      });
+      if (sprintItems.length) {
+        items += '<div style="height:1px;background:var(--border);margin:4px 12px"></div>';
+        sprintItems.forEach(function(d) {
+          var pid = 'sprint-db-' + d.id;
+          var act = pid === activeId;
+          items += '<div class="nitem' + (act ? ' act' : '') + '" data-page="' + pid + '" data-label="' + d.name + '">'
+            + (act ? '<div class="nbar"></div>' : '')
+            + '<div class="nico">' + ico.sprint + '</div>'
+            + '<span class="nlabel">' + d.name + '</span>'
+            + '</div>';
+        });
+      }
+      if (canManage) {
+        items += '<div class="nitem" onclick="_sdOpenAddModal()" style="cursor:pointer;opacity:.65" onmouseenter="this.style.opacity=\'1\'" onmouseleave="this.style.opacity=\'.65\'">'
+          + '<div class="nico"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>'
+          + '<span class="nlabel" style="color:var(--muted);font-size:12px">Add Dashboard</span>'
+          + '</div>';
+      }
+    }
+
     // Sections with noHeader render items directly (no toggle header)
     if (sec.noHeader) {
       return '<div style="padding-bottom:4px">' + items + '</div>';
@@ -165,13 +192,22 @@ function setPage(id, label, noPush) {
   var adminDd = document.getElementById('adminDd');
   if (adminDd) adminDd.classList.remove('open');
   var content = document.getElementById('content');
+
+  if (id.startsWith('sprint-db-')) {
+    var _sdDbId = parseInt(id.replace('sprint-db-', ''), 10);
+    content.innerHTML = '<div id="content-bc" class="content-bc">' + label + '</div>' + renderSprintDashboard(_sdDbId);
+    buildNav();
+    setTimeout(function() { initSprintDashboard(_sdDbId); }, 50);
+    if (!noPush) history.pushState({ id: id, label: label }, '', '/' + id);
+    return;
+  }
+
   var pageHtml = PAGES[id] ? PAGES[id]() : '<div class="ptitle">' + label + '</div>';
   content.innerHTML = (id === 'overview' ? '' : '<div id="content-bc" class="content-bc">' + label + '</div>') + pageHtml;
   buildNav();
-  if (id === 'overview')            setTimeout(ovxLoad, 0);
-  if (id === 'roadmap-neon')        setTimeout(rnxGanttTooltipInit, 50);
-  if (id === 'sdt-sprint-analysis') setTimeout(xtsInit, 50);
-  if (id === 'admin-users')         setTimeout(auLoad, 0);
+  if (id === 'overview')      setTimeout(ovxLoad, 0);
+  if (id === 'roadmap-neon')  setTimeout(rnxGanttTooltipInit, 50);
+  if (id === 'admin-users')   setTimeout(auLoad, 0);
   if (!noPush) history.pushState({ id: id, label: label }, '', '/' + id);
 }
 
@@ -192,6 +228,17 @@ function _kervFirstAccessiblePage() {
 
 function pageFromPath() {
   var path = location.pathname.replace(/^\//, '').replace(/\/$/, '') || 'overview';
+
+  // Handle sprint-db-{id} paths
+  if (path.startsWith('sprint-db-')) {
+    var dbId = parseInt(path.replace('sprint-db-', ''), 10);
+    var dash = null;
+    for (var di = 0; di < (_kervDashboards || []).length; di++) {
+      if (_kervDashboards[di].id === dbId) { dash = _kervDashboards[di]; break; }
+    }
+    if (dash) return { id: path, label: dash.name };
+  }
+
   // find matching nav item (including children)
   var found = null;
   NAV_CONFIG.forEach(function(sec) {
@@ -237,6 +284,38 @@ function toggleSb() {
     : '<path d="M6 2L3 5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
 }
 
+// ── Sprint Dashboards loader ──────────────────────────────────────────────────
+
+function _kervLoadDashboards(cb) {
+  fetch('/api/neon/lookup?t=sprint-dashboards')
+    .then(function(r) { return r.json(); })
+    .then(function(rows) {
+      _kervDashboards = Array.isArray(rows) ? rows : [];
+      _sdSyncAuModules();
+      buildNav();
+      if (cb) cb();
+    })
+    .catch(function() { _kervDashboards = []; if (cb) cb(); });
+}
+
+function _sdSyncAuModules() {
+  if (typeof AU_MODULES === 'undefined') return;
+  // Remove old sprint-db entries
+  for (var i = AU_MODULES.length - 1; i >= 0; i--) {
+    if (String(AU_MODULES[i].id).indexOf('sprint-db-') === 0) AU_MODULES.splice(i, 1);
+  }
+  // Find insert position (after teamcapacity-neon)
+  var idx = -1;
+  for (var j = 0; j < AU_MODULES.length; j++) {
+    if (AU_MODULES[j].id === 'teamcapacity-neon') { idx = j; break; }
+  }
+  if (idx === -1) idx = AU_MODULES.length - 1;
+  var items = _kervDashboards.map(function(d) {
+    return { id: 'sprint-db-' + d.id, label: d.name + ' (Sprint)' };
+  });
+  AU_MODULES.splice.apply(AU_MODULES, [idx + 1, 0].concat(items));
+}
+
 // ── Login / Logout ──
 
 function _applySession(data, instant) {
@@ -279,15 +358,19 @@ function _applySession(data, instant) {
   document.body.setAttribute('data-roadmap-role',  _kervUser.superAdmin ? 'editor' : (perms['roadmap-neon']      || 'none'));
   document.body.setAttribute('data-capacity-role', _kervUser.superAdmin ? 'editor' : (perms['teamcapacity-neon'] || 'none'));
 
-  var startItem = pageFromPath();
-  // If user has no permission for the URL-resolved page, land on their first accessible page
-  if (_kervUser && !_kervUser.superAdmin) {
-    var perms = _kervUser.permissions || {};
-    if (!perms[startItem.id]) startItem = _kervFirstAccessiblePage();
-  }
-  activeId = startItem.id;
-  buildNav();
-  setPage(startItem.id, startItem.label, true);
+  _kervLoadDashboards(function() {
+    var startItem = pageFromPath();
+    // If user has no permission for the URL-resolved page, land on their first accessible page
+    if (_kervUser && !_kervUser.superAdmin) {
+      var startPerms = _kervUser.permissions || {};
+      if (!startPerms[startItem.id] && !startItem.id.startsWith('sprint-db-')) {
+        startItem = _kervFirstAccessiblePage();
+      }
+    }
+    activeId = startItem.id;
+    buildNav();
+    setPage(startItem.id, startItem.label, true);
+  });
 }
 
 function login() {

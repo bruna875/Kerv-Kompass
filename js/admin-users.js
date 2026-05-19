@@ -11,7 +11,6 @@ var AU_MODULES = [
   { id: 'roadmap-neon',        label: 'Product Roadmap'           },
   { id: 'settings-neon',       label: 'Assumptions', parent: 'roadmap-neon' },
   { id: 'teamcapacity-neon',   label: 'Team Capacity'             },
-  { id: 'sdt-sprint-analysis', label: 'XTS Team'                  },
   { id: 'api-team',            label: 'Content (VOD, Live)'       },
   { id: 'ads-team',            label: 'Ads (Radius, Ads, Tags)'   },
   { id: 'kervone-team',        label: 'KERV One Team'             },
