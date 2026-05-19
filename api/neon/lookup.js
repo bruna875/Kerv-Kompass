@@ -238,7 +238,18 @@ export default async function handler(req, res) {
             } catch(e) { /* non-fatal */ }
           }
         }
-        if (t === 'drivers') rows = await sql`UPDATE drivers SET name=${name}, template_slug=${slug} WHERE id=${id} RETURNING id`;
+        if (t === 'drivers') {
+          let oldDriverName = null;
+          try {
+            const oldRows = await sql`SELECT name FROM drivers WHERE id=${id}`;
+            oldDriverName = oldRows[0]?.name ?? null;
+          } catch(e) { /* ignore */ }
+          rows = await sql`UPDATE drivers SET name=${name}, template_slug=${slug} WHERE id=${id} RETURNING id`;
+          // Cascade rename to initiatives so driver tags stay consistent
+          if (oldDriverName && oldDriverName !== name) {
+            try { await sql`UPDATE initiatives SET driver=${name} WHERE driver=${oldDriverName}`; } catch(e) { /* non-fatal */ }
+          }
+        }
         if (t === 'themes')  rows = await sql`UPDATE themes  SET name=${name} WHERE id=${id} RETURNING id`;
       } else {
         if (t === 'teams') {
