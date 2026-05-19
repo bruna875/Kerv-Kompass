@@ -3154,7 +3154,8 @@ function renderRoadmapNeon() {
 function rnxOpenSettings() {
   if (document.getElementById('rnx-settings-overlay')) return;
 
-  var SNX_TABS_LOCAL = [
+  // Use the canonical SNX_TABS defined in settings-neon.js (single source of truth)
+  var SNX_TABS_LOCAL = (typeof SNX_TABS !== 'undefined') ? SNX_TABS : [
     { id: 'teams',         label: 'Teams & Capacity' },
     { id: 'members',       label: 'Team Members'     },
     { id: 'drivers',       label: 'Drivers'          },
