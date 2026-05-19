@@ -143,24 +143,37 @@ function buildNav() {
         if (_kervUser.superAdmin) return true;
         return !!(_kervUser.permissions && _kervUser.permissions['sprint-db-' + d.id]);
       });
-      if (sprintItems.length) {
-        items += '<div style="height:1px;background:var(--border);margin:4px 12px"></div>';
-        sprintItems.forEach(function(d) {
-          var pid = 'sprint-db-' + d.id;
-          var act = pid === activeId;
-          items += '<div class="nitem' + (act ? ' act' : '') + '" data-page="' + pid + '" data-label="' + d.name + '">'
-            + (act ? '<div class="nbar"></div>' : '')
-            + '<div class="nico">' + ico.sprint + '</div>'
-            + '<span class="nlabel">' + d.name + '</span>'
-            + '</div>';
-        });
-      }
+
+      // Divider + section label
+      items += '<div style="height:1px;background:var(--border);margin:4px 12px"></div>'
+        + '<div style="padding:6px 16px 2px;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--faint)">Sprint Analysis</div>';
+
+      // Dashboard items (above Add button)
+      sprintItems.forEach(function(d) {
+        var pid = 'sprint-db-' + d.id;
+        var act = pid === activeId;
+        items += '<div class="nitem' + (act ? ' act' : '') + '" data-page="' + pid + '" data-label="' + d.name + '">'
+          + (act ? '<div class="nbar"></div>' : '')
+          + '<div class="nico">' + ico.sprint + '</div>'
+          + '<span class="nlabel">' + d.name + '</span>'
+          + '</div>';
+      });
+
+      // Add Dashboard button
       if (canManage) {
-        items += '<div class="nitem" onclick="_sdOpenAddModal()" style="cursor:pointer;color:var(--accent)" onmouseenter="this.style.opacity=\'.75\'" onmouseleave="this.style.opacity=\'1\'">'
+        items += '<div class="nitem" onclick="_sdOpenAddModal()" style="cursor:pointer" onmouseenter="this.style.opacity=\'.75\'" onmouseleave="this.style.opacity=\'1\'">'
           + '<div class="nico" style="color:var(--accent)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>'
           + '<span class="nlabel" style="color:var(--accent);font-weight:500">Add Dashboard</span>'
           + '</div>';
       }
+
+      // Divider + Product Ideas (Soon)
+      items += '<div style="height:1px;background:var(--border);margin:4px 12px"></div>'
+        + '<div class="nitem" style="opacity:.45;cursor:default;pointer-events:none">'
+        + '<div class="nico">' + ico.ideas + '</div>'
+        + '<span class="nlabel">Product Req / Ideas</span>'
+        + '<span class="nsoon" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:var(--subtle);color:var(--muted);font-size:8px;font-weight:700;padding:2px 6px;border-radius:10px;letter-spacing:.4px;white-space:nowrap">Soon</span>'
+        + '</div>';
     }
 
     // Sections with noHeader render items directly (no toggle header)
