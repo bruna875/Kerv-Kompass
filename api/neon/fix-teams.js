@@ -57,5 +57,11 @@ export default async function handler(req, res) {
     } catch (e) { report.push({ table: 'initiatives(driver)', from, to, error: e.message }); }
   }
 
-  return res.status(200).json({ ok: true, applied: report });
+  // Show current drivers so we can verify the rename
+  let currentDrivers = [];
+  try {
+    currentDrivers = (await sql`SELECT name FROM drivers ORDER BY name ASC`).map(r => r.name);
+  } catch(e) { /* ignore */ }
+
+  return res.status(200).json({ ok: true, applied: report, drivers: currentDrivers });
 }
