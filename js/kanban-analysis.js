@@ -294,11 +294,13 @@ function createKanbanAnalysis(config) {
         + 'Loading Kanban data from Jira…</div>';
     }
 
-    fetch('/api/jira/kanban?project=' + encodeURIComponent(config.projectKey))
+    // Kanban metrics are served by the sprints endpoint (merged to stay within Vercel's 12-function limit)
+    fetch('/api/jira/sprints?project=' + encodeURIComponent(config.projectKey))
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (!data.ok) throw new Error(data.error || 'Jira API error');
-        kData = data;
+        if (!data.kanban) throw new Error('No Kanban metrics in response — board may be Scrum');
+        kData = data.kanban;
         if (root) root.innerHTML = shell();
         renderAll();
       })
