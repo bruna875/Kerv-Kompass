@@ -1801,7 +1801,7 @@ function rnxModalHtml() {
     +   '<label style="' + LB + '">Jira Project</label>'
     +   '<div class="rnx-mdd-wrap">'
     +     '<button type="button" class="rnx-mdd-btn" onclick="rnxMddToggle(\'rnx-jira-project\')">'
-    +       '<span class="rnx-mdd-label" id="rnx-jira-project-label"><span class="rnx-mdd-text">' + (_rnxJiraProjects[0] ? _rnxJiraProjects[0].team_name : 'SDT') + '</span></span>'
+    +       '<span class="rnx-mdd-label" id="rnx-jira-project-label"><span class="rnx-mdd-text"><span style="color:var(--accent);font-weight:600">' + (_rnxJiraProjects[0] ? _rnxJiraProjects[0].jira_id : 'SDT') + '</span>' + (_rnxJiraProjects[0] ? ' ' + _rnxJiraProjects[0].team_name : '') + '</span></span>'
     +       S3CHEV
     +     '</button>'
     +     '<input type="hidden" id="rnx-jira-project" value="' + (_rnxJiraProjects[0] ? _rnxJiraProjects[0].jira_id : 'SDT') + '">'
@@ -2038,7 +2038,7 @@ function rnxOpenModal(id) {
   // Reset project dropdown label to first project in list (or SDT fallback)
   var _rnxFirstProj = _rnxJiraProjects[0];
   var projLabel = document.getElementById('rnx-jira-project-label');
-  if (projLabel) projLabel.innerHTML = '<span class="rnx-mdd-text">' + (_rnxFirstProj ? _rnxFirstProj.team_name : 'SDT') + '</span>';
+  if (projLabel) projLabel.innerHTML = '<span class="rnx-mdd-text"><span style="color:var(--accent);font-weight:600">' + (_rnxFirstProj ? _rnxFirstProj.jira_id : 'SDT') + '</span>' + (_rnxFirstProj ? ' ' + _rnxFirstProj.team_name : '') + '</span>';
   var projInp = document.getElementById('rnx-jira-project');
   if (projInp) projInp.value = _rnxFirstProj ? _rnxFirstProj.jira_id : 'SDT';
   var projPanel = document.getElementById('rnx-jira-project-panel');
@@ -2417,7 +2417,9 @@ function rnxS3ProjectSet(val) {
   var labelEl = document.getElementById('rnx-jira-project-label');
   if (labelEl) {
     var proj = _rnxJiraProjects.filter(function(p) { return p.jira_id === val; })[0];
-    var displayLabel = proj ? proj.team_name : val;
+    var displayLabel = proj
+      ? '<span style="color:var(--accent);font-weight:600">' + proj.jira_id + '</span> ' + proj.team_name
+      : val;
     labelEl.innerHTML = '<span class="rnx-mdd-text">' + displayLabel + '</span>';
   }
   var panel = document.getElementById('rnx-jira-project-panel');
@@ -2615,7 +2617,7 @@ function rnxBuildProjectOptions() {
   return list.map(function(p) {
     var isFirst = p === list[0];
     return '<div class="rnx-mdd-opt' + (isFirst ? ' sel' : '') + '" data-val="' + p.jira_id + '" onclick="rnxS3ProjectSet(\'' + p.jira_id.replace(/'/g, "\\'") + '\')">'
-      + '<span class="rnx-mdd-text"><span style="font-weight:600;color:var(--accent)">' + p.jira_id + '</span> — ' + p.team_name + '</span>'
+      + '<span class="rnx-mdd-text"><span style="font-weight:600;color:var(--accent)">' + p.jira_id + '</span> ' + p.team_name + '</span>'
       + '</div>';
   }).join('');
 }
