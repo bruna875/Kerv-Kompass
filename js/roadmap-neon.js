@@ -28,6 +28,7 @@ var rnxInitiatives  = [];
 var rnxLoading      = false;
 var rnxGanttGroup   = 'driver';
 var rnxGroupKey     = 'driver'; // active tab in grouped analysis card
+var _rnxJiraProjects = [];
 var rnxEditId       = null;  // null = new, number = editing
 var rnxModalStep2Data = {};  // persists step-2 ROI fields between steps and across edits
 
@@ -1800,12 +1801,12 @@ function rnxModalHtml() {
     +   '<label style="' + LB + '">Jira Project</label>'
     +   '<div class="rnx-mdd-wrap">'
     +     '<button type="button" class="rnx-mdd-btn" onclick="rnxMddToggle(\'rnx-jira-project\')">'
-    +       '<span class="rnx-mdd-label" id="rnx-jira-project-label"><span class="rnx-mdd-text">SDT</span></span>'
+    +       '<span class="rnx-mdd-label" id="rnx-jira-project-label"><span class="rnx-mdd-text">' + (_rnxJiraProjects[0] ? _rnxJiraProjects[0].team_name : 'SDT') + '</span></span>'
     +       S3CHEV
     +     '</button>'
-    +     '<input type="hidden" id="rnx-jira-project" value="SDT">'
+    +     '<input type="hidden" id="rnx-jira-project" value="' + (_rnxJiraProjects[0] ? _rnxJiraProjects[0].jira_id : 'SDT') + '">'
     +     '<div class="rnx-mdd-panel" id="rnx-jira-project-panel">'
-    +       '<div class="rnx-mdd-opt sel" data-val="SDT" onclick="rnxS3ProjectSet(\'SDT\')"><span class="rnx-mdd-text">SDT</span></div>'
+    +       rnxBuildProjectOptions()
     +     '</div>'
     +   '</div>'
     + '</div>'
@@ -2034,11 +2035,16 @@ function rnxOpenModal(id) {
   if (pickerLabelEl) pickerLabelEl.innerHTML = '<span class="rnx-mdd-text" style="color:var(--muted)">Select epics…</span>';
   var pickerPanel = document.getElementById('rnx-epic-picker-panel');
   if (pickerPanel) pickerPanel.classList.remove('open');
-  // Reset project dropdown label
+  // Reset project dropdown label to first project in list (or SDT fallback)
+  var _rnxFirstProj = _rnxJiraProjects[0];
   var projLabel = document.getElementById('rnx-jira-project-label');
-  if (projLabel) projLabel.innerHTML = '<span class="rnx-mdd-text">SDT</span>';
+  if (projLabel) projLabel.innerHTML = '<span class="rnx-mdd-text">' + (_rnxFirstProj ? _rnxFirstProj.team_name : 'SDT') + '</span>';
   var projInp = document.getElementById('rnx-jira-project');
-  if (projInp) projInp.value = 'SDT';
+  if (projInp) projInp.value = _rnxFirstProj ? _rnxFirstProj.jira_id : 'SDT';
+  var projPanel = document.getElementById('rnx-jira-project-panel');
+  if (projPanel) {
+    projPanel.innerHTML = rnxBuildProjectOptions();
+  }
   // Reset toggle to "Create New" (segmented pill style)
   var tabCreate = document.getElementById('rnx-s3-tab-create');
   var tabLink   = document.getElementById('rnx-s3-tab-link');
@@ -2409,7 +2415,11 @@ function rnxS3ProjectSet(val) {
   var inp = document.getElementById('rnx-jira-project');
   if (inp) inp.value = val;
   var labelEl = document.getElementById('rnx-jira-project-label');
-  if (labelEl) labelEl.innerHTML = '<span class="rnx-mdd-text">' + val + '</span>';
+  if (labelEl) {
+    var proj = _rnxJiraProjects.filter(function(p) { return p.jira_id === val; })[0];
+    var displayLabel = proj ? proj.team_name : val;
+    labelEl.innerHTML = '<span class="rnx-mdd-text">' + displayLabel + '</span>';
+  }
   var panel = document.getElementById('rnx-jira-project-panel');
   if (panel) {
     panel.querySelectorAll('.rnx-mdd-opt').forEach(function(o) {
@@ -2576,6 +2586,38 @@ function rnxUpdateStatus(id, val) {
     });
   })
   .catch(function(e) { console.warn('Status update failed', e); });
+}
+
+// ── Jira Projects — load from settings ────────────────────────────────────
+
+function rnxLoadJiraProjects() {
+  fetch('/api/neon/jira-projects').then(function(r) { return r.json(); }).then(function(rows) {
+    if (Array.isArray(rows)) {
+      _rnxJiraProjects = rows;
+      // Re-render picker if the modal panel is currently in the DOM
+      var panel = document.getElementById('rnx-jira-project-panel');
+      if (panel) {
+        panel.innerHTML = rnxBuildProjectOptions();
+        var inp = document.getElementById('rnx-jira-project');
+        var lbl = document.getElementById('rnx-jira-project-label');
+        var first = _rnxJiraProjects[0];
+        if (first) {
+          if (inp) inp.value = first.jira_id;
+          if (lbl) lbl.innerHTML = '<span class="rnx-mdd-text">' + first.team_name + '</span>';
+        }
+      }
+    }
+  }).catch(function() { /* non-fatal */ });
+}
+
+function rnxBuildProjectOptions() {
+  var list = _rnxJiraProjects.length ? _rnxJiraProjects : [{ jira_id: 'SDT', team_name: 'SDT' }];
+  return list.map(function(p) {
+    var isFirst = p === list[0];
+    return '<div class="rnx-mdd-opt' + (isFirst ? ' sel' : '') + '" data-val="' + p.jira_id + '" onclick="rnxS3ProjectSet(\'' + p.jira_id.replace(/'/g, "\\'") + '\')">'
+      + '<span class="rnx-mdd-text"><span style="font-weight:600;color:var(--accent)">' + p.jira_id + '</span> — ' + p.team_name + '</span>'
+      + '</div>';
+  }).join('');
 }
 
 // ── API — load ─────────────────────────────────────────────────────────────
@@ -3103,7 +3145,7 @@ function renderRoadmapNeon() {
     + '</div>'
     + '<div id="rnx-content"></div>';
 
-  setTimeout(rnxLoadAndRender, 0);
+  setTimeout(function() { rnxLoadJiraProjects(); rnxLoadAndRender(); }, 0);
   return html;
 }
 

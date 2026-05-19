@@ -5,7 +5,7 @@
 
 var snxActiveTab      = 'teams';
 var snxSelectedTeamId = null;
-var snxData           = { teams: [], members: [], drivers: [], themes: [], assumptions: [], budgets: {} };
+var snxData           = { teams: [], members: [], drivers: [], themes: [], assumptions: [], budgets: {}, jiraProjects: [] };
 var snxMemberFilter     = { role: '', team: '' };
 var snxAssumptionFilter = { category: '' };
 
@@ -60,7 +60,7 @@ var _SOL_BLUR  = 'onblur="this.style.borderColor=\'var(--border-md)\';this.style
 // Existing-row text input — auto-saves on blur
 function _autoTI(id, val, placeholder, saveFn) {
   return '<input type="text" id="' + id + '" value="' + (val || '').replace(/"/g, '&quot;') + '"'
-    + ' placeholder="' + (placeholder || '') + '" style="' + _S.INP + '"'
+    + ' placeholder="' + (placeholder || '') + '" class="snx-ei" style="' + _S.INP + '"'
     + ' ' + _VIS_FOCUS
     + ' onblur="this.style.border=\'1px solid transparent\';this.style.background=\'transparent\';this.style.boxShadow=\'none\';' + saveFn + '"'
     + ' />';
@@ -69,7 +69,7 @@ function _autoTI(id, val, placeholder, saveFn) {
 // Existing-row url input — auto-saves on blur
 function _autoURL(id, val, placeholder, saveFn) {
   return '<input type="url" id="' + id + '" value="' + (val || '').replace(/"/g, '&quot;') + '"'
-    + ' placeholder="' + (placeholder || '') + '" style="' + _S.INP + '"'
+    + ' placeholder="' + (placeholder || '') + '" class="snx-ei" style="' + _S.INP + '"'
     + ' ' + _VIS_FOCUS
     + ' onblur="this.style.border=\'1px solid transparent\';this.style.background=\'transparent\';this.style.boxShadow=\'none\';' + saveFn + '"'
     + ' />';
@@ -224,7 +224,7 @@ function _buildDrop(id, opts, val, saveFn, solid) {
       + '</div>';
   }).join('');
 
-  var btnCls = 'snx-drop-btn' + (solid ? ' snx-drop-btn-solid' : '');
+  var btnCls = 'snx-drop-btn' + (solid ? ' snx-drop-btn-solid' : ' snx-ei');
 
   return '<div class="snx-drop-wrap">'
     + '<input type="hidden" id="' + id + '" value="' + val.replace(/"/g, '&quot;') + '">'
@@ -341,7 +341,7 @@ function _solidMultiTeam(id, teams, selectedIds) {
 // Existing-row number input — auto-saves on blur. Pass extraStyle to override width etc.
 function _autoNUM(id, val, saveFn, extraStyle) {
   return '<input type="number" id="' + id + '" value="' + (val != null ? val : '') + '" placeholder="0"'
-    + ' style="' + _S.NUM + (extraStyle ? ';' + extraStyle : '') + '"'
+    + ' class="snx-ei" style="' + _S.NUM + (extraStyle ? ';' + extraStyle : '') + '"'
     + ' ' + _SOL_FOCUS
     + ' onblur="this.style.borderColor=\'var(--border-md)\';this.style.boxShadow=\'none\';' + saveFn + '"'
     + ' />';
@@ -353,7 +353,7 @@ function _autoNUM(id, val, saveFn, extraStyle) {
 var _TRASH_SVG = '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2.5h4V4M5.5 6.5v4M8.5 6.5v4M3 4l.8 7.5A1 1 0 004.8 12.5h4.4a1 1 0 001-.9L11 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 function _trashBtn(onclick) {
-  return '<button onclick="' + onclick + '" title="Delete"'
+  return '<button onclick="' + onclick + '" title="Delete" class="snx-act"'
     + ' style="width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:6px;background:none;color:var(--faint);cursor:pointer;transition:color .12s,background .12s"'
     + ' onmouseenter="this.style.color=\'#E5243B\';this.style.background=\'#FFF0F0\'"'
     + ' onmouseleave="this.style.color=\'var(--faint)\';this.style.background=\'none\'">'
@@ -365,7 +365,7 @@ var _CAMERA_SVG = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><
 
 function _picBtn(onclick, hasUrl) {
   var color = hasUrl ? 'var(--accent)' : 'var(--faint)';
-  return '<button onclick="' + onclick + '" title="' + (hasUrl ? 'Edit photo URL' : 'Add photo URL') + '"'
+  return '<button onclick="' + onclick + '" title="' + (hasUrl ? 'Edit photo URL' : 'Add photo URL') + '" class="snx-act"'
     + ' style="width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:6px;background:none;color:' + color + ';cursor:pointer;transition:color .12s,background .12s"'
     + ' onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'none\'">'
     + _CAMERA_SVG + '</button>';
@@ -427,7 +427,9 @@ function snxOpenPicModal(memberId, currentUrl) {
       if (!m) return;
       m.pictureUrl = url;
       snxApi('/api/neon/team-members', 'POST', {
-        id: memberId, name: m.name, title: m.title || '', role: m.role, pictureUrl: url, teamId: m.teamId || null
+        id: memberId, name: m.name, title: m.title || '', role: m.role, pictureUrl: url,
+        teamIds: m.teamIds || (m.teamId ? [m.teamId] : []),
+        teamId:  m.teamId || null
       }).then(function() { snxRefreshTab('members'); });
     } else {
       // new-row: store in hidden input and tint the button
@@ -445,7 +447,7 @@ function snxOpenPicModal(memberId, currentUrl) {
 
 // Save button — only for new-row additions
 function _saveBtn(onclick) {
-  return '<button onclick="' + onclick + '"'
+  return '<button onclick="' + onclick + '" class="snx-act"'
     + ' style="height:30px;padding:0 14px;font-size:12px;font-weight:500;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;transition:opacity .12s"'
     + ' onmouseenter="this.style.opacity=\'.85\'" onmouseleave="this.style.opacity=\'1\'">Add</button>';
 }
@@ -588,14 +590,16 @@ function snxLoadAll(cb) {
     snxApi('/api/neon/lookup?t=drivers'),
     snxApi('/api/neon/lookup?t=themes'),
     snxApi('/api/neon/assumptions'),
-    snxApi('/api/neon/budget')
+    snxApi('/api/neon/budget'),
+    snxApi('/api/neon/jira-projects')
   ]).then(function(res) {
-    snxData.teams       = Array.isArray(res[0]) ? res[0] : [];
-    snxData.members     = Array.isArray(res[1]) ? res[1] : [];
-    snxData.drivers     = Array.isArray(res[2]) ? res[2] : [];
-    snxData.themes      = Array.isArray(res[3]) ? res[3] : [];
-    snxData.assumptions = Array.isArray(res[4]) ? res[4] : [];
-    snxData.budgets     = (res[5] && typeof res[5] === 'object') ? res[5] : {};
+    snxData.teams        = Array.isArray(res[0]) ? res[0] : [];
+    snxData.members      = Array.isArray(res[1]) ? res[1] : [];
+    snxData.drivers      = Array.isArray(res[2]) ? res[2] : [];
+    snxData.themes       = Array.isArray(res[3]) ? res[3] : [];
+    snxData.assumptions  = Array.isArray(res[4]) ? res[4] : [];
+    snxData.budgets      = (res[5] && typeof res[5] === 'object') ? res[5] : {};
+    snxData.jiraProjects = Array.isArray(res[6]) ? res[6] : [];
 
     var isEmpty = !snxData.teams.length && !snxData.drivers.length && !snxData.themes.length && !snxData.members.length;
     if (isEmpty) {
@@ -684,7 +688,7 @@ function snxTeamsHtml() {
       + '">' + t.name + '</button>';
   }).join('');
 
-  var addBtn = '<button onclick="snxAddTeamCard()"'
+  var addBtn = '<button onclick="snxAddTeamCard()" class="snx-act"'
     + ' style="height:30px;padding:0 12px;border-radius:20px;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;'
     + 'background:none;color:var(--faint);border:1px dashed var(--border-md);display:flex;align-items:center;gap:5px;white-space:nowrap;transition:color .15s,border-color .15s"'
     + ' onmouseenter="this.style.color=\'var(--accent)\';this.style.borderColor=\'var(--accent)\'"'
@@ -721,18 +725,29 @@ function snxSelectTeam(id) {
 }
 
 function snxNewTeamForm() {
-  return '<div id="snx-new-team-card" style="display:none;border:1px solid var(--accent);border-radius:12px;padding:14px 16px;background:var(--surface);margin-bottom:16px">'
+  return '<div id="snx-new-team-card" class="snx-new-row" style="display:none;border:1px solid var(--accent);border-radius:12px;padding:14px 16px;background:var(--surface);margin-bottom:16px">'
     + '<div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);margin-bottom:10px">New team</div>'
     + '<div style="display:flex;align-items:center;gap:8px">'
     +   '<input id="snx-new-team-name" type="text" placeholder="Team name" style="flex:1;' + _S.INPs + '" ' + _SOL_FOCUS + ' ' + _SOL_BLUR + ' />'
     +   '<button onclick="snxSaveNewTeam()" style="height:34px;padding:0 16px;font-size:13px;font-weight:500;border:none;border-radius:7px;background:var(--accent);color:#fff;cursor:pointer;font-family:inherit">Add</button>'
-    +   '<button onclick="document.getElementById(\'snx-new-team-card\').style.display=\'none\'" style="height:34px;padding:0 12px;font-size:13px;border:1px solid var(--border-md);border-radius:7px;background:none;color:var(--muted);cursor:pointer;font-family:inherit">Cancel</button>'
+    +   '<button onclick="document.getElementById(\'snx-new-team-card\').style.display=\'none\';if(snxSelectedTeamId)snxSelectTeam(snxSelectedTeamId);" style="height:34px;padding:0 12px;font-size:13px;border:1px solid var(--border-md);border-radius:7px;background:none;color:var(--muted);cursor:pointer;font-family:inherit">Cancel</button>'
     + '</div></div>';
 }
 
 function snxAddTeamCard() {
   var card = document.getElementById('snx-new-team-card');
-  if (card) { card.style.display = 'block'; setTimeout(function() { var i = document.getElementById('snx-new-team-name'); if (i) i.focus(); }, 50); }
+  if (!card) return;
+  card.style.display = 'block';
+  // Deactivate all chips — no team is "selected" while adding
+  document.querySelectorAll('.snx-team-chip').forEach(function(c) {
+    c.style.background  = 'var(--surface)';
+    c.style.color       = 'var(--muted)';
+    c.style.borderColor = 'var(--border-md)';
+  });
+  // Clear body area below
+  var body = document.getElementById('snx-team-body');
+  if (body) body.innerHTML = '';
+  setTimeout(function() { var i = document.getElementById('snx-new-team-name'); if (i) i.focus(); }, 50);
 }
 
 function snxSaveNewTeam() {
@@ -820,11 +835,11 @@ function snxTeamBudgetTable(t) {
   var teamHeader =
     '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:16px;margin-bottom:20px;border-bottom:1px solid var(--border)">'
     + '<div style="flex:1;min-width:0">'
-    +   '<input type="text" id="snx-tname-' + t.id + '" value="' + tNameEsc + '" placeholder="Team name"'
+    +   '<input type="text" id="snx-tname-' + t.id + '" value="' + tNameEsc + '" placeholder="Team name" class="snx-ei"'
     +     ' style="' + GI_BASE + ';display:block;width:100%;max-width:400px;padding:2px 6px;margin-left:-6px;font-size:17px;font-weight:600;color:var(--text);margin-bottom:5px"'
     +     ' onmouseenter="' + GI_HOVER + '" onmouseleave="' + GI_LEAVE + '"'
     +     ' onfocus="' + GI_FOCUS + '" onblur="' + GI_BLUR + 'snxSaveTeamName(' + t.id + ')" />'
-    +   '<input type="text" id="snx-tdesc-' + t.id + '" value="' + tDescEsc + '" placeholder="Add a description…"'
+    +   '<input type="text" id="snx-tdesc-' + t.id + '" value="' + tDescEsc + '" placeholder="Add a description…" class="snx-ei"'
     +     ' style="' + GI_BASE + ';display:block;width:100%;max-width:560px;padding:2px 6px;margin-left:-6px;font-size:12px;color:var(--muted)"'
     +     ' onmouseenter="' + GI_HOVER + '" onmouseleave="' + GI_LEAVE + '"'
     +     ' onfocus="' + GI_FOCUS + '" onblur="' + GI_BLUR + 'snxSaveTeamDesc(' + t.id + ')" />'
@@ -938,6 +953,7 @@ function snxSaveTeamName(id) {
   if (chip) chip.textContent = name;
   snxApi('/api/neon/lookup', 'POST', { t: 'teams', id: id, name: name, description: desc ? desc.value : (t && t.description) || '' }).then(function() {
     snxFlash(inp);
+    snxNotifyCapacity();
   });
 }
 
@@ -977,6 +993,7 @@ function snxSaveTeamBudget(teamId, teamName) {
       if (body && team) body.innerHTML = snxTeamBudgetTable(team);
       var msg = document.getElementById('snx-bud-msg-' + teamId);
       if (msg) { msg.style.opacity = '1'; setTimeout(function() { msg.style.opacity = '0'; }, 1500); }
+      snxNotifyCapacity();
     });
   }).catch(function(e) { alert('Save failed: ' + e.message); });
 }
@@ -1037,7 +1054,7 @@ function snxMembersHtml() {
 
   if (!rows) rows = '<tr><td colspan="5" style="padding:32px;text-align:center;font-size:12px;color:var(--faint)">No members match the current filter.</td></tr>';
 
-  var newRow = '<tr style="background:var(--bg)">'
+  var newRow = '<tr class="snx-new-row" style="background:var(--bg)">'
     + '<td style="' + _S.TD + ';padding:8px 12px;width:150px;min-width:120px">'
     +   '<input type="text" id="snx-m-new-name" placeholder="Full name" style="' + _S.INPs + '" ' + _SOL_FOCUS + ' ' + _SOL_BLUR + ' />'
     + '</td>'
@@ -1081,17 +1098,20 @@ function snxSaveMember(id) {
   if (!name) return;
   var title   = titleEl ? titleEl.value.trim() : '';
   var role    = roleEl  ? roleEl.value : 'Product';
-  var teamIds = [];
-  try { teamIds = JSON.parse(teamEl ? teamEl.value : '[]') || []; } catch(e) { teamIds = []; }
   // pictureUrl managed via camera modal — read from in-memory data
   var m   = snxData.members.filter(function(x) { return x.id === id; })[0];
   var pic = m ? (m.pictureUrl || '') : '';
+  // Read teamIds from DOM; fall back to in-memory data to avoid accidentally clearing team
+  var teamIds = [];
+  try { teamIds = JSON.parse(teamEl ? teamEl.value : '[]') || []; } catch(e) { teamIds = []; }
+  if (!teamIds.length && m) teamIds = m.teamIds && m.teamIds.length ? m.teamIds : (m.teamId ? [m.teamId] : []);
   // Update in-memory immediately so any re-render shows current values
   if (m) { m.name = name; m.title = title; m.role = role; m.teamIds = teamIds; m.teamId = teamIds[0] || null; }
   snxApi('/api/neon/team-members', 'POST', {
     id: id, name: name, title: title, role: role, pictureUrl: pic, teamIds: teamIds
   }).then(function(res) {
     if (res && res.error) console.error('snxSaveMember error:', res.error);
+    snxNotifyCapacity();
   });
 }
 
@@ -1147,7 +1167,7 @@ function snxSimpleTableHtml(type, placeholder) {
       + '</td>'
     : '';
 
-  var newRow = '<tr style="background:var(--bg)">'
+  var newRow = '<tr class="snx-new-row" style="background:var(--bg)">'
     + '<td style="' + _S.TD + '">'
     +   '<input type="text" id="snx-' + type + '-new" placeholder="' + placeholder + '" style="' + _S.INPs + '" ' + _SOL_FOCUS + ' ' + _SOL_BLUR + ' />'
     + '</td>'
@@ -1221,7 +1241,7 @@ function snxAssumptionsHtml() {
       + '</tr>';
   }).join('');
 
-  var newRow = '<tr style="background:var(--bg)">'
+  var newRow = '<tr class="snx-new-row" style="background:var(--bg)">'
     + '<td style="' + _S.TD + ';width:160px">'
     +   _solidDROP('snx-a-new-cat', SNX_CATEGORIES, 'Others')
     + '</td>'
@@ -1261,7 +1281,7 @@ function snxSaveAssumption(id) {
     name:     name,
     value:    valEl && valEl.value !== '' ? parseFloat(valEl.value) : null,
     unit:     document.getElementById('snx-a-unit-' + id).value
-  });
+  }).then(function() { snxNotifyCapacity(); });
 }
 
 function snxAddAssumption() {
@@ -1284,22 +1304,100 @@ function snxDeleteAssumption(id) {
   });
 }
 
+// ── Live-reload Team Capacity when settings change ─────────────────────────
+function snxNotifyCapacity() {
+  if (typeof activeId !== 'undefined' && activeId === 'teamcapacity-neon'
+      && typeof cnxLoadAndRender === 'function') {
+    cnxLoadAndRender();
+  }
+}
+
+// ── Tab: Jira Projects ─────────────────────────────────────────────────────
+
+function snxJiraProjectsHtml() {
+  var items = snxData.jiraProjects || [];
+
+  var rows = items.map(function(item) {
+    var sfJiraId   = 'snxSaveJiraProject(' + item.id + ')';
+    var sfTeamName = 'snxSaveJiraProject(' + item.id + ')';
+    return '<tr onmouseenter="this.style.background=\'#FAFAF8\'" onmouseleave="this.style.background=\'\'">'
+      + '<td style="' + _S.TD + '">'
+      +   _autoTI('snx-jp-jira-id-' + item.id, item.jira_id, 'e.g. SDT', sfJiraId)
+      + '</td>'
+      + '<td style="' + _S.TD + '">'
+      +   _autoTI('snx-jp-team-name-' + item.id, item.team_name, 'e.g. Platform', sfTeamName)
+      + '</td>'
+      + '<td style="' + _S.TD + ';text-align:right;width:44px">'
+      +   _trashBtn('snxDeleteJiraProject(' + item.id + ')')
+      + '</td></tr>';
+  }).join('');
+
+  var newRow = '<tr class="snx-new-row" style="background:var(--bg)">'
+    + '<td style="' + _S.TD + '">'
+    +   '<input type="text" id="snx-jp-new-jira-id" placeholder="e.g. SDT" style="' + _S.INPs + '" ' + _SOL_FOCUS + ' ' + _SOL_BLUR + ' />'
+    + '</td>'
+    + '<td style="' + _S.TD + '">'
+    +   '<input type="text" id="snx-jp-new-team-name" placeholder="e.g. Platform" style="' + _S.INPs + '" ' + _SOL_FOCUS + ' ' + _SOL_BLUR + ' />'
+    + '</td>'
+    + '<td style="' + _S.TD + ';text-align:right">' + _saveBtn('snxAddJiraProject()') + '</td>'
+    + '</tr>';
+
+  var headers = _th('Jira ID', 'Team Name', '');
+  return _scrollCard('<tr>' + headers + '</tr>', rows, newRow);
+}
+
+function snxSaveJiraProject(id) {
+  var jiraIdEl   = document.getElementById('snx-jp-jira-id-' + id);
+  var teamNameEl = document.getElementById('snx-jp-team-name-' + id);
+  var jiraId   = jiraIdEl   ? jiraIdEl.value.trim()   : '';
+  var teamName = teamNameEl ? teamNameEl.value.trim() : '';
+  if (!jiraId || !teamName) return;
+  snxApi('/api/neon/jira-projects', 'POST', { id: id, jira_id: jiraId, team_name: teamName }).then(function() {
+    var item = (snxData.jiraProjects || []).filter(function(x) { return x.id === id; })[0];
+    if (item) { item.jira_id = jiraId; item.team_name = teamName; }
+  });
+}
+
+function snxAddJiraProject() {
+  var jiraIdEl   = document.getElementById('snx-jp-new-jira-id');
+  var teamNameEl = document.getElementById('snx-jp-new-team-name');
+  var jiraId   = jiraIdEl   ? jiraIdEl.value.trim()   : '';
+  var teamName = teamNameEl ? teamNameEl.value.trim() : '';
+  if (!jiraId || !teamName) return;
+  snxApi('/api/neon/jira-projects', 'POST', { jira_id: jiraId, team_name: teamName }).then(function() {
+    snxRefreshTab('jira-projects');
+  });
+}
+
+function snxDeleteJiraProject(id) {
+  var item = (snxData.jiraProjects || []).filter(function(x) { return x.id === id; })[0];
+  var label = item ? (item.jira_id + ' — ' + item.team_name) : 'this mapping';
+  snxConfirm('Are you sure you want to delete <strong>' + label + '</strong>? This action cannot be undone.', function() {
+    snxApi('/api/neon/jira-projects', 'DELETE', { id: id }).then(function(res) {
+      if (res && res.error) { alert('Delete failed: ' + res.error); return; }
+      snxRefreshTab('jira-projects');
+    }).catch(function(e) { alert('Delete failed: ' + e.message); });
+  });
+}
+
 // ── Tab switcher + refresh ─────────────────────────────────────────────────
 
 var SNX_TABS = [
-  { id: 'teams',       label: 'Teams & Capacity' },
-  { id: 'members',     label: 'Team Members'     },
-  { id: 'drivers',     label: 'Drivers'          },
-  { id: 'themes',      label: 'Themes'           },
-  { id: 'assumptions', label: 'Assumptions'      }
+  { id: 'teams',         label: 'Teams & Capacity' },
+  { id: 'members',       label: 'Team Members'     },
+  { id: 'drivers',       label: 'Drivers'          },
+  { id: 'themes',        label: 'Themes'           },
+  { id: 'assumptions',   label: 'Assumptions'      },
+  { id: 'jira-projects', label: 'Jira Projects'    }
 ];
 
 function snxTabContent(tab) {
-  if (tab === 'teams')       return snxTeamsHtml();
-  if (tab === 'members')     return snxMembersHtml();
-  if (tab === 'drivers')     return snxSimpleTableHtml('drivers', 'e.g. Revenue Growth');
-  if (tab === 'themes')      return snxSimpleTableHtml('themes',  'e.g. Personalisation');
-  if (tab === 'assumptions') return snxAssumptionsHtml();
+  if (tab === 'teams')         return snxTeamsHtml();
+  if (tab === 'members')       return snxMembersHtml();
+  if (tab === 'drivers')       return snxSimpleTableHtml('drivers', 'e.g. Revenue Growth');
+  if (tab === 'themes')        return snxSimpleTableHtml('themes',  'e.g. Personalisation');
+  if (tab === 'assumptions')   return snxAssumptionsHtml();
+  if (tab === 'jira-projects') return snxJiraProjectsHtml();
   return '';
 }
 
@@ -1328,7 +1426,8 @@ function snxRefreshTab(tab) {
   if (tab === 'members')     fetches = [snxApi('/api/neon/team-members').then(function(r)     { snxData.members     = Array.isArray(r) ? r : []; })];
   if (tab === 'drivers')     fetches = [snxApi('/api/neon/lookup?t=drivers').then(function(r) { snxData.drivers     = Array.isArray(r) ? r : []; })];
   if (tab === 'themes')      fetches = [snxApi('/api/neon/lookup?t=themes').then(function(r)  { snxData.themes      = Array.isArray(r) ? r : []; })];
-  if (tab === 'assumptions') fetches = [snxApi('/api/neon/assumptions').then(function(r)      { snxData.assumptions = Array.isArray(r) ? r : []; })];
+  if (tab === 'assumptions')   fetches = [snxApi('/api/neon/assumptions').then(function(r)        { snxData.assumptions  = Array.isArray(r) ? r : []; })];
+  if (tab === 'jira-projects') fetches = [snxApi('/api/neon/jira-projects').then(function(r)     { snxData.jiraProjects = Array.isArray(r) ? r : []; })];
   Promise.all(fetches).then(function() {
     if (snxActiveTab === tab) {
       var body = document.getElementById('snx-tab-body');
@@ -1340,9 +1439,11 @@ function snxRefreshTab(tab) {
 // ── Main render ────────────────────────────────────────────────────────────
 
 function renderSettingsNeon() {
+  var isViewer = typeof _kervCan === 'function' && !_kervCan('settings-neon', 'editor');
   var html =
-    '<div class="page-header"><div>'
-    + '<div class="ptitle">Settings</div>'
+    '<div id="snx-page"' + (isViewer ? ' class="snx-viewer"' : '') + '>'
+    + '<div class="page-header"><div>'
+    + '<div class="ptitle">Assumptions</div>'
     + '<div class="psub">Manage reference data — click any cell to edit, changes save automatically</div>'
     + '</div></div>'
     + '<div class="tabnav">'
@@ -1351,7 +1452,8 @@ function renderSettingsNeon() {
       }).join('')
     + '</div>'
     + '<div id="snx-loading">' + (typeof _KERV_LOADER_HTML !== 'undefined' ? _KERV_LOADER_HTML : '<div class="kerv-loader"><div class="kerv-loader-mark"><img src="https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg" alt=""></div><div class="kerv-loader-text">Loading</div></div>') + '</div>'
-    + '<div id="snx-tab-body" style="display:none"></div>';
+    + '<div id="snx-tab-body" style="display:none"></div>'
+    + '</div>'; // close #snx-page
 
   setTimeout(function() {
     snxLoadAll(function(err) {
