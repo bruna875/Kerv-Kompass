@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KERV Team — Platform Overview</title>
+<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .ps-page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .ps-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 48px;
+  }
+  .ps-header-left { display: flex; align-items: center; gap: 14px; }
+  .ps-logo {
+    width: 40px; height: 40px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
+  }
+  .ps-logo img { width: 100%; height: 100%; object-fit: contain; }
+  .ps-brand-name { font-size: 17px; font-weight: 600; color: #1e293b; letter-spacing: -.3px; }
+  .ps-brand-sub  { font-size: 12px; color: #94a3b8; margin-top: 1px; }
+
+  .ps-export-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 16px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 12px; font-weight: 500; font-family: inherit;
+    color: #475569; cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+    flex-shrink: 0;
+    text-decoration: none;
+  }
+  .ps-export-btn:hover { border-color: #ED005E; color: #ED005E; background: rgba(237,0,94,.03); }
+
+  /* ── Hero ── */
+  .ps-hero {
+    margin-bottom: 48px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .ps-hero-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .8px;
+    text-transform: uppercase; color: #ED005E;
+    margin-bottom: 12px;
+  }
+  .ps-hero-title {
+    font-size: 32px; font-weight: 700; color: #0f172a;
+    letter-spacing: -.6px; line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  .ps-hero-desc {
+    font-size: 14px; color: #475569; line-height: 1.75;
+  }
+
+  /* ── Section label ── */
+  .ps-section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .7px;
+    text-transform: uppercase; color: #94a3b8;
+    margin-bottom: 16px; margin-top: 40px;
+  }
+
+  /* Print ──────────────────────────────────────────────── */
+  @media print {
+    body { background: #fff; }
+    .ps-export-btn { display: none !important; }
+    .ps-page { padding: 32px 24px; max-width: 100%; }
+    .ps-header { margin-bottom: 32px; }
+    .ps-hero  { margin-bottom: 32px; }
+    .ps-module { break-inside: avoid; }
+
+    @page {
+      size: A4;
+      margin: 18mm 16mm;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="ps-page">
+
+  <!-- Header -->
+  <div class="ps-header">
+    <div class="ps-header-left">
+      <div class="ps-logo">
+        <img src="https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg" alt="KERV"/>
+      </div>
+      <div>
+        <div class="ps-brand-name">KERV Team</div>
+        <div class="ps-brand-sub">Platform Overview</div>
+      </div>
+    </div>
+    <button class="ps-export-btn" onclick="window.print()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      Export to PDF
+    </button>
+  </div>
+
+  <!-- Hero -->
+  <div class="ps-hero">
+    <div class="ps-hero-label">Product Overview</div>
+    <div class="ps-hero-title">One internal platform serving as<br/>Operating System for teams at Kerv</div>
+    <div class="ps-hero-desc">
+      KERV Team is the single source of truth for how work gets planned, tracked and delivered across the organisation. It connects roadmap initiatives to team capacity, sprint execution to strategic objectives, and gives every role — from engineers to leadership — the right level of visibility without context-switching between tools.
+    </div>
+  </div>
+
+  <!-- Modules -->
+  <div class="ps-section-label">Product Modules</div>
+  <div id="ps-root"></div>
+
+  <!-- Support Tools -->
+  <div class="ps-section-label" style="margin-top:48px">Support Tools</div>
+  <div id="ps-tools-root"></div>
+
+  <!-- Footer -->
+  <div style="margin-top:48px;padding-top:24px;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:16px">
+    <div style="font-size:11px;color:#94a3b8">KERV Team &mdash; Internal Platform Overview</div>
+    <div style="font-size:11px;color:#cbd5e1" id="ps-date"></div>
+  </div>
+
+</div>
+
+<script src="js/product-spec.js"></script>
+<script>
+  psRender();
+  psToolsRender();
+  var d = new Date();
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('ps-date').textContent = months[d.getMonth()] + ' ' + d.getFullYear();
+</script>
+
+</body>
+</html>

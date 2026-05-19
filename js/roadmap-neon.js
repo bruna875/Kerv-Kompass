@@ -2591,7 +2591,7 @@ function rnxUpdateStatus(id, val) {
 // ── Jira Projects — load from settings ────────────────────────────────────
 
 function rnxLoadJiraProjects() {
-  fetch('/api/neon/jira-projects').then(function(r) { return r.json(); }).then(function(rows) {
+  fetch('/api/neon/lookup?t=jira-projects').then(function(r) { return r.json(); }).then(function(rows) {
     if (Array.isArray(rows)) {
       _rnxJiraProjects = rows;
       // Re-render picker if the modal panel is currently in the DOM

@@ -1,458 +1,94 @@
-// overview.js — Landing dashboard
+// overview.js — Overview shell: header + tab navigation
 
-function renderOverview() {
-  return '<div id="ovx-root" style="max-width:1100px">'
-    + '<div style="margin-bottom:28px">'
-    +   '<div style="font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.3px">Overview</div>'
-    +   '<div style="font-size:13px;color:var(--muted);margin-top:3px">Product team at a glance</div>'
-    + '</div>'
-    + '<div id="ovx-body" style="color:var(--muted);font-size:13px">Loading…</div>'
-    + '</div>';
-}
+var _ovxActiveTab = 'product';
 
-// ── Data fetch & render ────────────────────────────────────────────────────
-
-function ovxLoad() {
-  var root = document.getElementById('ovx-root');
-  if (!root) return;
-
-  // Reset quarter selection to current on each page load
-  window._ovxSelQ = ovxCurrentQLabel();
-
-  Promise.all([
-    fetch('/api/neon/initiatives').then(function(r) { return r.json(); }),
-    fetch('/api/neon/team-members').then(function(r) { return r.json(); })
-  ])
-  .then(function(results) {
-    var initiatives = Array.isArray(results[0]) ? results[0] : [];
-    var members     = Array.isArray(results[1]) ? results[1] : [];
-    ovxRender(initiatives, members);
-  })
-  .catch(function() {
-    var body = document.getElementById('ovx-body');
-    if (body) body.innerHTML = '<span style="color:#E5243B">Failed to load data.</span>';
-  });
-}
-
-// ── Delivery status config ─────────────────────────────────────────────────
-
-var OVX_DS = [
-  { val: 'not-started', label: 'Not Started', color: '#8E8E93' },
-  { val: 'on-track',    label: 'On Track',    color: '#2EAD4B' },
-  { val: 'at-risk',     label: 'At Risk',     color: '#E5A100' },
-  { val: 'delayed',     label: 'Delayed',     color: '#E5243B' },
-  { val: 'on-hold',     label: 'On Hold',     color: '#C2410C' },
-  { val: 'delivered',   label: 'Delivered',   color: '#1D4ED8' }
+var _OVX_TABS = [
+  { id: 'product', label: 'Product & Tech' },
+  { id: 'okrs',    label: 'OKRs' },
+  { id: 'finance', label: 'Finance' },
+  { id: 'sales',   label: 'Sales' }
 ];
 
-// ── Quarters sort order ────────────────────────────────────────────────────
-
-function ovxQSort(q) {
-  if (!q || q === 'Backlog') return 9999;
-  var m = q.match(/Q(\d)\s*(\d{4})?/i);
-  if (!m) return 9998;
-  return (parseInt(m[2] || 0)) * 10 + parseInt(m[1]);
+// Returns the list of tabs visible to the current user.
+// SuperAdmin → all tabs. Others → only tabs with an explicit sub-module permission.
+function _ovxVisibleTabs() {
+  if (typeof _kervUser === 'undefined' || !_kervUser) return _OVX_TABS;
+  if (_kervUser.superAdmin) return _OVX_TABS;
+  var perms = _kervUser.permissions || {};
+  return _OVX_TABS.filter(function(t) { return !!perms['overview-' + t.id]; });
 }
 
-// ── Section header ─────────────────────────────────────────────────────────
-
-function ovxSectionHeader(title, sub) {
-  return '<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:16px;margin-top:36px">'
-    + '<span style="font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.2px">' + title + '</span>'
-    + (sub ? '<span style="font-size:11px;color:var(--muted)">' + sub + '</span>' : '')
-    + '</div>';
-}
-
-// ── Detect current quarter label ────────────────────────────────────────────
-
-function ovxCurrentQLabel() {
-  var m = new Date().getMonth(); // 0-11
-  var q = m < 3 ? 'Q1' : m < 6 ? 'Q2' : m < 9 ? 'Q3' : 'Q4';
-  return q + ' ' + new Date().getFullYear();
-}
-
-// ── Quarter navigator helpers ──────────────────────────────────────────────
-
-// Returns sorted list of all quarters present in data + current quarter
-function ovxAllQuarters(initiatives) {
-  var set = {};
-  set[ovxCurrentQLabel()] = true;
-  initiatives.forEach(function(i) {
-    var q = i.quarter || '';
-    if (q && q !== 'Backlog' && /Q\d/i.test(q)) set[q] = true;
-  });
-  return Object.keys(set).sort(function(a, b) { return ovxQSort(a) - ovxQSort(b); });
-}
-
-// Count initiatives in a given quarter label
-function ovxQCount(initiatives, qLabel) {
-  var qKey  = qLabel.split(' ')[0];
-  var qYear = parseInt(qLabel.split(' ')[1]);
-  return initiatives.filter(function(i) {
-    var q = i.quarter || '';
-    var m = q.match(/Q(\d)\s*(\d{4})?/i);
-    if (!m) return false;
-    return q.indexOf(qKey) !== -1 && (m[2] ? parseInt(m[2]) : qYear) === qYear;
-  }).length;
-}
-
-function ovxChangeQ(dir) {
-  var qs  = ovxAllQuarters(window._ovxInits || []);
-  var idx = qs.indexOf(window._ovxSelQ || ovxCurrentQLabel());
-  var next = idx + dir;
-  if (next < 0 || next >= qs.length) return;
-  window._ovxSelQ = qs[next];
-  ovxRender(window._ovxInits, window._ovxMembers);
-}
-
-// ── Main render ────────────────────────────────────────────────────────────
-
-function ovxRender(initiatives, members) {
-  var body = document.getElementById('ovx-body');
-  if (!body) return;
-
-  // Persist data for quarter navigation
-  window._ovxInits   = initiatives;
-  window._ovxMembers = members;
-  // Default to current quarter on first load
-  if (!window._ovxSelQ) window._ovxSelQ = ovxCurrentQLabel();
-
-  // ── Selected quarter (navigable) ──
-  var selQ    = window._ovxSelQ;
-  var selQKey = selQ.split(' ')[0];         // e.g. "Q2"
-  var selYear = parseInt(selQ.split(' ')[1]); // e.g. 2026
-
-  var qInits = initiatives.filter(function(i) {
-    var q = i.quarter || '';
-    var m = q.match(/Q(\d)\s*(\d{4})?/i);
-    if (!m) return false;
-    var iyear = m[2] ? parseInt(m[2]) : selYear;
-    return q.indexOf(selQKey) !== -1 && iyear === selYear;
-  });
-
-  // Navigator state
-  var allQs    = ovxAllQuarters(initiatives);
-  var selIdx   = allQs.indexOf(selQ);
-  var hasPrev  = selIdx > 0;
-  var nextQ    = allQs[selIdx + 1];
-  var hasNext  = !!nextQ && ovxQCount(initiatives, nextQ) > 0;
-
-  var qByDs = {};
-  OVX_DS.forEach(function(d) { qByDs[d.val] = 0; });
-  qInits.forEach(function(i) {
-    var ds = i.deliveryStatus || 'not-started';
-    if (qByDs[ds] !== undefined) qByDs[ds]++; else qByDs['not-started']++;
-  });
-  var qTotal    = qInits.length;
-  var qDone     = qByDs['delivered'] || 0;
-  var qPct      = qTotal ? Math.round(qDone / qTotal * 100) : 0;
-
-  // ── Portfolio ──
-  var total  = initiatives.length;
-  var byDs   = {};
-  OVX_DS.forEach(function(d) { byDs[d.val] = 0; });
-  initiatives.forEach(function(i) {
-    var ds = i.deliveryStatus || 'not-started';
-    if (byDs[ds] !== undefined) byDs[ds]++; else byDs['not-started']++;
-  });
-
-  var qMap = {};
-  initiatives.forEach(function(i) {
-    var q = i.quarter || 'Backlog';
-    if (!qMap[q]) qMap[q] = [];
-    qMap[q].push(i);
-  });
-  var quarters = Object.keys(qMap).sort(function(a, b) { return ovxQSort(a) - ovxQSort(b); });
-
-  var doneCount = byDs['delivered'] || 0;
-  var pct = total ? Math.round(doneCount / total * 100) : 0;
-
-  // ── Quick-nav cards ──
-  var navCards = [
-    { id: 'roadmap-neon',      label: 'Product Roadmap',               icon: ico.roadmap,  disabled: false },
-    { id: 'teamcapacity-neon', label: 'Team Capacity',                 icon: ico.capacity, disabled: false },
-    { id: null,                label: 'Submit a Product Idea / Request', icon: _ovxIdeaIcon, disabled: true },
-    { id: null,                label: 'OKR',                           icon: _ovxOkrIcon,  disabled: true }
-  ];
-
-  // ── Team breakdown for current quarter ──
-  var teamMap = {};
-  qInits.forEach(function(i) {
-    var t = i.team || 'Unassigned';
-    if (!teamMap[t]) teamMap[t] = {};
-    OVX_DS.forEach(function(d) { if (!teamMap[t][d.val]) teamMap[t][d.val] = 0; });
-    var ds = i.deliveryStatus || 'not-started';
-    teamMap[t][ds] = (teamMap[t][ds] || 0) + 1;
-  });
-  var teamNames = Object.keys(teamMap).sort();
-
-  body.innerHTML =
-
-    // ══ THIS QUARTER AT A GLANCE ══════════════════════════════════════════════
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;margin-top:36px">'
-    +   '<span style="font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.2px">This quarter at a glance</span>'
-    +   ovxQNav(selQ, hasPrev, hasNext)
-    + '</div>'
-
-    + '<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start">'
-
-      // ── Status breakdown by team ──
-      + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">'
-      +   '<div style="padding:14px 20px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px">'
-      +     '<span style="font-size:13px;font-weight:600;color:var(--text)">Status breakdown</span>'
-      +     '<div style="display:flex;align-items:center;gap:10px;margin-left:auto">'
-      +     OVX_DS.map(function(d) {
-              return '<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)">'
-                + '<span style="width:8px;height:8px;border-radius:2px;background:' + d.color + ';flex-shrink:0"></span>'
-                + d.label + '</span>';
-            }).join('')
-      +     '</div>'
-      +   '</div>'
-      +   '<div style="display:flex;align-items:center;gap:12px;padding:6px 20px;border-bottom:1px solid var(--border-lt)">'
-      +     '<span style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;width:120px;flex-shrink:0">Team</span>'
-      +     '<span style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;flex:1">Status</span>'
-      +     '<span style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;width:24px;text-align:right;flex-shrink:0">#</span>'
-      +     '<span style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;width:32px;text-align:right;flex-shrink:0">Done</span>'
-      +   '</div>'
-      +   '<div style="padding:4px 0">'
-      +     teamNames.map(function(t) { return ovxTeamBar(t, teamMap[t]); }).join('')
-      +     '<div style="height:1px;background:var(--border);margin:4px 0"></div>'
-      +     ovxTeamBar('Total', qByDs, true)
-      +   '</div>'
-      + '</div>'
-
-      // ── Quick access ──
-      + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px">'
-      +   '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Quick access</div>'
-      +   navCards.map(function(c) { return ovxNavCard(c); }).join('')
-      + '</div>'
-
-    + '</div>'
-
-    // ══ PORTFOLIO VIEW ════════════════════════════════════════════════════════
-    + ovxSectionHeader('Portfolio View', total + ' initiative' + (total !== 1 ? 's' : '') + ' across ' + quarters.length + ' period' + (quarters.length !== 1 ? 's' : ''))
-
-    + '<div style="display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start">'
-
-      // Quarterly breakdown
-      + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">'
-      +   '<div style="padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">'
-      +     '<span style="font-size:13px;font-weight:600;color:var(--text)">Initiatives by quarter</span>'
-      +     '<span style="font-size:11px;color:var(--muted)">' + pct + '% overall done</span>'
-      +   '</div>'
-      +   '<div style="padding:8px 0">'
-      +     quarters.map(function(q) { return ovxQuarterRow(q, qMap[q], total); }).join('')
-      +   '</div>'
-      + '</div>'
-
-      // Portfolio summary stats
-      + '<div style="display:flex;flex-direction:column;gap:16px">'
-      +   '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px">'
-      +     '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px">Portfolio status</div>'
-      +     OVX_DS.map(function(d) { return ovxStatusRow(d, byDs[d.val] || 0, total); }).join('')
-      +   '</div>'
-      + '</div>'
-
-    + '</div>';
-}
-
-// ── Component builders ─────────────────────────────────────────────────────
-
-// ── Overview chart state ───────────────────────────────────────────────────
-var _ovxGroupKey = 'team';
-
-function ovxSetGroupKey(k) {
-  _ovxGroupKey = k;
-  ['team','theme','driver'].forEach(function(key) {
-    var btn = document.getElementById('ovx-gtab-' + key);
-    if (!btn) return;
-    btn.style.background = key === k ? 'var(--accent)' : 'var(--surface)';
-    btn.style.color      = key === k ? '#fff' : 'var(--muted)';
-  });
-  ovxRenderChart(_ovxGroupKey, window._ovxInits || [], window._ovxSelQ);
-}
-
-function ovxRenderChart(key, allInits, selQ) {
-  var canvas = document.getElementById('ovx-group-chart');
-  if (!canvas || typeof Chart === 'undefined') return;
-
-  // Filter to selected quarter
-  var selQKey = (selQ || '').split(' ')[0];
-  var selYear = parseInt((selQ || '').split(' ')[1]);
-  var subset = allInits.filter(function(i) {
-    var q = i.quarter || '';
-    var m = q.match(/Q(\d)\s*(\d{4})?/i);
-    if (!m) return false;
-    return q.indexOf(selQKey) !== -1 && (m[2] ? parseInt(m[2]) : selYear) === selYear;
-  });
-
-  var groups = {};
-  subset.forEach(function(i) {
-    var k = (i[key] || '—').trim() || '—';
-    if (!groups[k]) groups[k] = { 'not-started':0, 'on-track':0, 'at-risk':0, 'delayed':0, 'on-hold':0, 'delivered':0 };
-    groups[k][i.deliveryStatus || 'not-started']++;
-  });
-  var labels = Object.keys(groups).sort();
-  if (window._ovxChart) { window._ovxChart.destroy(); window._ovxChart = null; }
-  window._ovxChart = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [
-        { label: 'On Track',    data: labels.map(function(k){return groups[k]['on-track'];   }), backgroundColor: '#2EAD4B', borderRadius: 0 },
-        { label: 'At Risk',     data: labels.map(function(k){return groups[k]['at-risk'];    }), backgroundColor: '#E5A100', borderRadius: 0 },
-        { label: 'Delayed',     data: labels.map(function(k){return groups[k]['delayed'];    }), backgroundColor: '#E5243B', borderRadius: 0 },
-        { label: 'On Hold',     data: labels.map(function(k){return groups[k]['on-hold'];    }), backgroundColor: '#C2410C', borderRadius: 0 },
-        { label: 'Delivered',   data: labels.map(function(k){return groups[k]['delivered'];  }), backgroundColor: '#1D4ED8', borderRadius: 0 },
-        { label: 'Not Started', data: labels.map(function(k){return groups[k]['not-started'];}), backgroundColor: '#C8C8C8', borderRadius: 0 }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom', labels: { font: { size: 10, family: 'inherit' }, boxWidth: 10, padding: 10 } },
-        tooltip: { callbacks: { title: function(items) { return items[0].label; } } }
-      },
-      scales: {
-        x: { stacked: true, ticks: { font: { size: 10, family: 'inherit' }, maxRotation: 30 }, grid: { display: false } },
-        y: { stacked: true, ticks: { font: { size: 10, family: 'inherit' }, stepSize: 1, precision: 0 }, grid: { color: 'rgba(0,0,0,.05)' }, border: { display: false } }
-      }
-    }
-  });
-}
-
-function ovxQNav(label, hasPrev, hasNext) {
-  function btn(dir, enabled) {
-    var arrow = dir === -1 ? '&#8592;' : '&#8594;';
-    var base  = 'width:22px;height:22px;border-radius:5px;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:12px;line-height:1;color:var(--text)';
-    var dis   = ';opacity:.3;cursor:default;pointer-events:none';
-    return '<button type="button" onclick="ovxChangeQ(' + dir + ')" style="' + base + (enabled ? '' : dis) + '">' + arrow + '</button>';
+function renderOverview() {
+  var visibleTabs = _ovxVisibleTabs();
+  // If current active tab is no longer visible, fall back to first visible
+  if (!visibleTabs.some(function(t) { return t.id === _ovxActiveTab; })) {
+    _ovxActiveTab = visibleTabs.length ? visibleTabs[0].id : 'product';
   }
-  return '<div style="display:inline-flex;align-items:center;gap:6px">'
-    + btn(-1, hasPrev)
-    + '<span style="font-size:11px;font-weight:600;color:var(--text);min-width:56px;text-align:center">' + label + '</span>'
-    + btn(1, hasNext)
+  return '<div id="ovx-root">'
+    + '<div style="margin-bottom:4px">'
+    +   '<div style="font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.3px">Welcome to KERV Team Dashboard</div>'
+    +   '<div id="ovx-subtitle" style="font-size:13px;color:var(--muted);margin-top:3px">Product &amp; Tech Overview</div>'
+    + '</div>'
+    + _ovxTabBarHtml(_ovxActiveTab)
+    + '<div id="ovx-tab-content">'
+    +   '<div id="ovx-body">' + (typeof _KERV_LOADER_HTML !== 'undefined' ? _KERV_LOADER_HTML : '') + '</div>'
+    + '</div>'
     + '</div>';
 }
 
-// Compact team row for the left column (no stacked bar, just name + count + %)
-function ovxTeamRow(name, dsByVal, isBold) {
-  var total = OVX_DS.reduce(function(s, d) { return s + (dsByVal[d.val] || 0); }, 0);
-  var done  = dsByVal['delivered'] || 0;
-  var pct   = total ? Math.round(done / total * 100) : 0;
-  var nameStyle = 'font-size:11px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
-    + (isBold ? 'font-weight:700;color:var(--text)' : 'color:var(--muted)');
-  return '<div style="display:flex;align-items:center;gap:8px;padding:5px 14px">'
-    + '<span style="' + nameStyle + '">' + name + '</span>'
-    + '<span style="font-size:11px;' + (isBold ? 'font-weight:700;' : '') + 'color:var(--muted);width:18px;text-align:right;flex-shrink:0">' + total + '</span>'
-    + '<span style="font-size:10px;font-weight:' + (isBold ? '700' : '500') + ';width:28px;text-align:right;flex-shrink:0;color:' + (pct >= 75 ? '#2EAD4B' : pct >= 40 ? '#E5A100' : 'var(--muted)') + '">' + (total ? pct + '%' : '—') + '</span>'
-    + '</div>';
-}
-
-function ovxTeamBar(name, dsByVal, isBold) {
-  var total = OVX_DS.reduce(function(s, d) { return s + (dsByVal[d.val] || 0); }, 0);
-  var done  = dsByVal['delivered'] || 0;
-  var pct   = total ? Math.round(done / total * 100) : 0;
-
-  var segments = total > 0
-    ? OVX_DS.map(function(d) {
-        var n = dsByVal[d.val] || 0;
-        if (!n) return '';
-        var w = (n / total * 100).toFixed(1);
-        return '<div title="' + d.label + ': ' + n + '" style="height:100%;width:' + w + '%;background:' + d.color + ';flex-shrink:0"></div>';
+function _ovxTabBarHtml(activeTab) {
+  var visibleTabs = _ovxVisibleTabs();
+  return '<div id="ovx-tab-bar" style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-top:16px;margin-bottom:0">'
+    + visibleTabs.map(function(t) {
+        var active = t.id === (activeTab || _ovxActiveTab);
+        return '<button onclick="ovxSwitchTab(\'' + t.id + '\')" id="ovx-tab-btn-' + t.id + '"'
+          + ' style="font-size:13px;font-weight:' + (active ? '600' : '400') + ';'
+          + 'color:' + (active ? 'var(--text)' : 'var(--muted)') + ';'
+          + 'background:none;border:none;border-bottom:2px solid ' + (active ? 'var(--accent)' : 'transparent') + ';'
+          + 'padding:8px 16px;cursor:pointer;margin-bottom:-1px;transition:color .15s,border-color .15s;font-family:inherit">'
+          + t.label + '</button>';
       }).join('')
-    : '<div style="height:100%;width:100%;background:var(--border)"></div>';
-
-  var labelStyle = isBold
-    ? 'font-size:11px;font-weight:700;color:var(--text);width:120px;flex-shrink:0'
-    : 'font-size:11px;color:var(--muted);width:120px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
-
-  return '<div style="display:flex;align-items:center;gap:12px;padding:7px 20px">'
-    + '<span style="' + labelStyle + '" title="' + name + '">' + name + '</span>'
-    + '<div style="flex:1;height:8px;border-radius:4px;overflow:hidden;display:flex;background:var(--border)">' + segments + '</div>'
-    + '<span style="font-size:11px;color:var(--muted);width:24px;text-align:right;flex-shrink:0">' + total + '</span>'
-    + '<span style="font-size:10px;font-weight:' + (isBold ? '700' : '500') + ';color:' + (pct >= 75 ? '#10B981' : pct >= 40 ? '#F59E0B' : 'var(--muted)') + ';width:32px;text-align:right;flex-shrink:0">' + (total ? pct + '%' : '—') + '</span>'
     + '</div>';
 }
 
-function ovxStatCard(label, value, color, iconSvg) {
-  return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-    +   '<span style="font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">' + label + '</span>'
-    +   '<span style="color:' + color + ';opacity:.7">' + iconSvg + '</span>'
-    + '</div>'
-    + '<div style="font-size:26px;font-weight:600;color:var(--text);letter-spacing:-.5px">' + value + '</div>'
-    + '</div>';
+var _OVX_SUBTITLES = {
+  product: 'Product & Tech Overview',
+  okrs:    'OKRs Overview',
+  finance: 'Finance Overview',
+  sales:   'Sales Overview'
+};
+
+function ovxSwitchTab(tab) {
+  _ovxActiveTab = tab;
+
+  // Update subtitle
+  var sub = document.getElementById('ovx-subtitle');
+  if (sub) sub.textContent = _OVX_SUBTITLES[tab] || '';
+
+  // Update tab button styles
+  _ovxVisibleTabs().forEach(function(t) {
+    var btn = document.getElementById('ovx-tab-btn-' + t.id);
+    if (!btn) return;
+    var active = t.id === tab;
+    btn.style.fontWeight   = active ? '600' : '400';
+    btn.style.color        = active ? 'var(--text)' : 'var(--muted)';
+    btn.style.borderBottom = '2px solid ' + (active ? 'var(--accent)' : 'transparent');
+  });
+
+  var content = document.getElementById('ovx-tab-content');
+  if (!content) return;
+
+  if (tab === 'product') {
+    content.innerHTML = '<div id="ovx-body">'
+      + (typeof _KERV_LOADER_HTML !== 'undefined' ? _KERV_LOADER_HTML : '') + '</div>';
+    if (typeof ovxLoad === 'function') ovxLoad();
+  } else {
+    var labels = { okrs: 'OKRs', finance: 'Finance', sales: 'Sales' };
+    content.innerHTML =
+      '<div style="padding:80px 0;text-align:center">'
+      + '<div style="font-size:36px;margin-bottom:16px">🚧</div>'
+      + '<div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">' + labels[tab] + '</div>'
+      + '<div style="font-size:13px;color:var(--muted)">Coming soon</div>'
+      + '</div>';
+  }
 }
-
-function ovxQuarterRow(quarter, items, totalAll) {
-  var count = items.length;
-  var done  = items.filter(function(i) { return i.deliveryStatus === 'done'; }).length;
-  var pct   = count ? Math.round(done / count * 100) : 0;
-
-  // Mini status dots
-  var dots = OVX_DS.map(function(d) {
-    var n = items.filter(function(i) { return (i.deliveryStatus || 'not-started') === d.val; }).length;
-    return n ? '<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--muted)">'
-      + '<span style="width:6px;height:6px;border-radius:50%;background:' + d.color + ';flex-shrink:0"></span>'
-      + n + '</span>' : '';
-  }).filter(Boolean).join('<span style="color:var(--border);margin:0 2px">·</span>');
-
-  return '<div style="display:flex;align-items:center;gap:12px;padding:9px 20px;border-bottom:1px solid var(--border-lt);cursor:pointer;transition:background .12s" '
-    + 'onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'\'">'
-    + '<div style="width:56px;font-size:12px;font-weight:600;color:var(--text);flex-shrink:0">' + quarter + '</div>'
-    + '<div style="flex:1;min-width:0">'
-    +   '<div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:5px">'
-    +     '<div style="height:100%;width:' + pct + '%;background:#10B981;border-radius:3px;transition:width .4s"></div>'
-    +   '</div>'
-    +   '<div style="display:flex;gap:6px;flex-wrap:wrap">' + dots + '</div>'
-    + '</div>'
-    + '<div style="text-align:right;flex-shrink:0">'
-    +   '<div style="font-size:13px;font-weight:600;color:var(--text)">' + count + '</div>'
-    +   '<div style="font-size:10px;color:var(--muted)">' + pct + '% done</div>'
-    + '</div>'
-    + '</div>';
-}
-
-function ovxStatusRow(d, count, total) {
-  var pct = total ? Math.round(count / total * 100) : 0;
-  return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
-    + '<span style="width:7px;height:7px;border-radius:50%;background:' + d.color + ';flex-shrink:0"></span>'
-    + '<span style="font-size:12px;color:var(--text);flex:1">' + d.label + '</span>'
-    + '<div style="width:80px;height:4px;background:var(--border);border-radius:2px;overflow:hidden">'
-    +   '<div style="height:100%;width:' + pct + '%;background:' + d.color + ';border-radius:2px"></div>'
-    + '</div>'
-    + '<span style="font-size:12px;color:var(--muted);width:24px;text-align:right">' + count + '</span>'
-    + '</div>';
-}
-
-function ovxNavCard(c) {
-  var disabledStyle = c.disabled
-    ? 'cursor:default;opacity:.55'
-    : 'cursor:pointer';
-  var hoverAttrs = c.disabled ? '' :
-    ' onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'\'"';
-  var clickAttr = c.disabled ? '' :
-    ' onclick="setPage(\'' + c.id + '\',\'' + c.label.replace(/'/g, "\\'") + '\')"';
-  var rightIcon = c.disabled
-    ? '<span style="margin-left:auto;font-size:10px;font-weight:500;color:var(--faint);white-space:nowrap">Coming Soon</span>'
-    : '<svg style="margin-left:auto;color:var(--muted)" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;transition:background .12s;margin-bottom:4px;' + disabledStyle + '"'
-    + clickAttr + hoverAttrs + '>'
-    + '<span style="width:28px;height:28px;border-radius:7px;background:var(--subtle);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0">' + c.icon + '</span>'
-    + '<div>'
-    +   '<div style="font-size:12px;font-weight:500;color:var(--text)">' + c.label + '</div>'
-    + '</div>'
-    + rightIcon
-    + '</div>';
-}
-
-// ── Micro icons ────────────────────────────────────────────────────────────
-
-var _ovxIdeaIcon = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2a4.5 4.5 0 0 1 2 8.5V12H6v-1.5A4.5 4.5 0 0 1 8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 13.5h4M7 15h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
-var _ovxOkrIcon  = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r=".8" fill="currentColor"/></svg>';
-
-function ovxBarIcon()   { return '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="9" width="2.5" height="5" rx=".5" fill="currentColor" opacity=".4"/><rect x="6.5" y="6" width="2.5" height="8" rx=".5" fill="currentColor" opacity=".6"/><rect x="11" y="3" width="2.5" height="11" rx=".5" fill="currentColor"/></svg>'; }
-function ovxCheckIcon() { return '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2.5 2.5L11 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
-function ovxPlayIcon()  { return '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 5.5l4 2.5-4 2.5V5.5z" fill="currentColor"/></svg>'; }
-function ovxPctIcon()   { return '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 13L13 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="4.5" cy="4.5" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="11.5" cy="11.5" r="2" stroke="currentColor" stroke-width="1.3"/></svg>'; }

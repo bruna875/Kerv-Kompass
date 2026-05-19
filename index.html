@@ -10,6 +10,22 @@
 </head>
 <body>
 
+<!-- ── Set password (invite flow) ── -->
+<div id="invite-screen" style="display:none;position:fixed;inset:0;background:var(--bg);align-items:center;justify-content:center;z-index:99">
+  <div class="acard">
+    <div class="alogo">
+      <div class="amark"><img src="https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:6px"/></div>
+      <span class="alogo-text">KERV Team</span>
+    </div>
+    <div class="atitle">Set your password</div>
+    <div class="asub" id="invite-sub">Create a password to access your account</div>
+    <div class="fwrap"><div class="flabel">New Password</div><input class="finput" id="invite-pw1" type="password" placeholder="••••••••"/></div>
+    <div class="fwrap"><div class="flabel">Confirm Password</div><input class="finput" id="invite-pw2" type="password" placeholder="••••••••"/></div>
+    <div class="aerr" id="invite-err"></div>
+    <button class="abtn" id="invite-btn" onclick="inviteSetPassword()">Set password &amp; sign in</button>
+  </div>
+</div>
+
 <!-- ── Login ── -->
 <div id="auth">
   <div class="acard">
@@ -19,15 +35,10 @@
     </div>
     <div class="atitle">Sign in</div>
     <div class="asub">Enter your credentials to continue</div>
-    <div class="fwrap"><div class="flabel">Email</div><input class="finput" id="em" type="text" value="product@kerv.ai" placeholder="you@company.com"/></div>
-    <div class="fwrap"><div class="flabel">Password</div><input class="finput" id="pw" type="password" value="roadmap" placeholder="••••••••"/></div>
+    <div class="fwrap"><div class="flabel">Email</div><input class="finput" id="em" type="text" placeholder="you@company.com"/></div>
+    <div class="fwrap"><div class="flabel">Password</div><input class="finput" id="pw" type="password" placeholder="••••••••"/></div>
     <div class="aerr" id="err"></div>
     <button class="abtn" id="loginBtn">Sign in</button>
-    <div class="demo-creds">
-      <div class="demo-creds-label">Demo credentials</div>
-      <div><strong>Email:</strong> product@kerv.ai</div>
-      <div><strong>Password:</strong> roadmap</div>
-    </div>
   </div>
 </div>
 
@@ -44,7 +55,7 @@
         <div class="avatar" id="av">CA</div>
         <div class="uinfo">
           <div class="uname" id="un">Admin</div>
-          <div class="urole">Product Team</div>
+          <div class="urole" id="urole">Product Team</div>
         </div>
         <div class="logoutbtn" id="logoutBtn" title="Sign out">
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6 3H3v10h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 5l3 3-3 3M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -57,34 +68,126 @@
   </div>
   <div class="main">
     <div class="topbar">
-      <span class="breadcrumb">Product &nbsp;/&nbsp; <b id="pgname">Product Roadmap</b></span>
       <span class="tbadge" id="qbadge"></span>
+      <div class="tb-admin-wrap">
+        <button class="tb-admin-btn" id="adminBtn" onclick="toggleAdminDd()" title="Administration">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+        <div class="tb-admin-dd" id="adminDd">
+          <div class="tb-admin-dd-item" data-page="admin-users" data-label="User &amp; Permissions">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 13c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M11 7.5l1 1 2-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            User Permissions
+          </div>
+          <div style="height:1px;background:var(--border);margin:4px 0"></div>
+          <a href="https://kerv-dashboard.vercel.app/product-spec" target="_blank" rel="noopener"
+             style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 12px;border-radius:6px;text-decoration:none;color:#6366F1;font-size:13px;font-weight:400;letter-spacing:.01em;transition:background .12s;cursor:pointer"
+             onmouseenter="this.style.background='rgba(99,102,241,.08)'" onmouseleave="this.style.background='none'">
+            <span style="display:flex;align-items:center;gap:7px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>
+              Product Overview
+            </span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
+      </div>
     </div>
+    <!-- pgname kept hidden for legacy JS compatibility -->
+    <span id="pgname" style="display:none"></span>
     <div class="content" id="content"></div>
-  </div>
-</div>
-
-<!-- ── Link popup (roadmap) ── -->
-<div class="link-popup" id="linkPopup">
-  <div class="link-popup-title">Initiative link</div>
-  <div class="link-popup-row">
-    <input type="url" id="linkInput" placeholder="https://..."/>
-    <button class="link-popup-open" id="linkOpenBtn" title="Open link"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M6 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 2h5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2L8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-    <button class="link-popup-save" id="linkSaveBtn">Save</button>
-    <button class="link-popup-clear" id="linkClearBtn">×</button>
   </div>
 </div>
 
 <!-- Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <!-- App modules -->
-<script src="js/config.js"></script>
 <script src="js/icons.js"></script>
+<script src="js/overview-product.js"></script>
+<script src="js/overview.js"></script>
 <script src="js/loader.js"></script>
-<script src="js/roadmap.js"></script>
-<script src="js/capacity.js"></script>
-<script src="js/sdt-content-form.js"></script>
-<script src="js/taxonomy-explorer.js"></script>
+<script src="js/capacity-calculations.js"></script>
+<script src="js/roadmap-neon.js"></script>
+<script src="js/csv-import.js"></script>
+<script src="js/capacity-neon.js"></script>
+<script src="js/roi-templates.js"></script>
+<script src="js/settings-neon.js"></script>
+
+<script src="js/ai-insights.js"></script>
+<script src="js/sprint-pptx.js"></script>
+<script src="js/sprint-analysis.js"></script>
+<script src="js/xts-team.js"></script>
+<script src="js/admin-users.js"></script>
 <script src="js/app.js"></script>
+
+<script>
+// ── Invite token handler ──────────────────────────────────────────────────────
+(function() {
+  var params = new URLSearchParams(location.search);
+  var token  = params.get('token');
+  if (!token) return;
+
+  // Show invite screen, hide login + app
+  document.getElementById('auth').style.display      = 'none';
+  document.getElementById('app').style.display       = 'none';
+  var screen = document.getElementById('invite-screen');
+  screen.style.display = 'flex';
+
+  // Validate token
+  fetch('/api/neon/users', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'validate', token: token })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (!res.ok) {
+      document.getElementById('invite-sub').textContent = '';
+      document.getElementById('invite-err').textContent = res.error || 'Invalid or expired link.';
+      document.getElementById('invite-btn').disabled = true;
+    } else if (res.user) {
+      document.getElementById('invite-sub').textContent =
+        'Hi ' + (res.user.first_name || '') + ', create a password for ' + res.user.email;
+    }
+  })
+  .catch(function() {
+    document.getElementById('invite-err').textContent = 'Could not validate link.';
+    document.getElementById('invite-btn').disabled = true;
+  });
+
+  window._inviteToken = token;
+})();
+
+function inviteSetPassword() {
+  var pw1  = document.getElementById('invite-pw1').value;
+  var pw2  = document.getElementById('invite-pw2').value;
+  var errEl = document.getElementById('invite-err');
+  errEl.textContent = '';
+  if (!pw1 || pw1.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+  if (pw1 !== pw2)             { errEl.textContent = 'Passwords do not match.'; return; }
+
+  var btn = document.getElementById('invite-btn');
+  btn.disabled = true; btn.textContent = 'Setting password…';
+
+  fetch('/api/neon/users', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'set', token: window._inviteToken, password: pw1 })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (!res.ok) throw new Error(res.error || 'Failed');
+    // Redirect to login, clean URL
+    history.replaceState({}, '', '/');
+    document.getElementById('invite-screen').style.display = 'none';
+    document.getElementById('auth').style.display = 'flex';
+    document.getElementById('invite-sub').textContent = 'Create a password to access your account';
+    btn.disabled = false; btn.textContent = 'Set password & sign in';
+  })
+  .catch(function(e) {
+    errEl.textContent = e.message;
+    btn.disabled = false; btn.textContent = 'Set password & sign in';
+  });
+}
+</script>
 </body>
 </html>

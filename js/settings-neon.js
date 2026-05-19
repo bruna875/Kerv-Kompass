@@ -591,7 +591,7 @@ function snxLoadAll(cb) {
     snxApi('/api/neon/lookup?t=themes'),
     snxApi('/api/neon/assumptions'),
     snxApi('/api/neon/budget'),
-    snxApi('/api/neon/jira-projects')
+    snxApi('/api/neon/lookup?t=jira-projects')
   ]).then(function(res) {
     snxData.teams        = Array.isArray(res[0]) ? res[0] : [];
     snxData.members      = Array.isArray(res[1]) ? res[1] : [];
@@ -1352,7 +1352,7 @@ function snxSaveJiraProject(id) {
   var jiraId   = jiraIdEl   ? jiraIdEl.value.trim()   : '';
   var teamName = teamNameEl ? teamNameEl.value.trim() : '';
   if (!jiraId || !teamName) return;
-  snxApi('/api/neon/jira-projects', 'POST', { id: id, jira_id: jiraId, team_name: teamName }).then(function() {
+  snxApi('/api/neon/lookup', 'POST', { t: 'jira-projects', id: id, jira_id: jiraId, team_name: teamName }).then(function() {
     var item = (snxData.jiraProjects || []).filter(function(x) { return x.id === id; })[0];
     if (item) { item.jira_id = jiraId; item.team_name = teamName; }
   });
@@ -1364,7 +1364,7 @@ function snxAddJiraProject() {
   var jiraId   = jiraIdEl   ? jiraIdEl.value.trim()   : '';
   var teamName = teamNameEl ? teamNameEl.value.trim() : '';
   if (!jiraId || !teamName) return;
-  snxApi('/api/neon/jira-projects', 'POST', { jira_id: jiraId, team_name: teamName }).then(function() {
+  snxApi('/api/neon/lookup', 'POST', { t: 'jira-projects', jira_id: jiraId, team_name: teamName }).then(function() {
     snxRefreshTab('jira-projects');
   });
 }
@@ -1373,7 +1373,7 @@ function snxDeleteJiraProject(id) {
   var item = (snxData.jiraProjects || []).filter(function(x) { return x.id === id; })[0];
   var label = item ? (item.jira_id + ' — ' + item.team_name) : 'this mapping';
   snxConfirm('Are you sure you want to delete <strong>' + label + '</strong>? This action cannot be undone.', function() {
-    snxApi('/api/neon/jira-projects', 'DELETE', { id: id }).then(function(res) {
+    snxApi('/api/neon/lookup', 'DELETE', { t: 'jira-projects', id: id }).then(function(res) {
       if (res && res.error) { alert('Delete failed: ' + res.error); return; }
       snxRefreshTab('jira-projects');
     }).catch(function(e) { alert('Delete failed: ' + e.message); });
@@ -1427,7 +1427,7 @@ function snxRefreshTab(tab) {
   if (tab === 'drivers')     fetches = [snxApi('/api/neon/lookup?t=drivers').then(function(r) { snxData.drivers     = Array.isArray(r) ? r : []; })];
   if (tab === 'themes')      fetches = [snxApi('/api/neon/lookup?t=themes').then(function(r)  { snxData.themes      = Array.isArray(r) ? r : []; })];
   if (tab === 'assumptions')   fetches = [snxApi('/api/neon/assumptions').then(function(r)        { snxData.assumptions  = Array.isArray(r) ? r : []; })];
-  if (tab === 'jira-projects') fetches = [snxApi('/api/neon/jira-projects').then(function(r)     { snxData.jiraProjects = Array.isArray(r) ? r : []; })];
+  if (tab === 'jira-projects') fetches = [snxApi('/api/neon/lookup?t=jira-projects').then(function(r)     { snxData.jiraProjects = Array.isArray(r) ? r : []; })];
   Promise.all(fetches).then(function() {
     if (snxActiveTab === tab) {
       var body = document.getElementById('snx-tab-body');

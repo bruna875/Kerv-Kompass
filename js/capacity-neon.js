@@ -3,12 +3,14 @@
 
 // ── State ──────────────────────────────────────────────────────────────────
 
-var cnxInitiatives  = [];
-var cnxBudgets      = {};   // { team: { Q1: { engineering, product, design } } } — FTE values
-var cnxAssumptions  = [];   // flat array from /api/neon/assumptions (global, no initiative_id)
-var cnxMembers      = [];   // team members (for avatar photos)
-var cnxActiveTab    = 'allocation';
-var cnxQ            = null; // active quarter
+var cnxInitiatives    = [];
+var cnxAllInitiatives = [];
+var cnxSelYear        = new Date().getFullYear();
+var cnxBudgets        = {};   // { team: { Q1: { engineering, product, design } } } — FTE values
+var cnxAssumptions    = [];   // flat array from /api/neon/assumptions (global, no initiative_id)
+var cnxMembers        = [];   // team members (for avatar photos)
+var cnxActiveTab      = 'allocation';
+var cnxQ              = null; // active quarter
 
 // ── Colour maps (imported from roadmap-neon globals if available) ──────────
 // Falls back to its own palette so this module is truly independent.
@@ -173,15 +175,26 @@ function cnxScorecardHtml(label, used, budget) {
 
 // ── Team block ─────────────────────────────────────────────────────────────
 
-function cnxTeamBlock(teamName, used, budget, inits) {
+function cnxTeamBlock(teamName, used, budget, inits, fte) {
+  function fmtFte(n) { n = parseFloat(n) || 0; return n % 1 === 0 ? String(n) : parseFloat(n.toFixed(1)).toString(); }
   var totalUsed = used.design + used.engineering + used.product;
+  function cnxAvatarCell(name) {
+    if (!name) return '<td style="padding:6px 8px">—</td>';
+    return '<td style="padding:6px 8px" title="' + name + '">'
+      + '<div style="display:flex;align-items:center;gap:6px;overflow:hidden">'
+      +   cnxMemberAvatar(name, 22)
+      +   '<span style="font-size:11px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + name.split(' ')[0] + '</span>'
+      + '</div>'
+      + '</td>';
+  }
+
   var initRows = inits.map(function(ini) {
     return '<tr style="border-top:0.5px solid var(--border)">'
-      + '<td style="padding:8px 8px 8px 0;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + ini.title + '</td>'
+      + '<td style="padding:8px 8px 8px 0;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + ini.title + '">' + ini.title + '</td>'
       + '<td style="padding:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + cnxDriverBadge(ini.driver) + '</td>'
       + '<td style="padding:8px;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ini.theme || '—') + '</td>'
-      + '<td style="padding:8px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ini.productOwner || '—') + '</td>'
-      + '<td style="padding:8px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ini.techLead    || '—') + '</td>'
+      + cnxAvatarCell(ini.productOwner)
+      + cnxAvatarCell(ini.techLead)
       + '<td style="padding:8px;text-align:right;color:var(--muted)">'    + (ini.engineering ? Math.round(ini.engineering) + 'd' : '—') + '</td>'
       + '<td style="padding:8px;text-align:right;color:var(--muted)">'    + (ini.product     ? Math.round(ini.product)     + 'd' : '—') + '</td>'
       + '<td style="padding:8px;text-align:right;color:var(--muted)">'    + (ini.design      ? Math.round(ini.design)      + 'd' : '—') + '</td>'
@@ -194,11 +207,11 @@ function cnxTeamBlock(teamName, used, budget, inits) {
   var TR = 'text-align:right;padding:4px 8px';
   var initTable = '<table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">'
     + '<colgroup>'
-    +   '<col>'
+    +   '<col style="width:160px">'
     +   '<col style="width:110px">'
     +   '<col style="width:110px">'
-    +   '<col style="width:90px">'
-    +   '<col style="width:90px">'
+    +   '<col style="width:96px">'
+    +   '<col style="width:96px">'
     +   '<col style="width:72px">'
     +   '<col style="width:72px">'
     +   '<col style="width:72px">'
@@ -218,9 +231,20 @@ function cnxTeamBlock(teamName, used, budget, inits) {
     + '<th style="text-align:right;padding:4px 0 4px 8px">ROI</th>'
     + '</tr></thead><tbody style="border-top:0.5px solid var(--border)">' + initRows + '</tbody></table>';
 
+  var fteLabel = fte
+    ? [
+        { n: fte.product,     l: 'Product' },
+        { n: fte.engineering, l: 'Tech'    },
+        { n: fte.design,      l: 'Design'  }
+      ].map(function(x) { return fmtFte(x.n) + ' ' + x.l; }).join(' · ')
+    : '';
+
   return '<div class="cap-team-block">'
     + '<div class="cap-team-head">'
-    +   '<div class="cap-team-name">' + teamName + '</div>'
+    +   '<div style="display:flex;align-items:baseline;gap:8px">'
+    +     '<div class="cap-team-name">' + teamName + '</div>'
+    +     (fteLabel ? '<span style="font-size:11px;color:var(--faint);font-weight:400">' + fteLabel + '</span>' : '')
+    +   '</div>'
     +   '<span class="cap-team-meta">' + inits.length + ' initiative' + (inits.length !== 1 ? 's' : '') + ' · ' + Math.round(totalUsed) + ' days</span>'
     + '</div>'
     + '<div class="cap-team-body">'
@@ -238,7 +262,7 @@ function cnxLeaderBlock(name, role, inits) {
   var initRows = inits.map(function(ini) {
     total += ini.total;
     return '<tr style="border-top:0.5px solid var(--border)">'
-      + '<td style="padding:8px 8px 8px 0;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + ini.title + '</td>'
+      + '<td style="padding:8px 8px 8px 0;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + ini.title + '">' + ini.title + '</td>'
       + '<td style="padding:8px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ini.team || '—') + '</td>'
       + '<td style="padding:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + cnxDriverBadge(ini.driver) + '</td>'
       + '<td style="padding:8px;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ini.theme || '—') + '</td>'
@@ -261,7 +285,7 @@ function cnxLeaderBlock(name, role, inits) {
     + '<div class="cap-leader-body">'
     +   '<table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">'
     +     '<colgroup>'
-    +       '<col>'
+    +       '<col style="width:160px">'
     +       '<col style="width:90px">'
     +       '<col style="width:110px">'
     +       '<col style="width:110px">'
@@ -302,8 +326,9 @@ function cnxRenderAllocation(q) {
   });
 
   var blocks = teamNames.map(function(t) {
-    var b = budgets[t] || { design:0, engineering:0, product:0 };
-    return cnxTeamBlock(t, teams[t], b, teams[t].initiatives);
+    var b   = budgets[t] || { design:0, engineering:0, product:0 };
+    var fte = (cnxBudgets[t] && cnxBudgets[t][q]) || { engineering:0, product:0, design:0 };
+    return cnxTeamBlock(t, teams[t], b, teams[t].initiatives, fte);
   }).join('');
 
   if (!teamNames.length) blocks = '<div class="cap-empty">No initiatives for ' + q + '</div>';
@@ -355,16 +380,16 @@ function cnxRenderByProdLead(q) {
 
 function cnxQFilter() {
   var cq = cnxCurrentQ();
-  var opts = ['Q1','Q2','Q3','Q4','all','backlog'];
+  var opts = ['Q1','Q2','Q3','Q4','all'];
   return '<div class="qfilter">' + opts.map(function(q) {
-    var lbl = q === 'all' ? 'All Year' : q === 'backlog' ? 'Backlog' : q;
+    var lbl = q === 'all' ? 'All Year' : q;
     return '<button id="cnx-btn-' + q + '" class="qfilter-btn' + (q === cq ? ' act' : '') + '"'
       + ' data-cnxq="' + q + '">' + lbl + '</button>';
   }).join('') + '</div>';
 }
 
 function cnxSetQAct(q) {
-  ['Q1','Q2','Q3','Q4','all','backlog'].forEach(function(b) {
+  ['Q1','Q2','Q3','Q4','all'].forEach(function(b) {
     var el = document.getElementById('cnx-btn-' + b);
     if (el) el.classList.toggle('act', b === q);
   });
@@ -552,7 +577,10 @@ function cnxLoadAndRender() {
     fetch('/api/neon/team-members').then(function(r) { return r.json(); })
   ])
   .then(function(results) {
-    cnxInitiatives = Array.isArray(results[0]) ? results[0] : [];
+    cnxAllInitiatives = Array.isArray(results[0]) ? results[0] : [];
+    cnxInitiatives    = cnxAllInitiatives.filter(function(i) {
+      return (parseInt(i.year) || new Date().getFullYear()) === cnxSelYear;
+    });
     cnxBudgets     = (results[1] && typeof results[1] === 'object' && !results[1].error) ? results[1] : {};
     // Keep only global assumptions (no initiative_id) for FTE→days conversion
     cnxAssumptions = Array.isArray(results[2])
@@ -562,6 +590,8 @@ function cnxLoadAndRender() {
     cnxBuildColorMaps();
     if (!cnxQ) cnxQ = cnxCurrentQ();
     container.innerHTML = cnxBuildInner();
+    var cnxYnEl = document.getElementById('cnx-year-nav');
+    if (cnxYnEl) cnxYnEl.innerHTML = rnxBuildYearNav('cnx', cnxAllInitiatives, cnxSelYear);
     cnxInitEvents();
   })
   .catch(function(err) {
@@ -606,24 +636,45 @@ function cnxInitEvents() {
 
 // ── Main render ────────────────────────────────────────────────────────────
 
+function cnxSetYear(y) {
+  cnxSelYear     = y;
+  cnxInitiatives = cnxAllInitiatives.filter(function(i) {
+    return (parseInt(i.year) || new Date().getFullYear()) === cnxSelYear;
+  });
+  var container = document.getElementById('cnx-content');
+  if (container) {
+    container.innerHTML = cnxBuildInner();
+    cnxInitEvents();
+  }
+  var cnxYnEl = document.getElementById('cnx-year-nav');
+  if (cnxYnEl) cnxYnEl.innerHTML = rnxBuildYearNav('cnx', cnxAllInitiatives, cnxSelYear);
+}
+
 function renderTeamCapacityNeon() {
   var html = '<div class="page-header">'
     + '<div>'
-    +   '<div class="ptitle">Team Capacity</div>'
-    +   '<div class="psub">Budget utilization by team and discipline — manage budgets in Settings → Teams & Capacity</div>'
+    +   '<div style="display:flex;align-items:center;gap:12px">'
+    +     '<div class="ptitle">Team Capacity</div>'
+    +     '<div id="cnx-year-nav" style="display:inline-block"></div>'
+    +   '</div>'
+    +   '<div class="psub">Capacity Budget utilization by team and discipline</div>'
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:8px">'
-    +   '<button onclick="window._rnxPendingModal=null;setPage(\'roadmap-neon\',\'Product Roadmap\')" style="display:flex;align-items:center;gap:6px;padding:7px 14px;font-size:13px;font-weight:500;border:none;border-radius:7px;background:var(--accent);color:#fff;cursor:pointer">'
-    +     '<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
-    +     'Add Initiative'
-    +   '</button>'
-    +   _RNX_CSV_BTN
-    +   '<button onclick="rnxOpenSettings()" title="Settings"'
-    +     ' style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s"'
-    +     ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
-    +     ' onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
-    +     '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M16.2 12.5a1.5 1.5 0 00.3 1.65l.05.05a1.8 1.8 0 010 2.55 1.8 1.8 0 01-2.55 0l-.05-.05a1.5 1.5 0 00-1.65-.3 1.5 1.5 0 00-.91 1.37V18a1.8 1.8 0 01-3.6 0v-.08A1.5 1.5 0 007 16.55a1.5 1.5 0 00-1.65.3l-.05.05a1.8 1.8 0 01-2.55-2.55l.05-.05A1.5 1.5 0 003.1 12.65a1.5 1.5 0 00-1.37-.91H1.67a1.8 1.8 0 010-3.6h.08A1.5 1.5 0 003.45 7.3a1.5 1.5 0 00-.3-1.65l-.05-.05a1.8 1.8 0 012.55-2.55l.05.05A1.5 1.5 0 007 3.1a1.5 1.5 0 00.91-1.37V1.67a1.8 1.8 0 013.6 0v.08A1.5 1.5 0 0013 3.45a1.5 1.5 0 001.65-.3l.05-.05a1.8 1.8 0 012.55 2.55l-.05.05A1.5 1.5 0 0016.9 7.3a1.5 1.5 0 001.37.91H18.33a1.8 1.8 0 010 3.6h-.08a1.5 1.5 0 00-1.37.91l-.68-.22z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-    +   '</button>'
+    + (typeof _kervCan === 'function' && _kervCan('roadmap-neon', 'editor')
+        ? '<button onclick="window._rnxPendingModal=null;setPage(\'roadmap-neon\',\'Product Roadmap\')" style="padding:7px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;transition:opacity .15s" onmouseenter="this.style.opacity=\'.85\'" onmouseleave="this.style.opacity=\'1\'">'
+        +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+        +   'Add Initiative'
+        + '</button>'
+        : '')
+    +   rnxToolsMenuHtml()
+    + (typeof _kervCan === 'function' && (_kervCan('roadmap-neon', 'editor') || _kervCan('teamcapacity-neon', 'editor'))
+        ? '<button onclick="rnxOpenSettings()" title="Settings"'
+        +   ' style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s"'
+        +   ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
+        +   ' onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
+        +   '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><circle cx="12" cy="4" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="14" cy="20" r="2"/></svg>'
+        + '</button>'
+        : '')
     + '</div>'
     + '</div>'
     + '<div id="cnx-content"></div>';

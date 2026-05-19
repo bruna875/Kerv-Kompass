@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>Email Preview</title>
+<style>
+  body { margin: 0; background: #E8E6E0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 48px 24px; }
+  .label { text-align: center; font-size: 11px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; color: #A8A8A0; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<div class="label">Email preview — invite</div>
+
+<!-- Email wrapper (simulates inbox background) -->
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F0EEE8;padding:40px 0">
+  <tr>
+    <td align="center">
+
+      <!-- Card -->
+      <table width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08)">
+
+        <!-- Top accent bar -->
+        <tr>
+          <td style="background:#ED005E;height:4px;font-size:0">&nbsp;</td>
+        </tr>
+
+        <!-- Header -->
+        <tr>
+          <td style="padding:32px 36px 24px">
+            <table cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding-right:10px;vertical-align:middle">
+                  <img src="https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg"
+                       width="30" height="30"
+                       style="border-radius:6px;display:block"/>
+                </td>
+                <td style="vertical-align:middle;font-size:15px;font-weight:600;color:#0D1E36;letter-spacing:-.2px">
+                  KERV Team
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Divider -->
+        <tr><td style="padding:0 36px"><div style="height:1px;background:rgba(0,0,0,0.07)"></div></td></tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:28px 36px 12px">
+            <p style="margin:0 0 20px;font-size:14px;color:#0D1E36;line-height:1.7">
+              Hi Alice,<br/><br/>
+              Your account has been created on KERV Dashboard Team.<br/>
+              Click the button below to set your password and start working.
+            </p>
+
+            <!-- CTA -->
+            <table cellpadding="0" cellspacing="0" style="margin-bottom:28px">
+              <tr>
+                <td style="background:#ED005E;border-radius:8px">
+                  <a href="#" style="display:inline-block;padding:12px 24px;font-size:13px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:-.1px">
+                    Set your password &nbsp;→
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Fallback link -->
+            <p style="margin:0 0 28px;font-size:11px;color:#A8A8A0;line-height:1.6">
+              Or copy this link into your browser:<br/>
+              <span style="color:#ED005E;word-break:break-all">https://kerv-dashboard.vercel.app/invite?token=abc123…</span>
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- Divider -->
+        <tr><td style="padding:0 36px"><div style="height:1px;background:rgba(0,0,0,0.07)"></div></td></tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 36px 28px">
+            <p style="margin:0;font-size:11px;color:#A8A8A0;line-height:1.6">
+              This link expires in <strong style="color:#6B6B65">72 hours</strong>.<br/>
+              If you weren't expecting this invitation, you can safely ignore this email.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+      <!-- /Card -->
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

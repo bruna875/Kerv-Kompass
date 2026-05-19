@@ -93,9 +93,9 @@ function renderTaxonomyExplorer() {
         <table style="width:100%;border-collapse:collapse">
           <thead>
             <tr>
-              <th style="text-align:left;padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)">Category</th>
+              <th style="text-align:left;padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)">Moment</th>
               <th style="text-align:right;padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)">Score</th>
-              <th style="text-align:right;padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)">Assets</th>
+              <th style="text-align:right;padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)">Inventory / PODs</th>
             </tr>
           </thead>
           <tbody id="tx-cat-body"></tbody>
@@ -172,29 +172,35 @@ var txActiveResTab = 'cat';
 var txReady       = false;
 
 var TX_CATEGORIES = [
-  { name:'Adrenaline & Action',  score:97, assets:214 },
-  { name:'Running & Athletics',  score:94, assets:189 },
-  { name:'Urban Lifestyle',      score:91, assets:156 },
-  { name:'Motivation & Mindset', score:88, assets:302 },
-  { name:'Endurance Sports',     score:85, assets:143 },
-  { name:'Youth Culture',        score:79, assets:97  },
-  { name:'Outdoor & Nature',     score:72, assets:211 },
-  { name:'Performance & Tech',   score:68, assets:88  },
-  { name:'Team Sports',          score:61, assets:174 },
-  { name:'Extreme Sports',       score:55, assets:62  },
+  { name:'Family Dinner Time',     score:96, assets:312 },
+  { name:'Grocery Shopping',       score:94, assets:278 },
+  { name:'Healthy Eating',         score:92, assets:241 },
+  { name:'Meal Prep & Cooking',    score:91, assets:198 },
+  { name:'Fresh Produce',          score:89, assets:167 },
+  { name:'Weekend BBQ',            score:87, assets:143 },
+  { name:'Quick & Easy Meals',     score:85, assets:209 },
+  { name:'Home Cooking',           score:83, assets:188 },
+  { name:'Family Life',            score:82, assets:324 },
+  { name:'Snack & Entertaining',   score:81, assets:154 },
+  { name:'Budget Living',          score:80, assets:119 },
+  { name:'Lifestyle & Wellness',   score:76, assets:231 },
+  { name:'Food Discovery',         score:72, assets:142 },
+  { name:'Kids & Family',          score:68, assets:287 },
+  { name:'Community & Local',      score:61, assets:176 },
+  { name:'Seasonal Celebrations',  score:55, assets:98  },
 ];
 
 var TX_EPISODES = [
-  { show:'Red Bull Racing: Pit Stop Masters',     episode:'S3E7 — High-Speed Sequences',        channel:'Sports+',      match:97 },
-  { show:'Trail Runners World Championship',      episode:'S1E4 — Mountain Sprint Final',        channel:'Discovery',    match:94 },
-  { show:'Urban Athletes: City Limits',           episode:'S2E4 — Rooftop Parkour',             channel:'MTV',          match:91 },
-  { show:'Marathon World Series: Tokyo',          episode:'S5E2 — Final 2km Push',              channel:'Eurosport',    match:88 },
-  { show:'The Training Ground',                   episode:'S1E1 — Pre-Season Conditioning',     channel:'ESPN',         match:84 },
-  { show:'Street Sports Collective',              episode:'S3E11 — Night Run NYC',              channel:'Vice',         match:80 },
-  { show:'Extreme Sports Weekly',                 episode:'S7E3 — Base Jump Compilation',       channel:'Red Bull TV',  match:73 },
-  { show:'Champions League Highlights',           episode:'Atletico Madrid Counter-Attack Reel',channel:'BT Sport',     match:68 },
-  { show:'The Body Lab',                          episode:'S2E6 — Biomechanics of Speed',       channel:'NatGeo',       match:62 },
-  { show:'Youth FC',                              episode:'S4E9 — Under-17 Sprint Drills',      channel:'DAZN',         match:57 },
+  { show:'The Pioneer Woman',                     episode:'S34E2 — Family Weeknight Dinners',   channel:'Food Network', match:97 },
+  { show:'Grocery Store Showdown',                episode:'S2E5 — Best Value Haul Challenge',   channel:'Food Network', match:94 },
+  { show:'Barefoot Contessa',                     episode:'S26E4 — Easy Entertaining at Home',  channel:'Food Network', match:91 },
+  { show:'Tasty: Everyday Eats',                  channel:'BuzzFeed',     episode:'S3E8 — Budget Family Meals',          match:88 },
+  { show:'MasterChef Family Edition',             episode:'S5E3 — Fresh Produce Cook-Off',      channel:'FOX',          match:84 },
+  { show:'Healthy Appetite with Ellie Krieger',   episode:'S4E11 — Quick Weeknight Wholesome',  channel:'Food Network', match:80 },
+  { show:'Guy\'s Grocery Games',                  episode:'S29E6 — Supermarket Sweep Remix',    channel:'Food Network', match:73 },
+  { show:'America\'s Test Kitchen',               episode:'S24E7 — Pantry Staples Mastery',     channel:'PBS',          match:68 },
+  { show:'Food52: Home Cooking',                  episode:'S1E9 — Seasonal Meal Prep Guide',    channel:'YouTube',      match:62 },
+  { show:'Little Kitchen Academy',                episode:'S2E4 — Kids Healthy Snack Builds',   channel:'Netflix',      match:57 },
 ];
 
 var TX_STEPS = [
@@ -306,12 +312,10 @@ function txScoreColor(s) {
 }
 
 function txScoreBar(s) {
-  var c = txScoreColor(s);
-  return '<div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">'
-    + '<div style="width:60px;height:4px;background:var(--bg);border-radius:4px;overflow:hidden">'
-    + '<div style="width:' + s + '%;height:100%;background:' + c + ';border-radius:4px"></div></div>'
-    + '<span style="font-size:12px;font-weight:500;color:' + c + ';min-width:32px;text-align:right">' + s + '</span>'
-    + '</div>';
+  var col = s >= 80 ? '#16a34a' : s >= 65 ? '#d97706' : 'var(--muted)';
+  var bg  = s >= 80 ? '#f0fdf4' : s >= 65 ? '#fffbeb' : 'var(--bg)';
+  var bd  = s >= 80 ? '#bbf7d0' : s >= 65 ? '#fde68a' : 'var(--border)';
+  return '<span style="font-size:10px;font-weight:600;color:' + col + ';background:' + bg + ';border:1px solid ' + bd + ';border-radius:20px;padding:2px 8px;white-space:nowrap">' + s + '%</span>';
 }
 
 function txRenderCategories() {
@@ -319,14 +323,216 @@ function txRenderCategories() {
   if (!tbody) return;
   tbody.innerHTML = TX_CATEGORIES.map(function(c, i) {
     var safeN = c.name.replace(/'/g, "\\'");
-    return '<tr class="tx-cat-row" style="border-bottom:1px solid var(--border);cursor:pointer" onclick="txOpenMomentModal(\'' + safeN + '\',' + c.score + ',' + c.assets + ')">'
-      + '<td style="padding:11px 12px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px">'
+    return '<tr class="tx-cat-row" style="border-bottom:1px solid var(--border)">'
+      + '<td style="padding:11px 12px;font-size:13px;color:var(--text)">'
+      + '<div style="display:flex;align-items:center;gap:8px">'
       + '<span style="font-size:10px;font-weight:600;color:var(--faint);min-width:16px">#' + (i+1) + '</span>'
-      + c.name + '</td>'
+      + '<span>' + c.name + '</span>'
+      + '<span class="tx-tax-breakdown-btn" onclick="txOpenMomentModal(\'' + safeN + '\',' + c.score + ',' + c.assets + ')">Show Taxonomies</span>'
+      + '</div>'
+      + '</td>'
       + '<td style="padding:11px 12px">' + txScoreBar(c.score) + '</td>'
-      + '<td style="padding:11px 12px;text-align:right;font-size:12px;font-weight:500;color:var(--muted)">' + c.assets.toLocaleString() + '</td>'
+      + '<td style="padding:11px 12px;text-align:right;font-size:12px;font-weight:500;color:var(--muted)">'
+      + '<span class="tx-assets-link" onclick="txShowAssetsView(\'' + safeN + '\',' + c.score + ',' + c.assets + ')">' + c.assets.toLocaleString() + ' episodes&nbsp;<svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="vertical-align:middle;opacity:.6"><path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
+      + '</td>'
       + '</tr>';
   }).join('');
+}
+
+// ── Assets drill-down ─────────────────────────────────────────────────────
+
+var TX_ASSET_SHOWS = [
+  { show: 'Red Bull Racing: Pit Stop Masters',   channel: 'Sports+',    seasons: 4, category: 'Entertainment',  daypart: 'Prime Time'  },
+  { show: 'Trail Runners World Championship',    channel: 'Discovery',  seasons: 3, category: 'Reality',        daypart: 'Prime Time'  },
+  { show: 'Urban Athletes: City Limits',         channel: 'MTV',        seasons: 3, category: 'Reality',        daypart: 'Early Fringe'},
+  { show: 'Marathon World Series',               channel: 'Eurosport',  seasons: 6, category: 'Entertainment',  daypart: 'Daytime'     },
+  { show: 'The Training Ground',                 channel: 'ESPN',       seasons: 2, category: 'Comedy',         daypart: 'Daytime'     },
+  { show: 'Street Sports Collective',            channel: 'Vice',       seasons: 4, category: 'Reality',        daypart: 'Late Night'  },
+  { show: 'Extreme Sports Weekly',               channel: 'Red Bull TV',seasons: 7, category: 'Entertainment',  daypart: 'Prime Time'  },
+  { show: 'Champions League Highlights',         channel: 'BT Sport',   seasons: 5, category: 'News & Morning', daypart: 'Prime Time'  },
+  { show: 'The Body Lab',                        channel: 'NatGeo',     seasons: 3, category: 'Comedy',         daypart: 'Early Fringe'},
+  { show: 'Youth FC',                            channel: 'DAZN',       seasons: 5, category: 'Entertainment',  daypart: 'Daytime'     },
+  { show: 'Adventure Racing Series',             channel: 'Discovery',  seasons: 2, category: 'News & Morning', daypart: 'Morning'     },
+  { show: 'Speed & Precision',                   channel: 'ESPN',       seasons: 3, category: 'Comedy',         daypart: 'Morning'     },
+];
+
+function txGenAssets(name, count) {
+  var seed = 0;
+  for (var k = 0; k < name.length; k++) seed += name.charCodeAt(k);
+  var max = Math.min(count, 24);
+  var assets = [];
+  for (var i = 0; i < max; i++) {
+    var showIdx   = (seed + i * 7)  % TX_ASSET_SHOWS.length;
+    var show      = TX_ASSET_SHOWS[showIdx];
+    var season    = 1 + (seed * (i + 2) * 3)  % show.seasons;
+    var episode   = 1 + (seed * (i + 5) * 11) % 13;
+    var sceneNum  = 1 + (seed * (i + 3) * 7)  % 18;
+    var tcMins    = 1 + (seed * (i + 4) * 13) % 42;
+    var tcSecs    = (seed * (i + 6) * 17) % 60;
+    var durSecs   = 20 + (seed * (i + 1) * 9)  % 100;
+    var durM      = Math.floor(durSecs / 60);
+    var durS      = durSecs % 60;
+    var endSecs   = tcMins * 60 + tcSecs + durSecs;
+    var endM      = Math.floor(endSecs / 60);
+    var endS      = endSecs % 60;
+    var conf      = 62 + (seed * (i + 4) * 19) % 37;
+    var impNum    = (5 + (seed * (i + 8) * 13) % 45) / 10; // 0.5 – 4.9 M
+    assets.push({
+      show:    show.show,
+      episode: 'S' + season + 'E' + String(episode).padStart(2, '0'),
+      channel:  show.channel,
+      category: show.category,
+      daypart:  show.daypart,
+      scene:   'Scene ' + sceneNum + ' (' + String(tcMins).padStart(2,'0') + ':' + String(tcSecs).padStart(2,'0')
+               + ' – ' + String(endM).padStart(2,'0') + ':' + String(endS).padStart(2,'0') + ')',
+      duration:  durM > 0 ? durM + ':' + String(durS).padStart(2,'0') : '0:' + String(durS).padStart(2,'0'),
+      confidence: Math.min(conf, 98),
+      impressionsNum: impNum,
+      imgSeed: show.show.replace(/\s+/g,'') + i
+    });
+  }
+  return assets;
+}
+
+var txDrillDownAllAssets = [];
+var txDrillDownName      = '';
+
+function txRefreshDrillDownTable() {
+  var wrap = document.getElementById('tx-drill-table-wrap');
+  if (!wrap) return;
+  var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border);';
+
+  var filtered = txDrillDownAllAssets.filter(function(a) {
+    if (typeof inv2FilterChannels !== 'undefined' && inv2FilterChannels.length && inv2FilterChannels.indexOf(a.channel) < 0) return false;
+    if (typeof inv2FilterDayparts !== 'undefined' && inv2FilterDayparts.length && inv2FilterDayparts.indexOf(a.daypart) < 0) return false;
+    if (typeof inv2FilterScore    !== 'undefined' && inv2FilterScore > 0 && a.confidence < inv2FilterScore) return false;
+    return true;
+  });
+
+  if (!filtered.length) {
+    wrap.innerHTML = '<div style="padding:32px;text-align:center;font-size:12px;color:var(--faint)">No episodes match the current filters.</div>';
+    return;
+  }
+
+  wrap.innerHTML =
+    '<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    + '<th style="text-align:left;'  + TH + '">Program</th>'
+    + '<th style="text-align:left;'  + TH + '">Channel</th>'
+    + '<th style="text-align:left;'  + TH + '">Category</th>'
+    + '<th style="text-align:left;'  + TH + '">Daypart</th>'
+    + '<th style="text-align:left;'  + TH + '">Scene</th>'
+    + '<th style="text-align:right;' + TH + '">Est. Impressions</th>'
+    + '<th style="text-align:right;' + TH + '">Est. CPM</th>'
+    + '<th style="text-align:right;' + TH + '">Confidence</th>'
+    + '</tr></thead><tbody>'
+    + filtered.map(function(a) {
+        return '<tr style="border-bottom:1px solid var(--border-md)">'
+          + '<td style="padding:10px 12px">'
+          +   '<div style="display:flex;align-items:center;gap:10px">'
+          +     '<div style="width:64px;height:36px;border-radius:5px;overflow:hidden;flex-shrink:0;background:var(--bg)">'
+          +       '<img src="https://picsum.photos/seed/' + a.imgSeed + '/128/72" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>'
+          +     '</div>'
+          +     '<div>'
+          +       '<div style="font-size:12px;color:var(--text);font-weight:500;line-height:1.3">' + a.show + '</div>'
+          +       '<div style="font-size:11px;color:var(--faint);margin-top:1px">' + a.episode + '</div>'
+          +     '</div>'
+          +   '</div>'
+          + '</td>'
+          + '<td style="padding:10px 12px;font-size:12px;color:var(--muted);white-space:nowrap">' + a.channel + '</td>'
+          + '<td style="padding:10px 12px;font-size:12px;color:var(--muted);white-space:nowrap">' + (a.category || '—') + '</td>'
+          + '<td style="padding:10px 12px;font-size:12px;color:var(--muted);white-space:nowrap">' + (a.daypart  || '—') + '</td>'
+          + '<td style="padding:10px 12px;font-size:12px;color:var(--muted);white-space:nowrap">' + a.scene + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap">' + (a.impressionsNum >= 1 ? a.impressionsNum.toFixed(1).replace(/\.0$/,'') + 'M' : Math.round(a.impressionsNum * 1000) + 'K') + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap">$' + (a.daypart === 'Prime Time' ? 25 : a.daypart === 'Late Night' ? 18 : a.daypart === 'Early Fringe' ? 20 : a.daypart === 'Morning' ? 12 : 15) + '</td>'
+          + '<td style="padding:10px 12px">' + txScoreBar(a.confidence) + '</td>'
+          + '</tr>';
+      }).join('')
+    + '</tbody></table>';
+}
+
+function txShowAssetsView(name, score, assetsCount) {
+  var container = document.getElementById('tx2-sub-content-moments');
+  if (!container) return;
+
+  txDrillDownName      = name;
+  txDrillDownAllAssets = txGenAssets(name, assetsCount).sort(function(a, b) { return b.confidence - a.confidence; });
+
+  // Reset any active filters when entering drill-down
+  if (typeof inv2FilterChannels !== 'undefined') { inv2FilterChannels = []; inv2FilterCategories = []; inv2FilterDayparts = []; inv2FilterScore = 0; inv2FilterPanelOpen = false; }
+
+  container.style.overflow      = 'visible'; // must NOT clip the absolute filter panel
+  container.style.display       = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.position      = 'relative';
+
+  container.innerHTML =
+    // Single top bar: back breadcrumb + spacer + filter chips + filter btn + media plan btn
+    '<div style="display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px;flex-shrink:0;min-width:0">'
+    +   '<span class="tx-bc-link" onclick="txBackToMoments()" style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
+    +     '<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M8 2.5L4.5 6.5 8 10.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +     'Moments'
+    +   '</span>'
+    +   '<span style="font-size:11px;color:var(--faint);flex-shrink:0">›</span>'
+    +   '<span style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + name + '</span>'
+    +   '<span style="font-size:11px;color:var(--faint);flex-shrink:0;white-space:nowrap">(' + assetsCount.toLocaleString() + ')</span>'
+    +   '<div style="flex:1;min-width:0"></div>'
+    +   '<div id="inv-filter-chips" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>'
+    +   '<button id="inv-filter-btn" onclick="inv2ToggleFilterPanel()" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--muted);cursor:pointer;font-size:12px;flex-shrink:0;position:relative;white-space:nowrap">'
+    +     '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M1 3h12M3 7h8M5 11h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>'
+    +     'Filters'
+    +     '<span id="inv-filter-badge" style="display:none;position:absolute;top:-5px;right:-5px;width:16px;height:16px;background:var(--accent);color:#fff;border-radius:50%;font-size:9px;font-weight:700;align-items:center;justify-content:center">0</span>'
+    +   '</button>'
+    +   '<button id="inv-mp-btn" class="inv-view-btn" onclick="inv2ToggleMediaPlan()" title="Media Plan" style="flex-shrink:0">'
+    +     '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M4 5h6M4 7.5h4M4 10h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>'
+    +   '</button>'
+    + '</div>'
+    // Filter panel — position:absolute relative to container (which has position:relative)
+    + '<div id="inv-drill-filter-panel" style="display:none;position:absolute;top:52px;right:0;width:256px;z-index:200;background:var(--surface);border:1px solid var(--border-md);border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.13);padding:16px;flex-direction:column;max-height:calc(100% - 60px);overflow:hidden"></div>'
+    // Table
+    + '<div id="tx-drill-table-wrap" style="flex:1;overflow-y:auto;min-height:0"></div>';
+
+  if (typeof inv2UpdateFilterBar === 'function') inv2UpdateFilterBar();
+  txRefreshDrillDownTable();
+  if (typeof inv2RenderMediaPlan === 'function') inv2RenderMediaPlan();
+}
+
+function txBackToMoments() {
+  txDrillDownAllAssets = [];
+  txDrillDownName = '';
+  // In Media Planner v2, go back to the card grid instead of the old table
+  if (typeof activeId !== 'undefined' && activeId === 'media-planner-v2') {
+    if (typeof mp2RenderMoments === 'function') mp2RenderMoments();
+    return;
+  }
+
+  var container = document.getElementById('tx2-sub-content-moments');
+  if (!container) return;
+
+  container.style.overflowY     = '';
+  container.style.display       = 'flex';
+  container.style.flexDirection = 'column';
+
+  var isInventoryV2 = typeof activeId !== 'undefined' && activeId === 'media-planner';
+  var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border);';
+  var cartBtn = isInventoryV2
+    ? '<div style="display:flex;align-items:center;justify-content:flex-end;padding-bottom:10px;flex-shrink:0">'
+      + '<button id="inv-mp-btn" class="inv-view-btn" onclick="invToggleMediaPlan()" title="Media Plan">'
+      + '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>'
+      + '</button></div>'
+    : '';
+
+  container.innerHTML =
+    cartBtn
+    + '<div style="overflow-y:auto;flex:1;min-height:0">'
+    + '<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    + '<th style="text-align:left;'  + TH + '">Moment</th>'
+    + '<th style="text-align:right;' + TH + '">Score</th>'
+    + '<th style="text-align:right;' + TH + '">Inventory / PODs</th>'
+    + '</tr></thead><tbody id="tx-cat-body"></tbody></table>'
+    + '</div>';
+
+  txRenderCategories();
+  if (typeof invRenderMediaPlan === 'function') invRenderMediaPlan();
 }
 
 function txRenderEpisodes() {
@@ -635,48 +841,48 @@ function txRenderMomentsCustomSection() {
 // ── Moment modal data ─────────────────────────────────────────────────────
 var TX_MOMENT_DATA = {
   emotion: [
-    { taxonomy:'Emotion > High Arousal',           category:'Excitement',      score:94 },
-    { taxonomy:'Emotion > Positive',               category:'Inspiration',     score:88 },
-    { taxonomy:'Emotion > High Arousal',           category:'Thrill',          score:82 },
-    { taxonomy:'Emotion > Motivational',           category:'Determination',   score:77 },
-    { taxonomy:'Emotion > Positive',               category:'Pride',           score:71 },
-    { taxonomy:'Emotion > Competitive',            category:'Challenge',       score:65 },
+    { taxonomy:'Emotion > Positive',               category:'Warmth',          score:94 },
+    { taxonomy:'Emotion > Positive',               category:'Comfort',         score:89 },
+    { taxonomy:'Emotion > Social',                 category:'Togetherness',    score:83 },
+    { taxonomy:'Emotion > Motivational',           category:'Nourishment',     score:76 },
+    { taxonomy:'Emotion > Positive',               category:'Pride',           score:70 },
+    { taxonomy:'Emotion > Sensory',                category:'Appetite',        score:63 },
   ],
   location: [
-    { taxonomy:'Location > Urban > Exterior',      category:'City Streets',    score:91 },
-    { taxonomy:'Location > Sports > Outdoor',      category:'Running Track',   score:85 },
-    { taxonomy:'Location > Natural > Terrain',     category:'Mountain Path',   score:78 },
-    { taxonomy:'Location > Urban > Interior',      category:'Gym / Fitness',   score:72 },
-    { taxonomy:'Location > Sports > Stadium',      category:'Arena',           score:64 },
+    { taxonomy:'Location > Domestic > Interior',   category:'Kitchen',         score:96 },
+    { taxonomy:'Location > Domestic > Interior',   category:'Dining Room',     score:88 },
+    { taxonomy:'Location > Retail > Grocery',      category:'Supermarket',     score:83 },
+    { taxonomy:'Location > Domestic > Exterior',   category:'Backyard',        score:72 },
+    { taxonomy:'Location > Retail > Market',       category:'Farmers Market',  score:65 },
   ],
   objects: [
-    { taxonomy:'Objects > Footwear > Sports',      category:'Running Shoes',   score:96 },
-    { taxonomy:'Objects > Apparel > Athletic',     category:'Sportswear',      score:90 },
-    { taxonomy:'Objects > Electronics > Wearable', category:'Smartwatch',      score:83 },
-    { taxonomy:'Objects > Equipment > Timing',     category:'Stopwatch',       score:74 },
-    { taxonomy:'Objects > Terrain > Surface',      category:'Asphalt Road',    score:67 },
+    { taxonomy:'Objects > Food > Fresh',           category:'Fruit & Veg',     score:95 },
+    { taxonomy:'Objects > Kitchenware > Cookware', category:'Pots & Pans',     score:88 },
+    { taxonomy:'Objects > Food > Packaged',        category:'Grocery Products',score:82 },
+    { taxonomy:'Objects > Kitchenware > Utensils', category:'Knives & Tools',  score:74 },
+    { taxonomy:'Objects > Packaging > Retail',     category:'Shopping Cart',   score:67 },
   ],
   sentiment: [
-    { taxonomy:'Sentiment > Positive > Energetic',    category:'High Energy',  score:93 },
-    { taxonomy:'Sentiment > Positive > Aspirational', category:'Aspirational', score:87 },
-    { taxonomy:'Sentiment > Competitive > Drive',     category:'Competitive',  score:81 },
-    { taxonomy:'Sentiment > Positive > Empowering',   category:'Empowerment',  score:75 },
-    { taxonomy:'Sentiment > Neutral > Informative',   category:'Informative',  score:58 },
+    { taxonomy:'Sentiment > Positive > Wholesome',    category:'Wholesome',    score:95 },
+    { taxonomy:'Sentiment > Positive > Warm',         category:'Warm & Cosy',  score:90 },
+    { taxonomy:'Sentiment > Positive > Reassuring',   category:'Trusted',      score:84 },
+    { taxonomy:'Sentiment > Positive > Aspirational', category:'Aspirational', score:75 },
+    { taxonomy:'Sentiment > Neutral > Informative',   category:'Informative',  score:60 },
   ],
   iab: [
-    { taxonomy:'IAB17 > Sports',                   category:'Athletics',          score:95 },
-    { taxonomy:'IAB17 > Sports > Running',         category:'Running & Jogging',  score:92 },
-    { taxonomy:'IAB9 > Hobbies & Interests > Fitness', category:'Fitness & Workout', score:86 },
-    { taxonomy:'IAB17 > Sports > Extreme',         category:'Action Sports',      score:79 },
-    { taxonomy:'IAB11 > Urban Lifestyle',          category:'Street Culture',     score:71 },
-    { taxonomy:'IAB7 > Health > Exercise',         category:'Exercise',           score:66 },
+    { taxonomy:'IAB8 > Food & Drink',              category:'Grocery & Food',     score:97 },
+    { taxonomy:'IAB8 > Food & Drink > Cooking',    category:'Home Cooking',       score:93 },
+    { taxonomy:'IAB8 > Food & Drink > Healthy',    category:'Healthy Eating',     score:86 },
+    { taxonomy:'IAB25 > Family & Parenting',       category:'Family Life',        score:78 },
+    { taxonomy:'IAB9 > Hobbies > Home & Garden',   category:'Home & Kitchen',     score:70 },
+    { taxonomy:'IAB7 > Health > Nutrition',        category:'Nutrition',          score:62 },
   ],
   brandsafety: [
     { taxonomy:'Brand Safety > Safe',              category:'Family Friendly',    score:100 },
-    { taxonomy:'Brand Safety > Safe > Sports',     category:'Sports Content',     score:100 },
-    { taxonomy:'Brand Safety > Safe > Positive',   category:'Positive Messaging', score:98  },
-    { taxonomy:'Brand Safety > Safe > Language',   category:'Clean Language',     score:97  },
-    { taxonomy:'Brand Safety > Safe > Violence',   category:'Non-Violent',        score:95  },
+    { taxonomy:'Brand Safety > Safe > Positive',   category:'Positive Messaging', score:100 },
+    { taxonomy:'Brand Safety > Safe > Language',   category:'Clean Language',     score:98  },
+    { taxonomy:'Brand Safety > Safe > Food',       category:'Food Safe',          score:97  },
+    { taxonomy:'Brand Safety > Safe > Violence',   category:'Non-Violent',        score:96  },
   ],
 };
 
@@ -877,6 +1083,21 @@ function txInjectStyles() {
 
     /* Clickable category rows */
     .tx-cat-row:hover { background: var(--bg); }
+    .tx-tax-breakdown-btn {
+      font-size: 10px; color: var(--faint); cursor: pointer;
+      transition: color .15s; white-space: nowrap;
+    }
+    .tx-tax-breakdown-btn:hover { color: var(--accent); }
+
+    .tx-assets-link {
+      cursor: pointer; transition: color .15s;
+    }
+    .tx-assets-link:hover { color: var(--accent); }
+
+    .tx-bc-link {
+      font-size: 12px; color: var(--muted); cursor: pointer; transition: color .15s;
+    }
+    .tx-bc-link:hover { color: var(--accent); }
 
     /* Taxonomies – taxonomy tab nav */
     .tx-ctabs-nav {
@@ -1061,3 +1282,332 @@ function txInjectStyles() {
   `;
   document.head.appendChild(s);
 }
+
+
+// ── Taxonomy Explorer: module-level state & self-contained flow ────────────
+
+var tsTaxStep      = 'upload';
+var tsTaxInputType = 'video';
+var tsTaxFileName  = '';
+
+var TS_LIBRARY = [
+  { type:'video', name:'below-deck-s12e03.mp4',        date:'2 May 2025',   moments:14, taxonomies:38 },
+  { type:'video', name:'parks-and-rec-s04e11.mp4',     date:'29 Apr 2025',  moments:9,  taxonomies:22 },
+  { type:'doc',   name:'Q1-content-brief.pdf',         date:'25 Apr 2025',  moments:6,  taxonomies:17 },
+  { type:'text',  name:'Campaign brief — Spring 2025', date:'18 Apr 2025',  moments:4,  taxonomies:11 },
+  { type:'video', name:'yellowstone-s05e08.mp4',       date:'11 Apr 2025',  moments:21, taxonomies:54 },
+  { type:'doc',   name:'Brand-safety-guidelines.docx', date:'3 Apr 2025',   moments:3,  taxonomies:9  },
+];
+
+function tsShowUpload() {
+  tsTaxStep = 'upload';
+  var ca = document.getElementById('tx2-content-area');
+  if (!ca) return;
+
+  var pgname = document.getElementById('content-bc');
+  if (pgname) pgname.textContent = 'Taxonomy Explorer';
+
+  function typeIcon(t) {
+    return t === 'video'
+      ? '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
+      : t === 'doc'
+      ? '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+      : '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  }
+
+  var libraryRows = TS_LIBRARY.map(function(item, i) {
+    return '<div class="tx2-lib-row" onclick="tsLibLoad(' + i + ')">'
+      + '<div class="tx2-lib-icon">' + typeIcon(item.type) + '</div>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<div style="font-size:12px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + item.name + '</div>'
+      +   '<div style="font-size:11px;color:var(--faint);margin-top:2px">' + item.date + ' &nbsp;·&nbsp; ' + item.moments + ' moments &nbsp;·&nbsp; ' + item.taxonomies + ' taxonomies</div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
+      +   '<span style="font-size:10px;font-weight:600;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:2px 8px">Completed</span>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+
+  ca.innerHTML =
+    '<div style="display:flex;gap:0;min-height:400px">'
+    + '<div style="width:300px;flex-shrink:0;padding-right:24px;border-right:1px solid var(--border)">'
+    +   '<div style="margin-bottom:32px">'
+    +     '<div style="font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.2px;margin-bottom:3px">New Analysis</div>'
+    +     '<div style="font-size:12px;color:var(--muted)">Choose an input type</div>'
+    +   '</div>'
+    +   '<div style="display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:16px">'
+    +     '<div class="tx2-seg tx2-seg--act" id="tx2-opt-video" onclick="tsSelectInput(\'video\')">'
+    +       '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
+    +       '<span>Video</span>'
+    +     '</div>'
+    +     '<div class="tx2-seg" id="tx2-opt-brief" onclick="tsSelectInput(\'brief\')">'
+    +       '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+    +       '<span>Brief</span>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div id="tx2-input-area" style="margin-bottom:16px">'
+    +     '<div class="tx2-upload-zone" onclick="document.getElementById(\'tx2-file-input-video\').click()">'
+    +       '<input type="file" id="tx2-file-input-video" style="display:none" accept="video/*">'
+    +       '<svg width="28" height="28" viewBox="0 0 32 32" fill="none" style="color:var(--faint)"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>'
+    +       '<div style="font-size:13px;font-weight:500;color:var(--text);margin-top:6px">Drop video file here</div>'
+    +       '<div style="font-size:11px;color:var(--faint);margin-top:2px">MP4, MOV, AVI — up to 2 GB</div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<button class="cs-btn-primary" style="width:100%;height:38px;font-size:13px" onclick="tsAnalyze()">Start Analysis</button>'
+    + '</div>'
+    + '<div style="flex:1;min-width:0;padding-left:24px;display:flex;flex-direction:column">'
+    +   '<div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:18px;flex-shrink:0">'
+    +     '<div class="tx2-home-tab tx2-home-tab--act">Previous Analyses</div>'
+    +   '</div>'
+    +   '<div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0">'
+    +     libraryRows
+    +   '</div>'
+    + '</div>'
+    + '</div>';
+}
+
+function tsSelectInput(type) {
+  ['video', 'brief'].forEach(function(t) {
+    var el = document.getElementById('tx2-opt-' + t);
+    if (el) el.className = 'tx2-seg' + (t === type ? ' tx2-seg--act' : '');
+  });
+  var area = document.getElementById('tx2-input-area');
+  if (!area) return;
+  if (type === 'video') {
+    tsTaxInputType = 'video';
+    area.innerHTML =
+      '<div class="tx2-upload-zone" onclick="document.getElementById(\'tx2-file-input-video\').click()">'
+      + '<input type="file" id="tx2-file-input-video" style="display:none" accept="video/*">'
+      + '<svg width="28" height="28" viewBox="0 0 32 32" fill="none" style="color:var(--faint)"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>'
+      + '<div style="font-size:13px;font-weight:500;color:var(--text);margin-top:6px">Drop video file here</div>'
+      + '<div style="font-size:11px;color:var(--faint);margin-top:2px">MP4, MOV, AVI — up to 2 GB</div>'
+      + '</div>';
+  } else {
+    tsTaxInputType = 'text';
+    area.innerHTML = tsBriefHtml();
+  }
+}
+
+function tsBriefHtml() {
+  return '<div style="border:1px solid var(--border-md);border-radius:8px;overflow:hidden;background:var(--surface)">'
+    + '<textarea id="tx2-text-input" placeholder="Paste or type your brief here. The AI will analyse topics, sentiments, moments and taxonomy classifications…" style="width:100%;box-sizing:border-box;min-height:160px;resize:none;border:none;outline:none;padding:10px 12px;font-size:13px;font-family:inherit;color:var(--text);background:transparent;display:block"></textarea>'
+    + '<div style="height:1px;background:var(--border)"></div>'
+    + '<label for="tx2-file-input-doc" id="tx2-brief-upload-label" style="display:flex;align-items:center;gap:7px;padding:8px 12px;cursor:pointer;color:var(--muted);font-size:12px;transition:background .13s,color .13s;border-radius:0 0 8px 8px" onmouseenter="this.style.background=\'var(--bg)\';this.style.color=\'var(--text)\'" onmouseleave="this.style.background=\'\';this.style.color=\'var(--muted)\'">'
+    +   '<svg width="13" height="13" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12M10 22h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +   '<span id="tx2-brief-file-label">Upload Doc or PDF</span>'
+    + '</label>'
+    + '<input type="file" id="tx2-file-input-doc" style="display:none" accept=".pdf,.doc,.docx" onchange="var n=this.files[0]?this.files[0].name:\'\';document.getElementById(\'tx2-brief-file-label\').textContent=n||\'Upload Doc or PDF\';tsTaxInputType=n?\'doc\':\'text\'">'
+    + '</div>';
+}
+
+function tsAnalyze() {
+  var ca = document.getElementById('tx2-content-area');
+  if (!ca) return;
+  tsTaxStep = 'progress';
+
+  if (tsTaxInputType === 'text') {
+    var ta = document.getElementById('tx2-text-input');
+    var raw = ta ? ta.value.trim() : '';
+    tsTaxFileName = raw.length ? (raw.slice(0, 42) + (raw.length > 42 ? '…' : '')) : 'Free text input';
+  } else {
+    var fi = document.getElementById('tx2-file-input-' + tsTaxInputType);
+    tsTaxFileName = (fi && fi.files && fi.files[0]) ? fi.files[0].name
+      : (tsTaxInputType === 'video' ? 'video-file.mp4' : 'document.pdf');
+  }
+
+  var progressSteps = ['Analyzing metadata…','Detecting scenes & objects…','Classifying moments…','Building taxonomy map…','Matching episodes & shows…'];
+  var frames = ['https://picsum.photos/seed/kervscene1/640/360','https://picsum.photos/seed/kervscene2/640/360','https://picsum.photos/seed/kervscene3/640/360','https://picsum.photos/seed/kervscene4/640/360','https://picsum.photos/seed/kervscene5/640/360'];
+
+  ca.innerHTML =
+    '<div style="max-width:520px;margin:0 auto">'
+    + '<div style="margin-bottom:14px">'
+    +   '<div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.6px;color:var(--faint);margin-bottom:3px">Scanning video</div>'
+    +   '<div style="font-size:15px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + tsTaxFileName + '</div>'
+    + '</div>'
+    + '<div style="position:relative;width:100%;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#111;margin-bottom:14px">'
+    +   '<img id="tx2-prog-frame" src="' + frames[0] + '" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .5s">'
+    +   '<div id="tx2-scan-line" style="position:absolute;left:0;right:0;height:2px;top:0%;background:rgba(237,0,94,.7);box-shadow:0 0 10px 2px rgba(237,0,94,.35);transition:none"></div>'
+    +   '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 55%);pointer-events:none">'
+    +     '<div style="position:absolute;bottom:10px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between">'
+    +       '<span id="tx2-prog-timecode" style="font-size:10px;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums;letter-spacing:.5px">00:00:00</span>'
+    +       '<span id="tx2-prog-scene" style="font-size:10px;color:rgba(255,255,255,.5)">Scene 1 / 5</span>'
+    +     '</div>'
+    +   '</div>'
+    + '</div>'
+    + '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;min-height:18px" id="tx2-progress-label">' + progressSteps[0] + '</div>'
+    + '<div class="tx2-progress-track" style="margin-bottom:7px"><div class="tx2-progress-fill" id="tx2-progress-bar" style="width:0%"></div></div>'
+    + '<div style="font-size:11px;color:var(--faint);text-align:right" id="tx2-progress-pct">0%</div>'
+    + '</div>';
+
+  var pct = 0, stepIdx = 0, scanPct = 0, frameIdx = 0;
+  var interval = setInterval(function() {
+    pct = Math.min(pct + 0.45, 100);
+    scanPct = (scanPct + 3) % 100;
+    var bar = document.getElementById('tx2-progress-bar'), label = document.getElementById('tx2-progress-label');
+    var pctEl = document.getElementById('tx2-progress-pct'), scanLine = document.getElementById('tx2-scan-line');
+    var timecode = document.getElementById('tx2-prog-timecode'), sceneLbl = document.getElementById('tx2-prog-scene');
+    var frameEl = document.getElementById('tx2-prog-frame');
+    if (bar) bar.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = Math.round(pct) + '%';
+    if (scanLine) scanLine.style.top = scanPct + '%';
+    var totalSec = Math.round((pct / 100) * 2655);
+    var hh = String(Math.floor(totalSec / 3600)).padStart(2,'0'), mm = String(Math.floor((totalSec % 3600) / 60)).padStart(2,'0'), ss = String(totalSec % 60).padStart(2,'0');
+    if (timecode) timecode.textContent = hh + ':' + mm + ':' + ss;
+    var newStep = Math.min(Math.floor(pct / 20), progressSteps.length - 1);
+    if (newStep !== stepIdx) {
+      stepIdx = newStep;
+      if (label) label.textContent = progressSteps[stepIdx];
+      var newFrameIdx = Math.min(newStep, frames.length - 1);
+      if (frameEl && newFrameIdx !== frameIdx) {
+        frameIdx = newFrameIdx;
+        frameEl.style.opacity = '0';
+        setTimeout(function() { if (frameEl) { frameEl.src = frames[frameIdx]; frameEl.style.opacity = '1'; } }, 250);
+      }
+      if (sceneLbl) sceneLbl.textContent = 'Scene ' + (newStep + 1) + ' / 5';
+    }
+    if (pct >= 100) { clearInterval(interval); if (scanLine) scanLine.style.display = 'none'; setTimeout(tsShowResults, 600); }
+  }, 40);
+}
+
+function tsShowResults() {
+  tsTaxStep = 'results';
+  var ca = document.getElementById('tx2-content-area');
+  if (!ca) return;
+
+  var TH = 'padding:9px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);border-bottom:1px solid var(--border)';
+  var fileIcon = tsTaxInputType === 'video'
+    ? '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M22 13l8-5v16l-8-5V13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'
+    : tsTaxInputType === 'doc'
+    ? '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M6 4h14l6 6v18a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v6h6M10 14h12M10 18h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    : '<svg width="12" height="12" viewBox="0 0 32 32" fill="none"><path d="M4 8h24M4 14h18M4 20h24M4 26h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  var typeLabel = tsTaxInputType === 'video' ? 'Video' : tsTaxInputType === 'doc' ? 'Document' : 'Text';
+
+  var pgname = document.getElementById('content-bc');
+  if (pgname) pgname.innerHTML =
+    '<span style="font-weight:400;opacity:.55;cursor:pointer" onclick="tsShowUpload()">Taxonomy Explorer</span>'
+    + ' &nbsp;/&nbsp; Analysis';
+
+  ca.innerHTML =
+    '<div style="display:flex;gap:20px;align-items:start;height:calc(100vh - 260px);min-height:460px">'
+    + '<div style="width:164px;flex-shrink:0;display:flex;flex-direction:column;gap:14px">'
+    +   '<div>'
+    +     '<div style="position:relative;width:100%;padding-top:56.25%;border-radius:8px;overflow:hidden;margin-bottom:10px">'
+    +       '<img id="tx-thumb-img" src="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#e5e7eb">'
+    +       '<div style="position:absolute;inset:0;background:rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center">'
+    +         '<div style="width:26px;height:26px;background:rgba(255,255,255,.9);border-radius:50%;display:flex;align-items:center;justify-content:center">'
+    +           '<svg width="9" height="11" viewBox="0 0 11 13" fill="none"><path d="M1 1.5l9 5-9 5V1.5z" fill="#111" stroke="#111" stroke-width=".5" stroke-linejoin="round"/></svg>'
+    +         '</div>'
+    +       '</div>'
+    +     '</div>'
+    +     '<div style="font-size:12px;font-weight:600;color:var(--text);word-break:break-word;line-height:1.4;margin-bottom:6px">' + tsTaxFileName + '</div>'
+    +     '<div style="display:flex;align-items:center;gap:5px;margin-bottom:10px">'
+    +       '<span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px">' + fileIcon + ' ' + typeLabel + '</span>'
+    +     '</div>'
+    +     '<span style="font-size:10px;font-weight:600;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:3px 9px">Completed</span>'
+    +   '</div>'
+    +   '<div style="display:flex;flex-direction:column;gap:0">'
+    +     '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:2px">Moments</div><div style="font-size:18px;font-weight:700;color:var(--text)">10</div></div>'
+    +     '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);margin-bottom:2px">Taxonomies</div><div style="font-size:18px;font-weight:700;color:var(--text)">28</div></div>'
+    +   '</div>'
+    + '</div>'
+    + '<div style="flex:1;min-width:0;display:flex;gap:16px;height:100%;overflow:hidden">'
+    +   '<div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden">'
+    +   '<div class="cs-dv-tabnav" style="margin-bottom:16px;flex-shrink:0">'
+    +     '<button class="cs-dv-tab cs-dv-tab--act" id="tx2-sub-tab-moments"    onclick="tsSubTab(\'moments\')">Moments</button>'
+    +     '<button class="cs-dv-tab"                 id="tx2-sub-tab-taxonomies" onclick="tsSubTab(\'taxonomies\')">Taxonomies</button>'
+    +     '<button class="cs-dv-tab"                 id="tx2-sub-tab-episodes"   onclick="tsSubTab(\'episodes\')">Episodes &amp; Shows</button>'
+    +   '</div>'
+    +   '<div id="tx2-sub-content-moments" style="display:flex;flex:1;min-height:0;flex-direction:column">'
+    +     '<div style="overflow-y:auto;flex:1;min-height:0">'
+    +       '<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    +         '<th style="text-align:left;'  + TH + '">Moment</th>'
+    +         '<th style="text-align:right;' + TH + '">Score</th>'
+    +         '<th style="text-align:right;' + TH + '">Inventory / PODs</th>'
+    +       '</tr></thead><tbody id="tx-cat-body"></tbody></table>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div id="tx2-sub-content-taxonomies" style="display:none;flex:1;min-height:0">'
+    +     '<div style="display:grid;grid-template-columns:1fr 240px;gap:16px;height:100%;width:100%">'
+    +       '<div style="min-width:0;overflow-y:auto">'
+    +         '<div class="tx-ctabs-nav">'
+    +           '<div class="tx-ctab tx-ctab--act" id="tx-ctab-emotion"     onclick="txCustomTab(\'emotion\')">Emotion</div>'
+    +           '<div class="tx-ctab"              id="tx-ctab-location"    onclick="txCustomTab(\'location\')">Location</div>'
+    +           '<div class="tx-ctab"              id="tx-ctab-objects"     onclick="txCustomTab(\'objects\')">Objects</div>'
+    +           '<div class="tx-ctab"              id="tx-ctab-sentiment"   onclick="txCustomTab(\'sentiment\')">Sentiment</div>'
+    +           '<div class="tx-ctab"              id="tx-ctab-iab"         onclick="txCustomTab(\'iab\')">IAB</div>'
+    +           '<div class="tx-ctab"              id="tx-ctab-brandsafety" onclick="txCustomTab(\'brandsafety\')">Brand Safety</div>'
+    +         '</div>'
+    +         '<div id="tx-ctab-table"></div>'
+    +         '<div id="tx-ctab-pagination"></div>'
+    +       '</div>'
+    +       '<div style="display:flex;flex-direction:column;height:100%;gap:0">'
+    +         '<div class="tx-chips-panel" id="tx-chips-panel" style="flex:1;overflow-y:auto;min-height:0">'
+    +           '<div class="tx-chips-title">Selected Taxonomies</div>'
+    +           '<div class="tx-chips-empty" id="tx-chips-empty">Select taxonomies from the table</div>'
+    +           '<div id="tx-chips-content" style="display:none"></div>'
+    +         '</div>'
+    +         '<div class="tx-save-panel">'
+    +           '<div class="tx-save-label">Save as Moment</div>'
+    +           '<input class="tx-moment-input" id="tx-moment-name" type="text" placeholder="Name this moment…">'
+    +           '<button class="tx-save-btn" onclick="txSaveMoment()">'
+    +             '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2h8l2 2v8a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M5 13V8h4v5M4 2v3h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    +             ' Save Moment'
+    +           '</button>'
+    +         '</div>'
+    +       '</div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div id="tx2-sub-content-episodes" style="display:none;flex:1;overflow-y:auto;min-height:0">'
+    +     '<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    +       '<th style="text-align:left;'  + TH + '">Show / Episode</th>'
+    +       '<th style="text-align:left;'  + TH + '">Channel</th>'
+    +       '<th style="text-align:right;' + TH + '">Match</th>'
+    +     '</tr></thead><tbody id="tx-eps-body"></tbody></table>'
+    +   '</div>'
+    +   '</div>'
+    + '</div>'
+    + '</div>';
+
+  if (typeof txInjectStyles === 'function') txInjectStyles();
+  txCustomSelections = [];
+  txRenderCategories();
+}
+
+function tsSubTab(tab) {
+  ['moments', 'taxonomies', 'episodes'].forEach(function(t) {
+    var btn = document.getElementById('tx2-sub-tab-' + t);
+    var pnl = document.getElementById('tx2-sub-content-' + t);
+    if (btn) btn.className = 'cs-dv-tab' + (t === tab ? ' cs-dv-tab--act' : '');
+    if (pnl) pnl.style.display = t === tab ? 'flex' : 'none';
+  });
+  if (tab === 'moments')    { txCustomSelections = []; txRenderCategories(); }
+  if (tab === 'taxonomies') { txCustomActiveTab = 'emotion'; txCustomCurrentPage = 1; txCustomRenderTable(); txRenderChips(); }
+  if (tab === 'episodes')   txRenderEpisodes();
+}
+
+function tsLibLoad(idx) {
+  var item = TS_LIBRARY[idx];
+  if (!item) return;
+  tsTaxInputType = item.type === 'video' ? 'video' : item.type === 'doc' ? 'doc' : 'text';
+  tsTaxFileName  = item.name;
+  tsShowResults();
+}
+
+// ── Taxonomy Explorer (showcase) entry point ────────────────────────────────
+
+function renderTaxonomyShowcase() {
+  setTimeout(function() {
+    tsTaxStep = 'upload'; tsTaxInputType = 'video'; tsTaxFileName = '';
+    sdtInjectStyles();
+    tsShowUpload();
+  }, 0);
+  return `
+<div class="ptitle">Taxonomy Explorer</div>
+<div class="psub" style="margin-bottom:24px">Upload a video or brief and let KervSDT analyse moments, metadata and taxonomy classifications</div>
+<div id="sdt-panel-taxonomy2">
+  <div class="cs-card" style="padding:32px">
+    <div id="tx2-content-area"></div>
+  </div>
+</div>`;
+}
+
