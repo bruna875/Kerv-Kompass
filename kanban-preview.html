@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kanban Analysis — Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg:#F5F5F7;--surface:#FFFFFF;--text:#1C1C1E;--muted:#6E6E73;
+    --faint:#AEAEB2;--border:#E5E5EA;--border-md:#D1D1D6;--accent:#ED005E;--subtle:#F5F5F7;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);padding:32px}
+  .page{max-width:1100px;margin:0 auto}
+</style>
+</head>
+<body>
+<div class="page" id="root"></div>
+<script>
+var MOCK={
+  wipCount:14,last7Throughput:8,prev7Throughput:6,avgCycleTime:4.2,medianCycleTime:3.5,p85CycleTime:8.1,blockedCount:2,
+  wipByStatus:{todo:5,inprogress:6,review:3},
+  throughputWeeks:[{label:'W1',count:5},{label:'W2',count:9},{label:'W3',count:6},{label:'W4',count:11},{label:'W5',count:7},{label:'W6',count:4},{label:'W7',count:10},{label:'W8',count:8}],
+  ctHistogram:[{label:'0-2d',count:12},{label:'2-5d',count:18},{label:'5-10d',count:9},{label:'10-20d',count:5},{label:'20d+',count:3}],
+  agingBuckets:{fresh:4,normal:6,stale:3,blocked:2},
+  typeMix:{Story:7,Bug:3,Task:3,Spike:1},
+  wipItems:[
+    {key:'XTS-42',title:'Refactor authentication middleware',assignee:'Marco Rossi',initials:'MR',type:'Task',status:'In Progress',ageInStage:18,totalAge:22},
+    {key:'XTS-31',title:'Dashboard redesign — new layout',assignee:'Sara Bianchi',initials:'SB',type:'Story',status:'In Review',ageInStage:11,totalAge:15},
+    {key:'XTS-55',title:'Fix login timeout on mobile',assignee:'Luca Ferrari',initials:'LF',type:'Bug',status:'In Progress',ageInStage:9,totalAge:9},
+    {key:'XTS-28',title:'API rate limiting implementation',assignee:'—',initials:'—',type:'Task',status:'To Do',ageInStage:7,totalAge:7},
+    {key:'XTS-61',title:'Onboarding flow v2',assignee:'Anna Conti',initials:'AC',type:'Story',status:'In Progress',ageInStage:5,totalAge:5},
+    {key:'XTS-47',title:'Performance spike — DB queries',assignee:'Marco Rossi',initials:'MR',type:'Spike',status:'In Progress',ageInStage:4,totalAge:4},
+    {key:'XTS-63',title:'Search autocomplete bug',assignee:'Sara Bianchi',initials:'SB',type:'Bug',status:'In Review',ageInStage:3,totalAge:3},
+    {key:'XTS-66',title:'Add CSV export to reports',assignee:'Luca Ferrari',initials:'LF',type:'Story',status:'To Do',ageInStage:2,totalAge:2},
+    {key:'XTS-67',title:'Update data retention policy',assignee:'—',initials:'—',type:'Task',status:'To Do',ageInStage:1,totalAge:1}
+  ]
+};
+var TC={Story:'#6366F1',Bug:'#EF4444',Task:'#3B82F6',Spike:'#F59E0B',Epic:'#8B5CF6'};
+var _card='background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px';
+var _sec='font-size:13px;font-weight:600;color:var(--text);letter-spacing:-.2px;margin-bottom:12px';
+function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function stat(lbl,val,sub,col){
+  return '<div style="'+_card+'">'
+    +'<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px">'+lbl+'</div>'
+    +'<div style="font-size:18px;font-weight:700;color:'+col+';letter-spacing:-.5px;line-height:1;margin-bottom:3px">'+val+'</div>'
+    +'<div style="font-size:9px;color:var(--muted)">'+sub+'</div></div>';
+}
+function co(ex){return Object.assign({responsive:true,animation:{duration:400},plugins:{legend:{display:false},tooltip:{bodyFont:{family:'inherit',size:11},titleFont:{family:'inherit',size:11},padding:8,cornerRadius:8}}},ex||{});}
+
+var BOARD='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="11" rx="1"/></svg>';
+document.getElementById('root').innerHTML=''
++'<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">'
++  '<div style="width:36px;height:36px;border-radius:8px;background:rgba(99,102,241,.1);display:flex;align-items:center;justify-content:center;color:#6366F1">'+BOARD+'</div>'
++  '<div><div style="font-size:20px;font-weight:600;color:var(--text);letter-spacing:-.3px">XTS Team</div>'
++      '<div style="font-size:12px;color:var(--muted);margin-top:1px">Kanban flow &amp; cycle time</div></div>'
++'</div>'
++'<div style="'+_sec+'">Flow Overview</div>'
++'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px" id="stats"></div>'
++'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">'
++  '<div style="'+_card+'"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">Throughput</div>'
++  '<div style="font-size:10px;color:var(--muted);margin-bottom:10px">Tickets completed per week</div>'
++  '<canvas id="tc" height="100"></canvas></div>'
++  '<div style="'+_card+'"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">WIP by Stage</div>'
++  '<div style="font-size:10px;color:var(--muted);margin-bottom:10px">Current open tickets per stage</div>'
++  '<div id="wip-bars"></div></div>'
++'</div>'
++'<div style="'+_sec+'">Cycle Time <span style="font-size:10px;font-weight:400;color:var(--muted)">(creation → done, last 8 weeks)</span></div>'
++'<div style="display:grid;grid-template-columns:1fr 220px;gap:12px;margin-bottom:20px">'
++  '<div style="'+_card+'"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">Cycle Time Distribution</div>'
++  '<div style="font-size:10px;color:var(--muted);margin-bottom:10px">How long tickets take to complete</div>'
++  '<canvas id="ctc" height="100"></canvas></div>'
++  '<div style="display:flex;flex-direction:column;gap:8px">'
++    '<div id="ct-stats" style="display:flex;flex-direction:column;gap:8px"></div>'
++    '<div style="'+_card+';flex:1"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px">Type Mix (WIP)</div>'
++    '<canvas id="tyc" height="120"></canvas><div id="ty-leg" style="margin-top:10px"></div></div>'
++  '</div>'
++'</div>'
++'<div style="'+_sec+'">Aging WIP</div>'
++'<div id="aging-bar" style="margin-bottom:12px"></div>'
++'<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:32px">'
++  '<div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">'
++    '<div style="font-size:12px;font-weight:600;color:var(--text)">Open tickets — oldest first</div>'
++    '<span id="wip-cnt" style="font-size:11px;color:var(--muted)"></span></div>'
++  '<div id="wip-table"></div></div>';
+
+// Stats
+var k=MOCK,t7=k.last7Throughput,p7=k.prev7Throughput;
+var td=p7>0?Math.round((t7-p7)/p7*100):null;
+var tdH=td!==null?'<span style="color:'+(td>=0?'#10B981':'#EF4444')+'">'+(td>=0?'▲':'▼')+' '+Math.abs(td)+'% vs prev week</span>':'last 7 days';
+var bCol=k.blockedCount===0?'#10B981':k.blockedCount<=2?'#F59E0B':'#EF4444';
+function ctc(d){return d<=5?'#10B981':d<=12?'#F59E0B':'#EF4444';}
+document.getElementById('stats').innerHTML=''
+  +stat('WIP',k.wipCount,'tickets currently open','#6366F1')
+  +stat('Throughput · 7d',t7+' tickets',tdH,'#10B981')
+  +stat('Avg Cycle Time',k.avgCycleTime+'d','creation → done',ctc(k.avgCycleTime))
+  +stat('Aging >14d',k.blockedCount,k.blockedCount===0?'No stale tickets':'tickets stale in stage',bCol);
+
+// Throughput
+var wl=k.throughputWeeks.map(function(w){return w.label;}),wc=k.throughputWeeks.map(function(w){return w.count;});
+var wa=wc.reduce(function(a,b){return a+b;},0)/wc.length;
+new Chart(document.getElementById('tc').getContext('2d'),{type:'bar',data:{labels:wl,datasets:[
+  {label:'Done',data:wc,backgroundColor:wc.map(function(c){return c>=wa*1.2?'rgba(16,185,129,.75)':c<wa*0.6?'rgba(239,68,68,.65)':'rgba(99,102,241,.65)';}),borderRadius:4,borderWidth:0},
+  {type:'line',label:'Avg',data:wc.map(function(){return Math.round(wa*10)/10;}),borderColor:'rgba(245,158,11,.8)',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false}
+]},options:co({plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ' '+ctx.raw+' tickets';}}}},
+  scales:{x:{grid:{display:false},ticks:{font:{size:9,family:'inherit'}},border:{display:false}},
+          y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:10,family:'inherit'},stepSize:1,precision:0},border:{display:false},beginAtZero:true}}})});
+
+// WIP bars
+var stgs=[{key:'todo',label:'To Do',color:'#9CA3AF'},{key:'inprogress',label:'In Progress',color:'#6366F1'},{key:'review',label:'In Review',color:'#F59E0B'}];
+document.getElementById('wip-bars').innerHTML=stgs.map(function(s){
+  var c=k.wipByStatus[s.key]||0,pct=Math.round(c/k.wipCount*100);
+  return '<div style="margin-bottom:14px">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
+    +'<span style="font-size:11px;color:var(--muted)">'+s.label+'</span>'
+    +'<span style="font-size:11px;font-weight:600;color:var(--text)">'+c+' <span style="color:var(--faint);font-weight:400">('+pct+'%)</span></span></div>'
+    +'<div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">'
+    +'<div style="height:100%;width:'+pct+'%;background:'+s.color+';border-radius:3px"></div></div></div>';
+}).join('');
+
+// CT chart
+var hl=k.ctHistogram.map(function(b){return b.label;}),hc=k.ctHistogram.map(function(b){return b.count;});
+new Chart(document.getElementById('ctc').getContext('2d'),{type:'bar',data:{labels:hl,datasets:[{label:'Tickets',data:hc,
+  backgroundColor:hc.map(function(c,i){var r=i/(hl.length-1);return r<0.35?'rgba(16,185,129,.7)':r<0.65?'rgba(245,158,11,.7)':'rgba(239,68,68,.7)';}),
+  borderRadius:4,borderWidth:0}]},options:co({plugins:{tooltip:{callbacks:{label:function(ctx){return ' '+ctx.raw+' tickets';}}}},
+  scales:{x:{grid:{display:false},ticks:{font:{size:9,family:'inherit'}},border:{display:false}},
+          y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:10,family:'inherit'},stepSize:1,precision:0},border:{display:false},beginAtZero:true}}})});
+
+// CT stats
+document.getElementById('ct-stats').innerHTML=''
+  +stat('Avg Cycle Time',k.avgCycleTime+'d','mean creation→done',ctc(k.avgCycleTime))
+  +stat('Median',k.medianCycleTime+'d','50th percentile',ctc(k.medianCycleTime))
+  +stat('85th Percentile',k.p85CycleTime+'d','SLA reference point',ctc(k.p85CycleTime));
+
+// Type donut
+var tl=['Story','Bug','Task','Spike','Epic'].filter(function(l){return(k.typeMix[l]||0)>0;});
+var td2=tl.map(function(l){return k.typeMix[l]||0;}),tcol=tl.map(function(l){return TC[l]||'#9CA3AF';});
+new Chart(document.getElementById('tyc').getContext('2d'),{type:'doughnut',data:{labels:tl,datasets:[{data:td2,backgroundColor:tcol,borderWidth:2,borderColor:'#fff',hoverOffset:4}]},
+  options:{responsive:true,cutout:'68%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ' '+ctx.label+': '+ctx.raw;}}}}}});
+document.getElementById('ty-leg').innerHTML=tl.map(function(l,i){
+  return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">'
+    +'<div style="display:flex;align-items:center;gap:5px"><span style="width:7px;height:7px;border-radius:2px;background:'+tcol[i]+';flex-shrink:0"></span><span style="font-size:10px;color:var(--text)">'+l+'</span></div>'
+    +'<span style="font-size:10px;font-weight:600;color:var(--text)">'+td2[i]+'</span></div>';
+}).join('');
+
+// Aging bar
+var ab=k.agingBuckets,at=(ab.fresh+ab.normal+ab.stale+ab.blocked)||1;
+var segs=[{label:'0–2d',count:ab.fresh,color:'#10B981'},{label:'3–7d',count:ab.normal,color:'#6366F1'},{label:'8–14d',count:ab.stale,color:'#F59E0B'},{label:'>14d',count:ab.blocked,color:'#EF4444'}];
+document.getElementById('aging-bar').innerHTML=
+  '<div style="height:20px;border-radius:6px;overflow:hidden;display:flex;margin-bottom:8px">'
+  +segs.map(function(s){var p=Math.round(s.count/at*100);return p>0?'<div style="height:100%;width:'+p+'%;background:'+s.color+';display:flex;align-items:center;justify-content:center">'+(p>8?'<span style="font-size:9px;font-weight:700;color:#fff">'+s.count+'</span>':'')+'</div>':''}).join('')
+  +'</div><div style="display:flex;gap:16px;flex-wrap:wrap">'
+  +segs.map(function(s){return '<div style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:'+s.color+';flex-shrink:0"></span><span style="font-size:10px;color:var(--muted)">'+s.label+' · <strong style="color:var(--text)">'+s.count+'</strong></span></div>';}).join('')
+  +'</div>';
+
+// WIP table
+var items=k.wipItems;
+document.getElementById('wip-cnt').textContent=items.length+' tickets';
+function ageCol(d){return d<=2?'#10B981':d<=7?'#6366F1':d<=14?'#F59E0B':'#EF4444';}
+function ageBg(d){return d<=2?'#F0FDF4':d<=7?'rgba(99,102,241,.07)':d<=14?'#FFFBEB':'#FEF2F2';}
+document.getElementById('wip-table').innerHTML=
+  '<div style="display:grid;grid-template-columns:90px 1fr 110px 70px 120px 90px 90px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);padding:8px 20px;border-bottom:1px solid var(--border)">'
+  +'<div>ID</div><div>Title</div><div>Assignee</div><div>Type</div><div>Status</div><div style="text-align:right">In stage</div><div style="text-align:right">Total age</div></div>'
+  +items.map(function(t){
+    var tc2=TC[t.type]||'#9CA3AF',ac=ageCol(t.ageInStage),ab2=ageBg(t.ageInStage);
+    return '<div style="display:grid;grid-template-columns:90px 1fr 110px 70px 120px 90px 90px;align-items:center;padding:9px 20px;border-bottom:1px solid var(--border);font-size:12px;cursor:default" onmouseenter="this.style.background=\'#F5F5F7\'" onmouseleave="this.style.background=\'\'">'
+      +'<div style="font-size:11px;font-weight:600;color:#6366F1;font-family:monospace">'+e(t.key)+'</div>'
+      +'<div style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--text);padding-right:12px">'+e(t.title)+'</div>'
+      +'<div style="display:flex;align-items:center;gap:5px"><span style="width:20px;height:20px;border-radius:50%;background:var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--text);flex-shrink:0">'+e(t.initials)+'</span><span style="font-size:11px;color:var(--muted)">'+e(t.assignee.split(' ')[0])+'</span></div>'
+      +'<div><span style="font-size:10px;font-weight:600;color:'+tc2+';background:'+tc2+'18;border-radius:10px;padding:2px 7px">'+e(t.type)+'</span></div>'
+      +'<div style="font-size:11px;color:var(--muted)">'+e(t.status)+'</div>'
+      +'<div style="text-align:right"><span style="font-size:11px;font-weight:700;color:'+ac+';background:'+ab2+';border-radius:6px;padding:2px 7px">'+t.ageInStage+'d</span></div>'
+      +'<div style="text-align:right;font-size:11px;color:var(--muted)">'+t.totalAge+'d</div>'
+      +'</div>';
+  }).join('');
+</script>
+</body>
+</html>

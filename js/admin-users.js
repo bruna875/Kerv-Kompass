@@ -1,45 +1,87 @@
 // admin-users.js — User & Permissions management UI
+// Fully rebuilt with UI Kit components (UI.*). Business logic unchanged.
+
+// ── SVG constants ─────────────────────────────────────────────────────────────
+var _AU_SVG_EDIT   = '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+var _AU_SVG_TRASH  = '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2.5h4V4M5.5 6.5v4M8.5 6.5v4M3 4l.8 7.5A1 1 0 004.8 12.5h4.4a1 1 0 001-.9L11 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var _AU_SVG_PLUS   = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+var _AU_SVG_CAMERA = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+var _AU_SVG_SEND   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+var _AU_SVG_USER   = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
 
 // ── Module registry ───────────────────────────────────────────────────────────
-// section is derived dynamically from NAV_CONFIG at render time via _auModuleSection()
 var AU_MODULES = [
-  { id: 'overview',            label: 'Overview'                  },
-  { id: 'overview-product',    label: 'Product & Tech', parent: 'overview' },
-  { id: 'overview-okrs',       label: 'OKRs',           parent: 'overview' },
-  { id: 'overview-finance',    label: 'Finance',         parent: 'overview' },
-  { id: 'overview-sales',      label: 'Sales',           parent: 'overview' },
-  { id: 'roadmap-neon',        label: 'Product Roadmap'           },
-  { id: 'settings-neon',       label: 'Assumptions', parent: 'roadmap-neon' },
-  { id: 'teamcapacity-neon',   label: 'Team Capacity'             },
-  { id: 'admin-users',         label: 'Admin — User & Permissions'}
+  // Company OKRs
+  { id: 'company-okrs',        label: 'Company OKRs',               section: 'Company OKRs'   },
+  // Overview + tab sub-items
+  { id: 'overview',            label: 'Overview',                   section: 'Overview'       },
+  { id: 'overview-okrs',       label: 'Company OKRs',               parent: 'overview'        },
+  { id: 'overview-product',    label: 'Product & Tech',             parent: 'overview'        },
+  { id: 'overview-sales',      label: 'Revenue',                    parent: 'overview'        },
+  { id: 'overview-finance',    label: 'Finance',                    parent: 'overview'        },
+  { id: 'overview-operations', label: 'Operations',                 parent: 'overview'        },
+  { id: 'overview-hr',         label: 'HR',                         parent: 'overview'        },
+  // Product & Tech
+  { id: 'roadmap-neon',        label: 'Product Roadmap',            section: 'Product & Tech' },
+  { id: 'settings-neon',       label: 'Assumptions',                parent: 'roadmap-neon'    },
+  { id: 'teamcapacity-neon',   label: 'Team Capacity',              section: 'Product & Tech' },
+  { id: 'product-ideas',       label: 'Product Req / Ideas',        section: 'Product & Tech' },
+  // Administration
+  { id: 'admin-users',         label: 'Admin — User & Permissions', section: 'Administration' }
 ];
 
-// Two roles only: editor (can act) · viewer (read-only)
-var AU_ROLES = [
-  { val: 'editor', label: 'Admin',  title: 'Admin — can act',    color: 'var(--accent)', bg: 'rgba(237,0,94,.10)',    accent: '#ED005E' },
-  { val: 'viewer', label: 'Viewer', title: 'Viewer — read only', color: '#6366F1',       bg: 'rgba(99,102,241,.10)', accent: '#6366F1' }
+// Fixed section order (mirrors sidebar + overview)
+var AU_SECTIONS_ORDER = [
+  'Overview',
+  'Company OKRs',
+  'Product & Tech',
+  'Revenue',
+  'Finance',
+  'Operations',
+  'HR',
+  'Administration'
 ];
 
-// ── Derive section from NAV_CONFIG ────────────────────────────────────────────
-function _auModuleSection(modId) {
-  if (typeof NAV_CONFIG === 'undefined') return 'General';
-  var result = null;
-  NAV_CONFIG.forEach(function(sec) {
-    sec.items.forEach(function(item) {
-      if (item.id === modId) result = sec.noHeader ? 'General' : sec.section;
-      if (item.children) item.children.forEach(function(c) {
-        if (c.id === modId) result = sec.noHeader ? 'General' : sec.section;
-      });
+// Sections that actually have modules (used to split permissionTable vs "soon")
+var AU_ACTIVE_SECTIONS = ['Overview', 'Company OKRs', 'Product & Tech', 'Administration'];
+
+// Returns AU_MODULES + dynamically injected sprint dashboards (deduplicated)
+function _auAllModules() {
+  var mods = AU_MODULES.slice();
+  var existingIds = mods.map(function(m) { return m.id; });
+  if (typeof _kervDashboards !== 'undefined') {
+    _kervDashboards.forEach(function(d) {
+      var pid = 'sprint-db-' + d.id;
+      if (existingIds.indexOf(pid) === -1) {
+        mods.push({ id: pid, label: d.name, section: 'Product & Tech' });
+        existingIds.push(pid);
+      }
     });
-  });
-  // admin-users lives under Administration (removed from sidebar but keep label)
-  if (!result && modId === 'admin-users') result = 'Administration';
-  return result || 'General';
+  }
+  return mods;
+}
+
+var AU_TEAMS = ['Product', 'Tech', 'Design', 'Operations', 'Sales', 'Strategy', 'People & Culture', 'Marketing', 'Finance'];
+
+// Two roles — order determines left→right column order in the table
+var AU_ROLES = [
+  { val: 'viewer', label: 'Viewer', color: '#6366F1', bg: 'rgba(99,102,241,.10)'  },
+  { val: 'editor', label: 'Admin',  color: 'var(--accent)', bg: 'rgba(237,0,94,.10)' }
+];
+
+// ── Derive section from module definition ─────────────────────────────────────
+function _auModuleSection(modId) {
+  var all = _auAllModules();
+  var m = all.filter(function(x) { return x.id === modId; })[0];
+  if (m && m.section) return m.section;
+  if (modId && modId.indexOf('sprint-db-') === 0) return 'Product & Tech';
+  return 'General';
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
-var _auUsers  = [];
-var _auEditId = null;
+var _auUsers       = [];
+var _auEditId      = null;
+var _auSearchQuery = '';
 
 // ── Render shell ──────────────────────────────────────────────────────────────
 function renderAdminUsers() {
@@ -47,6 +89,7 @@ function renderAdminUsers() {
 }
 
 function auLoad() {
+  _auSearchQuery = '';
   var root = document.getElementById('au-root');
   if (root) root.innerHTML = _KERV_LOADER_HTML;
   fetch('/api/neon/users')
@@ -57,7 +100,7 @@ function auLoad() {
     })
     .catch(function(e) {
       var root = document.getElementById('au-root');
-      if (root) root.innerHTML = '<div style="text-align:center;padding:60px 0;color:#E5243B;font-size:13px">Failed to load: ' + e.message + '</div>';
+      if (root) root.innerHTML = UI.alertBanner('error', 'Failed to load', e.message);
     });
 }
 
@@ -85,6 +128,36 @@ function auRender() {
   if (root) root.innerHTML = auPageHtml();
 }
 
+function auSearchFilter() {
+  var inp = document.getElementById('au-search');
+  _auSearchQuery = inp ? inp.value.toLowerCase().trim() : '';
+  var q = _auSearchQuery;
+  var filtered = q
+    ? _auUsers.filter(function(u) {
+        var full = ((u.firstName || '') + ' ' + (u.lastName || '')).toLowerCase();
+        return full.indexOf(q) !== -1
+          || (u.email       || '').toLowerCase().indexOf(q) !== -1
+          || (u.department  || '').toLowerCase().indexOf(q) !== -1
+          || (u.jobTitle    || '').toLowerCase().indexOf(q) !== -1;
+      })
+    : _auUsers;
+
+  var empty = filtered.length === 0
+    ? '<tr><td colspan="5" style="text-align:center;padding:48px 0;color:var(--faint);font-size:13px">'
+        + (q ? 'No users matching "' + _auEsc(q) + '"' : 'No users yet — add the first one')
+        + '</td></tr>'
+    : '';
+  var tbody = document.getElementById('au-tbody');
+  if (tbody) tbody.innerHTML = filtered.map(auRowHtml).join('') || empty;
+
+  var badge = document.getElementById('au-count');
+  if (badge) {
+    badge.textContent = q
+      ? filtered.length + ' of ' + _auUsers.length
+      : _auUsers.length + (filtered.length === 1 ? ' user' : ' users');
+  }
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 function _auCanEdit() {
   if (typeof _kervUser !== 'undefined' && _kervUser && _kervUser.superAdmin) return true;
@@ -93,79 +166,122 @@ function _auCanEdit() {
 
 function auPageHtml() {
   var isEditor = _auCanEdit();
-  var rows  = _auUsers.map(auRowHtml).join('');
-  var empty = '<tr><td colspan="4" style="text-align:center;padding:48px 0;color:var(--faint);font-size:13px">No users yet — add the first one</td></tr>';
+  var q        = _auSearchQuery;
+  var filtered = q
+    ? _auUsers.filter(function(u) {
+        var full = ((u.firstName || '') + ' ' + (u.lastName || '')).toLowerCase();
+        return full.indexOf(q) !== -1
+          || (u.email      || '').toLowerCase().indexOf(q) !== -1
+          || (u.department || '').toLowerCase().indexOf(q) !== -1
+          || (u.jobTitle   || '').toLowerCase().indexOf(q) !== -1;
+      })
+    : _auUsers;
 
-  return ''
-    + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px">'
-    +   '<div>'
-    +     '<div style="font-size:20px;font-weight:600;letter-spacing:-.4px;color:var(--text)">User & Permissions</div>'
-    +     '<div style="font-size:12px;color:var(--muted);margin-top:3px">Each user has an independent role per module</div>'
-    +   '</div>'
-    +   (isEditor
-        ? '<button onclick="auOpenDrawer(null)" style="padding:7px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;transition:opacity .15s" onmouseenter="this.style.opacity=\'.85\'" onmouseleave="this.style.opacity=\'1\'">'
-        +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Add User'
-        + '</button>'
-        : '')
+  var rows  = filtered.map(auRowHtml).join('');
+  var empty = '<tr><td colspan="5" style="text-align:center;padding:48px 0;color:var(--faint);font-size:13px">'
+    + (q ? 'No users matching "' + _auEsc(q) + '"' : 'No users yet — add the first one')
+    + '</td></tr>';
+
+  var countText = q
+    ? filtered.length + ' of ' + _auUsers.length
+    : _auUsers.length + (_auUsers.length === 1 ? ' user' : ' users');
+
+  // ── Page header ─────────────────────────────────────────────────────────────
+  var addBtn = isEditor
+    ? UI.btnPrimary(
+        '<span style="display:inline-flex;align-items:center;gap:6px">' + _AU_SVG_PLUS + 'Add User</span>',
+        'auOpenDrawer(null)'
+      )
+    : '';
+
+  var header = UI.pageHeader({
+    title:      'User & Permissions',
+    subtitle:   'Each user has an independent role per module',
+    titleRight: addBtn,
+    mb:         '20px'
+  });
+
+  // ── Search bar — UI.searchBar() ─────────────────────────────────────────────
+  var searchBar =
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
+    + '<div style="flex:1;max-width:360px">'
+    +   UI.searchBar('au-search', 'Search by name, email, department…', 'auSearchFilter()', _auSearchQuery)
     + '</div>'
-    + '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">'
-    +   '<table style="width:100%;border-collapse:collapse">'
-    +     '<thead><tr style="border-bottom:1px solid var(--border)">'
-    +       '<th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);width:200px">Name</th>'
-    +       '<th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Email</th>'
-    +       '<th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Module Permissions</th>'
-    +       '<th style="width:72px"></th>'
-    +     '</tr></thead>'
-    +     '<tbody>' + (rows || empty) + '</tbody>'
-    +   '</table>'
+    + '<span id="au-count" style="font-size:12px;color:var(--faint);white-space:nowrap">' + countText + '</span>'
     + '</div>';
+
+  // ── Table ────────────────────────────────────────────────────────────────────
+  var COLS = [
+    { label: 'Name',               width: '220px' },
+    { label: 'Department'                         },
+    { label: 'Job Title'                          },
+    { label: 'Module Permissions'                 },
+    { label: '',                   width: '72px'  }
+  ];
+
+  return header + searchBar + UI.table(COLS, rows || empty, 'au-tbody');
 }
 
+// ── Row ───────────────────────────────────────────────────────────────────────
 function auRowHtml(u) {
   var mp = u.modulePermissions || {};
   var counts = { editor: 0, viewer: 0 };
   Object.values(mp).forEach(function(r) {
-    // back-compat: treat legacy 'admin'/'team_member' as editor
     var normalized = (r === 'admin' || r === 'team_member') ? 'editor' : r;
     if (counts[normalized] !== undefined) counts[normalized]++;
   });
   var total = counts.editor + counts.viewer;
 
+  // Permission summary — UI.badge()
   var summary = total === 0
     ? '<span style="font-size:11px;color:var(--faint)">No access</span>'
     : [
-        counts.editor ? '<span style="font-size:11px;font-weight:500;color:var(--accent);background:rgba(237,0,94,.08);padding:2px 7px;border-radius:5px">Admin ×' + counts.editor + '</span>' : '',
-        counts.viewer ? '<span style="font-size:11px;font-weight:500;color:#6366F1;background:rgba(99,102,241,.08);padding:2px 7px;border-radius:5px">Viewer ×' + counts.viewer + '</span>' : ''
+        counts.editor ? UI.badge('Admin ×' + counts.editor, 'var(--accent)', 'rgba(237,0,94,.08)') : '',
+        counts.viewer ? UI.badge('Viewer ×' + counts.viewer, '#6366F1', 'rgba(99,102,241,.08)') : ''
       ].filter(Boolean).join(' ');
 
-  var isEditor = _auCanEdit();
-  return '<tr'
-    + (isEditor ? ' onclick="auOpenDrawer(' + u.id + ')"' : '')
-    + ' style="border-bottom:1px solid var(--border);' + (isEditor ? 'cursor:pointer;' : '') + 'transition:background .1s"'
-    + (isEditor ? ' onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'\'"' : '')
-    + '>'
-    + '<td style="padding:12px 16px"><span style="font-size:13px;font-weight:500;color:var(--text)">' + _auEsc(u.firstName) + ' ' + _auEsc(u.lastName) + '</span></td>'
-    + '<td style="padding:12px 16px;font-size:12px;color:var(--muted)">' + _auEsc(u.email) + '</td>'
-    + '<td style="padding:12px 16px"><div style="display:flex;gap:5px;flex-wrap:wrap">' + summary + '</div></td>'
-    + '<td style="padding:12px 16px;text-align:right;white-space:nowrap" onclick="event.stopPropagation()">'
-    + (isEditor
-        ? _auIconBtn('auOpenDrawer(' + u.id + ')', 'Edit',
-            '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
-            'var(--muted)', 'var(--accent)', 'rgba(237,0,94,.08)')
-          + _auIconBtn('auDelete(' + u.id + ')', 'Delete',
-              '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2.5h4V4M5.5 6.5v4M8.5 6.5v4M3 4l.8 7.5A1 1 0 004.8 12.5h4.4a1 1 0 001-.9L11 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-              'var(--faint)', '#E5243B', '#FFF0F0')
-        : '')
-    + '</td>'
-    + '</tr>';
-}
+  // Avatar — UI.avatarCell() with photo fallback
+  var fullName = ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || '?';
+  var avatarHtml = u.photoUrl
+    ? '<div style="display:flex;align-items:center;gap:10px">'
+        + '<img src="' + _auEsc(u.photoUrl) + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'">'
+        + '<div>'
+        +   '<div style="font-size:13px;font-weight:500;color:var(--text)">' + _auEsc(fullName) + '</div>'
+        +   '<div style="font-size:11px;color:var(--muted);margin-top:1px">' + _auEsc(u.email || '') + '</div>'
+        + '</div>'
+        + '</div>'
+    : UI.avatarCell(fullName, u.email || '');
 
-function _auIconBtn(onclick, title, svg, baseColor, hoverColor, hoverBg) {
-  return '<button onclick="' + onclick + '" title="' + title + '" '
-    + 'style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:' + baseColor + ';cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s" '
-    + 'onmouseenter="this.style.color=\'' + hoverColor + '\';this.style.background=\'' + hoverBg + '\'" '
-    + 'onmouseleave="this.style.color=\'' + baseColor + '\';this.style.background=\'none\'">'
-    + svg + '</button>';
+  // Department — UI.deptChip() or dash
+  var deptHtml = u.department
+    ? UI.deptChip(u.department)
+    : '<span style="font-size:11px;color:var(--faint)">—</span>';
+
+  // Job title
+  var jobHtml = u.jobTitle
+    ? '<span style="font-size:12px;color:var(--muted)">' + _auEsc(u.jobTitle) + '</span>'
+    : '<span style="font-size:11px;color:var(--faint)">—</span>';
+
+  var isEditor = _auCanEdit();
+  var rowStyle = 'border-bottom:1px solid var(--border)' + (isEditor ? ';cursor:pointer' : '');
+  var rowEvts  = isEditor
+    ? ' onclick="auOpenDrawer(' + u.id + ')"'
+      + ' onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'\'"'
+    : '';
+
+  // Action buttons — UI.btnIcon()
+  var actions = isEditor
+    ? UI.btnIcon('event.stopPropagation();auOpenDrawer(' + u.id + ')', 'Edit',   _AU_SVG_EDIT,  'var(--muted)', 'var(--accent)', 'rgba(237,0,94,.08)')
+      + UI.btnIcon('event.stopPropagation();auDelete('   + u.id + ')', 'Delete', _AU_SVG_TRASH, 'var(--faint)', '#E5243B',       '#FFF0F0')
+    : '';
+
+  return '<tr' + rowEvts + ' style="' + rowStyle + ';transition:background .1s">'
+    + '<td style="padding:10px 16px">' + avatarHtml + '</td>'
+    + '<td style="padding:10px 16px">' + deptHtml + '</td>'
+    + '<td style="padding:10px 16px">' + jobHtml + '</td>'
+    + '<td style="padding:10px 16px"><div style="display:flex;gap:5px;flex-wrap:wrap">' + summary + '</div></td>'
+    + '<td style="padding:12px 16px;text-align:right;white-space:nowrap">' + actions + '</td>'
+    + '</tr>';
 }
 
 // ── Password visibility toggle ────────────────────────────────────────────────
@@ -176,9 +292,7 @@ function auTogglePw() {
   var show = inp.type === 'password';
   inp.setAttribute('type', show ? 'text' : 'password');
   if (ico) ico.innerHTML = show
-    // eye-off: crossed-out eye
     ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
-    // eye: normal
     : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
 }
 
@@ -186,271 +300,339 @@ function auTogglePw() {
 var _auInviteMode = false;
 
 function auToggleInvite() {
-  _auInviteMode = !_auInviteMode;
-  var pwEl  = document.getElementById('au-f-pw');
-  var btn   = document.getElementById('au-invite-btn');
-  var info  = document.getElementById('au-invite-info');
-  if (!pwEl || !btn) return;
-  if (_auInviteMode) {
-    pwEl.disabled     = true;
-    pwEl.style.opacity = '.35';
-    pwEl.value        = '';
-    btn.style.background   = '#6366F1';
-    btn.style.borderColor  = '#6366F1';
-    btn.style.color        = '#fff';
-    btn.classList.add('au-inv-active');
-    if (info) info.style.display = '';
-  } else {
-    pwEl.disabled      = false;
-    pwEl.style.opacity = '1';
-    btn.style.background  = 'var(--surface)';
-    btn.style.borderColor = 'var(--border-md)';
-    btn.style.color       = 'var(--muted)';
-    btn.classList.remove('au-inv-active');
-    if (info) info.style.display = 'none';
-  }
+  var email = ((document.getElementById('au-f-email') || {}).value || '').trim();
+  var first = ((document.getElementById('au-f-first') || {}).value || '').trim();
+  var last  = ((document.getElementById('au-f-last')  || {}).value || '').trim();
+  if (!email) { alert('Please fill in the email field first.'); return; }
+
+  var name = (first + ' ' + last).trim() || email;
+  var isNew = _auEditId === null;
+  var title = isNew ? 'Send invite email' : 'Send password reset email';
+  var msg   = isNew
+    ? 'Send a password setup link to <strong style="color:var(--text)">' + _auEsc(name) + '</strong> (<span style="color:var(--accent)">' + _auEsc(email) + '</span>)?<br/><span style="font-size:11px;color:var(--muted)">They\'ll receive a link to set their own password. Expires in 72 hours.</span>'
+    : 'Send a password reset link to <strong style="color:var(--text)">' + _auEsc(name) + '</strong> (<span style="color:var(--accent)">' + _auEsc(email) + '</span>)?<br/><span style="font-size:11px;color:var(--muted)">They\'ll receive a link to choose a new password. Expires in 72 hours.</span>';
+
+  _auInviteMode = true;
+  window._auInviteDoSave = function() { _auInviteMode = true; auSave(); };
+
+  UI.openModal({
+    id: 'au-invite-confirm-modal',
+    title: title,
+    closeFn: 'UI.closeModal(\'au-invite-confirm-modal\');_auInviteMode=false',
+    width: '400px',
+    bodyHtml: '<p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0">' + msg + '</p>',
+    footerRight:
+      UI.btnCancel('Cancel', 'UI.closeModal(\'au-invite-confirm-modal\');_auInviteMode=false')
+      + UI.btnPrimary('Send email', 'UI.closeModal(\'au-invite-confirm-modal\');if(window._auInviteDoSave)window._auInviteDoSave()')
+  });
 }
 
-// ── Drawer ────────────────────────────────────────────────────────────────────
-function _auFormHtml(isNew) {
-  var IF = 'width:100%;box-sizing:border-box;padding:8px 11px;font-size:13px;border:1px solid var(--border-md);border-radius:7px;background:var(--surface);color:var(--text);outline:none;font-family:inherit;transition:border-color .15s';
-  var LB = 'font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);display:block;margin-bottom:5px';
+// ── Drawer form ───────────────────────────────────────────────────────────────
+function _auFormHtml(isNew, u) {
+  var allMods   = _auAllModules();
+  var mpCurrent = (u && u.modulePermissions) || {};
 
-  // Build sections dynamically from NAV_CONFIG
-  var sections = [];
-  AU_MODULES.forEach(function(m) {
-    if (m.parent) return;
-    var sec = _auModuleSection(m.id);
-    if (sections.indexOf(sec) === -1) sections.push(sec);
-  });
+  // ── Build permissionTable sections ──────────────────────────────────────────
+  var radioLabels = AU_ROLES.map(function(r) { return { val: r.val, label: r.label }; });
 
-  // Column header row — shown once at the top of the table
-  var colHeader = '<tr>'
-    + '<th style="text-align:left;padding:6px 0 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--faint)">Product Module</th>'
-    + AU_ROLES.map(function(r) {
-        return '<th style="text-align:center;padding:6px 0 10px;width:72px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:' + r.color + '">' + r.label + '</th>';
-      }).join('')
-    + '</tr>';
-
-  var permRows = sections.map(function(sec, si) {
-    var items = AU_MODULES.filter(function(m) {
+  var ptSections = AU_ACTIVE_SECTIONS.map(function(sec) {
+    var items = allMods.filter(function(m) {
       return !m.parent && _auModuleSection(m.id) === sec;
     });
+    var rows = items.map(function(m) {
+      var roleRaw = mpCurrent[m.id];
+      if (roleRaw === 'admin' || roleRaw === 'team_member') roleRaw = 'editor';
+      var children = allMods.filter(function(c) { return c.parent === m.id; });
+      return {
+        id:         'aupt-' + m.id,
+        label:      m.label,
+        checked:    !!roleRaw,
+        radioValue: roleRaw || '',
+        onCheckFn:  'auModToggle(\'' + m.id + '\')',
+        sub: children.map(function(c) {
+          var cRaw = mpCurrent[c.id];
+          if (cRaw === 'admin' || cRaw === 'team_member') cRaw = 'editor';
+          return {
+            id:         'aupt-' + c.id,
+            label:      c.label,
+            checked:    !!cRaw,
+            radioValue: cRaw || '',
+            onCheckFn:  'auModToggle(\'' + c.id + '\')'
+          };
+        })
+      };
+    });
+    return { label: sec, rows: rows };
+  }).filter(function(s) { return s.rows.length > 0; });
 
-    var sectionHeader = '<tr><td colspan="' + (AU_ROLES.length + 1) + '" style="padding:' + (si === 0 ? '0' : '14px') + ' 0 6px">'
-      + '<span style="font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.5px">' + sec + '</span>'
-      + '</td></tr>';
-
-    var moduleRows = items.map(function(m) {
-      var children = AU_MODULES.filter(function(c) { return c.parent === m.id; });
-      return _auPermRow(m, false) + children.map(function(c) { return _auPermRow(c, true); }).join('');
-    }).join('');
-
-    return '<tbody>' + sectionHeader + moduleRows + '</tbody>';
-  }).join('');
+  // "Coming soon" sections (no modules yet)
+  var soonSections = AU_SECTIONS_ORDER.filter(function(s) {
+    return AU_ACTIVE_SECTIONS.indexOf(s) === -1;
+  });
+  var soonBadge = soonSections.map(function(s) {
+    return '<span style="font-size:10px;font-weight:600;color:var(--faint);background:var(--border);'
+      + 'border-radius:4px;padding:2px 7px;letter-spacing:.3px">' + _auEsc(s) + '</span>';
+  }).join(' ');
 
   var inviteBtnTitle = isNew ? 'Send invite email instead' : 'Send password reset email';
   var inviteInfoText = isNew
     ? 'Invite email will be sent — user sets their own password (link expires in 72 h)'
     : 'Password reset email will be sent — user sets a new password (link expires in 72 h)';
 
+  // Department select — UI.customSelect()
+  var teamOpts = [{ val: '', label: '— No function —' }].concat(
+    AU_TEAMS.map(function(t) { return { val: t, label: t }; })
+  );
+  var currentDept = (u && u.department) ? u.department : '';
+  var teamSelect  = UI.customSelect('au-f-team', teamOpts, currentDept);
+
+  var ROW = 'display:grid;grid-template-columns:1fr 1fr 36px;gap:10px;align-items:flex-end;margin-bottom:14px';
+
   return ''
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 36px;gap:10px;margin-bottom:14px">'
-    +   '<div><label style="' + LB + '">First Name</label><input id="au-f-first" type="text" placeholder="Alice" class="au-inp" autocomplete="off" style="' + IF + '"></div>'
-    +   '<div><label style="' + LB + '">Last Name</label><input id="au-f-last"  type="text" placeholder="Smith"  class="au-inp" autocomplete="off" style="' + IF + '"></div>'
-    +   '<div></div>'
+    // Error banner — top of form so it's always visible
+    + '<div id="au-drawer-err" style="display:none;margin-bottom:14px"></div>'
+
+    // Hidden photo input
+    + '<input type="hidden" id="au-f-photo">'
+
+    // Row 1: First Name | Last Name | Camera btn
+    + '<div style="' + ROW + '">'
+    +   '<div><label style="' + UI.LB + '">First Name</label>'
+    +   '<input id="au-f-first" type="text" placeholder="Alice" autocomplete="off" style="' + UI.IF + ';height:36px;box-sizing:border-box"></div>'
+    +   '<div><label style="' + UI.LB + '">Last Name</label>'
+    +   '<input id="au-f-last" type="text" placeholder="Smith" autocomplete="off" style="' + UI.IF + ';height:36px;box-sizing:border-box"></div>'
+    +   '<div id="au-photo-btn-wrap">'
+    +   '<button type="button" id="au-photo-btn" onclick="_auOpenPhotoModal()" title="Set profile photo" '
+    +   'style="width:36px;height:36px;flex-shrink:0;border:1px solid var(--border-md);border-radius:7px;background:var(--surface);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0;transition:all .15s" '
+    +   'onmouseenter="if(!document.getElementById(\'au-f-photo\').value)this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'" '
+    +   'onmouseleave="if(!document.getElementById(\'au-f-photo\').value)this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
+    +   '<span id="au-photo-btn-ico">' + _AU_SVG_CAMERA + '</span>'
+    +   '</button>'
+    +   '</div>'
     + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 36px;gap:10px;align-items:flex-end;margin-bottom:8px">'
-    +   '<div><label style="' + LB + '">Email</label><input id="au-f-email" type="email" placeholder="alice@kerv.ai" class="au-inp" autocomplete="off" style="' + IF + '"></div>'
-    +   '<div><label style="' + LB + '">'
+
+    // Row 2: Department | Job Title | spacer
+    + '<div style="' + ROW + '">'
+    +   '<div><label style="' + UI.LB + '">Department</label>' + teamSelect + '</div>'
+    +   '<div><label style="' + UI.LB + '">Job Title</label>'
+    +   '<input id="au-f-jobtitle" type="text" placeholder="e.g. Product Manager" autocomplete="off" style="' + UI.IF + ';height:36px;box-sizing:border-box"></div>'
+    +   '<div style="width:36px"></div>'
+    + '</div>'
+
+    // Row 3: Email | Password | Invite btn
+    + '<div style="' + ROW + ';margin-bottom:8px">'
+    +   '<div><label style="' + UI.LB + '">Email</label>'
+    +   '<input id="au-f-email" type="email" placeholder="alice@kerv.ai" autocomplete="off" style="' + UI.IF + ';height:36px;box-sizing:border-box"></div>'
+    +   '<div><label style="' + UI.LB + '">'
     +     (isNew ? 'Password' : 'Password <span style="font-weight:400;font-size:10px;color:var(--faint)">(blank = keep)</span>')
     +   '</label>'
     +   '<div style="position:relative">'
-    +     '<input id="au-f-pw" type="password" placeholder="••••••••" class="au-inp" autocomplete="new-password" style="' + IF + ';padding-right:34px">'
-    +     '<button type="button" onclick="auTogglePw()" title="Show/hide password" id="au-pw-eye"'
-    +       ' style="position:absolute;right:0;top:0;bottom:0;width:34px;z-index:2;background:none;border:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;padding:0;transition:color .12s"'
-    +       ' onmouseenter="this.style.color=\'var(--text)\'" onmouseleave="this.style.color=\'var(--muted)\'">'
+    +     '<input id="au-f-pw" type="password" placeholder="••••••••" autocomplete="new-password" style="' + UI.IF + ';height:36px;box-sizing:border-box;padding-right:34px">'
+    +     '<button type="button" onclick="auTogglePw()" title="Show/hide" '
+    +     'style="position:absolute;right:0;top:0;bottom:0;width:34px;background:none;border:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;padding:0;transition:color .12s" '
+    +     'onmouseenter="this.style.color=\'var(--text)\'" onmouseleave="this.style.color=\'var(--muted)\'">'
     +       '<svg id="au-pw-eye-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
     +     '</button>'
-    +   '</div>'
-    +   '</div>'
-    +   '<button type="button" id="au-invite-btn" onclick="auToggleInvite()" title="' + inviteBtnTitle + '"'
-    +     ' style="width:36px;height:36px;border:1px solid var(--border-md);border-radius:7px;background:var(--surface);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0"'
-    +     ' onmouseenter="if(!this.classList.contains(\'au-inv-active\'))this.style.borderColor=\'var(--border)\'"'
-    +     ' onmouseleave="if(!this.classList.contains(\'au-inv-active\'))this.style.borderColor=\'var(--border-md)\'">'
-    +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
+    +   '</div></div>'
+    +   '<button type="button" id="au-invite-btn" onclick="auToggleInvite()" title="' + inviteBtnTitle + '" '
+    +   'style="width:36px;height:36px;flex-shrink:0;border:1px solid var(--border-md);border-radius:7px;background:var(--surface);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s" '
+    +   'onmouseenter="if(!this.classList.contains(\'au-inv-active\'))this.style.borderColor=\'var(--border)\'" '
+    +   'onmouseleave="if(!this.classList.contains(\'au-inv-active\'))this.style.borderColor=\'var(--border-md)\'">'
+    +     _AU_SVG_SEND
     +   '</button>'
     + '</div>'
-    + '<div id="au-invite-info" style="display:none;margin-bottom:18px;padding:9px 12px;background:rgba(99,102,241,.06);border-radius:7px;border:1px solid rgba(99,102,241,.18)">'
-    +   '<span style="font-size:11px;color:#6366F1">' + inviteInfoText + '</span>'
+
+    // Invite info banner (hidden by default)
+    + '<div id="au-invite-info" style="display:none;margin-bottom:18px">'
+    +   UI.alertBanner('info', '', inviteInfoText)
     + '</div>'
+
     + '<div style="margin-bottom:6px"></div>'
+
+    // ── Module Permissions ───────────────────────────────────────────────────
     + '<div style="border-top:1px solid var(--border);padding-top:18px">'
-    +   '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +   '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
     +     '<div style="font-size:13px;font-weight:600;color:var(--text);letter-spacing:-.2px">Module Permissions</div>'
     +     '<div style="display:flex;align-items:center;gap:2px">'
     +       AU_ROLES.map(function(r) {
-              return '<button type="button" onclick="auSetAll(\'' + r.val + '\')" style="font-size:11px;color:' + r.color + ';background:none;border:none;cursor:pointer;padding:3px 7px;font-family:inherit;border-radius:4px;transition:background .1s" onmouseenter="this.style.background=\'' + r.bg + '\'" onmouseleave="this.style.background=\'none\'">All ' + r.label + '</button>';
+              return '<button type="button" onclick="auSetAll(\'' + r.val + '\')" '
+                + 'style="font-size:11px;color:' + r.color + ';background:none;border:none;cursor:pointer;'
+                + 'padding:3px 7px;font-family:inherit;border-radius:4px;transition:background .1s" '
+                + 'onmouseenter="this.style.background=\'' + r.bg + '\'" onmouseleave="this.style.background=\'none\'">All ' + r.label + '</button>';
             }).join('<span style="color:var(--border-md);font-size:10px">·</span>')
     +       '<span style="color:var(--border-md);font-size:10px">·</span>'
     +       '<button type="button" onclick="auSetAll(\'\')" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:3px 7px;font-family:inherit;border-radius:4px;transition:background .1s" onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'none\'">Clear</button>'
     +     '</div>'
     +   '</div>'
-    +   '<table style="width:100%;border-collapse:collapse"><thead>' + colHeader + '</thead>' + permRows + '</table>'
-    + '</div>'
-    + '<div id="au-drawer-err" style="display:none;font-size:12px;color:#E5243B;margin-top:10px;padding:8px 10px;background:#FFF0F0;border-radius:6px"></div>';
+    // UI.permissionTable — all active sections
+    +   UI.permissionTable(ptSections, radioLabels)
+    // "Coming soon" sections
+    + (soonBadge
+        ? '<div style="margin-top:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+          + '<span style="font-size:10px;color:var(--faint)">Coming soon:</span>'
+          + soonBadge
+          + '</div>'
+        : '')
+    + '</div>';
 }
 
-function _auPermRow(m, isChild) {
-  var radios = AU_ROLES.map(function(r) {
-    return '<td style="text-align:center;padding:6px 0;width:72px">'
-      + '<input type="radio" id="au-rad-' + m.id + '-' + r.val + '" name="au-role-' + m.id + '" value="' + r.val + '" '
-      + 'disabled style="width:15px;height:15px;accent-color:' + r.accent + ';cursor:pointer;opacity:.3">'
-      + '</td>';
-  }).join('');
+// ── Photo modal ───────────────────────────────────────────────────────────────
+function _auOpenPhotoModal() {
+  var currentUrl = ((document.getElementById('au-f-photo') || {}).value || '');
+  var previewHtml = currentUrl
+    ? '<img src="' + _auEsc(currentUrl) + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">'
+    : _AU_SVG_USER;
 
-  return '<tr style="border-bottom:1px solid var(--border)">'
-    + '<td style="padding:7px 0">'
-    +   '<label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none' + (isChild ? ';padding-left:20px' : '') + '">'
-    +     '<input type="checkbox" id="au-chk-' + m.id + '" data-mod="' + m.id + '" onchange="auModToggle(\'' + m.id + '\')" style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">'
-    +     '<span style="font-size:' + (isChild ? '11px;color:var(--muted)' : '12px;color:var(--text)') + '">' + m.label + '</span>'
-    +   '</label>'
-    + '</td>'
-    + radios
-    + '</tr>';
+  UI.openModal({
+    id:        'au-photo-modal',
+    width:     '360px',
+    title:     'Profile photo',
+    subtitle:  'Paste a public image URL',
+    closeFn:   'auClosePhotoModal',
+    bodyHtml:
+      '<div style="display:flex;gap:10px;align-items:center">'
+      + '<div id="au-photo-preview" style="width:52px;height:52px;border-radius:50%;background:var(--subtle);'
+      + 'flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">'
+      + previewHtml + '</div>'
+      + '<input id="au-photo-url-inp" type="url" placeholder="https://..." value="' + _auEsc(currentUrl) + '" '
+      + 'style="' + UI.IF + ';height:36px;box-sizing:border-box;background:var(--bg)" '
+      + 'onfocus="this.style.borderColor=\'var(--accent)\'" onblur="this.style.borderColor=\'var(--border-md)\'" '
+      + 'oninput="_auPhotoPreview(this.value)">'
+      + '</div>',
+    footerRight: UI.btnCancel('Cancel', 'auClosePhotoModal()') + UI.btnPrimary('Apply', '_auApplyPhoto()')
+  });
+  setTimeout(function() { var inp = document.getElementById('au-photo-url-inp'); if (inp) inp.focus(); }, 100);
 }
 
+function auClosePhotoModal() {
+  UI.closeModal('au-photo-modal');
+}
+
+function _auPhotoPreview(url) {
+  var prev = document.getElementById('au-photo-preview');
+  if (!prev) return;
+  prev.innerHTML = url
+    ? '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">'
+    : _AU_SVG_USER;
+}
+
+function _auApplyPhoto() {
+  var url    = ((document.getElementById('au-photo-url-inp') || {}).value || '').trim();
+  var hidden = document.getElementById('au-f-photo');
+  if (hidden) hidden.value = url;
+  var btn = document.getElementById('au-photo-btn');
+  if (btn && url) {
+    btn.innerHTML         = '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px" onerror="this.style.display=\'none\'">';
+    btn.style.borderColor = 'var(--accent)';
+  } else if (btn) {
+    btn.innerHTML         = '<span id="au-photo-btn-ico">' + _AU_SVG_CAMERA + '</span>';
+    btn.style.borderColor = 'var(--border-md)';
+  }
+  auClosePhotoModal();
+}
+
+// ── Open drawer ───────────────────────────────────────────────────────────────
 function auOpenDrawer(id) {
-  var existing = document.getElementById('au-drawer-overlay');
-  if (existing) existing.parentNode.removeChild(existing);
   _auInviteMode = false;
+  _auEditId     = id;
+  var isNew     = id === null;
+  var u         = isNew ? null : (_auUsers.filter(function(x) { return x.id === id; })[0] || null);
 
-  _auEditId = id;
-  var isNew = id === null;
+  var drawerTitle = isNew ? 'Add User'
+    : 'Edit User' + (u ? ' — ' + _auEsc((u.firstName || '') + ' ' + (u.lastName || '')) : '');
 
-  var overlay = document.createElement('div');
-  overlay.id = 'au-drawer-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:600;display:flex;justify-content:flex-end;pointer-events:auto';
-
-  var backdrop = document.createElement('div');
-  backdrop.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .28s ease;cursor:pointer';
-  backdrop.onclick = auCloseDrawer;
-
-  var panel = document.createElement('div');
-  panel.style.cssText = [
-    'position:relative', 'width:680px', 'max-width:95vw', 'height:100%',
-    'background:var(--surface)', 'box-shadow:-6px 0 40px rgba(0,0,0,.13)',
-    'display:flex', 'flex-direction:column',
-    'transform:translateX(100%)', 'transition:transform .3s cubic-bezier(.4,0,.2,1)',
-    'font-family:inherit'
-  ].join(';');
-
-  var drawerTitle = isNew ? 'Add User' : (function() {
-    var u = _auUsers.filter(function(x) { return x.id === id; })[0];
-    return 'Edit User' + (u ? ' — ' + (u.firstName || '') + ' ' + (u.lastName || '') : '');
-  })();
-
-  var header = document.createElement('div');
-  header.style.cssText = 'padding:18px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0';
-  header.innerHTML = ''
-    + '<div>'
-    +   '<div style="font-size:15px;font-weight:600;letter-spacing:-.3px;color:var(--text)">' + _auEsc(drawerTitle) + '</div>'
-    +   '<div style="font-size:12px;color:var(--faint);margin-top:2px">Set name, email and per-module access</div>'
-    + '</div>'
-    + '<button onclick="auCloseDrawer()" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:none;cursor:pointer;color:var(--muted);transition:border-color .15s,color .15s;flex-shrink:0" onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'" onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
-    +   '<svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
-    + '</button>';
-
-  var body = document.createElement('div');
-  body.style.cssText = 'flex:1;overflow-y:auto;padding:24px 28px';
-  body.innerHTML = _auFormHtml(isNew);
-
-  var footer = document.createElement('div');
-  footer.style.cssText = 'padding:14px 28px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;background:var(--surface)';
-  footer.innerHTML = ''
-    + '<button onclick="auCloseDrawer()" style="height:34px;padding:0 16px;background:none;border:1px solid var(--border-md);border-radius:7px;font-size:13px;font-family:inherit;color:var(--muted);cursor:pointer;transition:border-color .15s">Cancel</button>'
-    + '<button id="au-save-btn" onclick="auSave()" style="height:34px;padding:0 18px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;transition:opacity .15s" onmouseenter="this.style.opacity=\'.85\'" onmouseleave="this.style.opacity=\'1\'">Save</button>';
-
-  panel.appendChild(header);
-  panel.appendChild(body);
-  panel.appendChild(footer);
-  overlay.appendChild(backdrop);
-  overlay.appendChild(panel);
-  document.body.appendChild(overlay);
-
-  requestAnimationFrame(function() {
-    requestAnimationFrame(function() {
-      backdrop.style.background = 'rgba(0,0,0,.28)';
-      panel.style.transform = 'translateX(0)';
-    });
+  UI.openDrawer({
+    id:          'au-drawer-overlay',
+    title:       drawerTitle,
+    subtitle:    'Set name, email and per-module access',
+    closeFn:     'auCloseDrawer',
+    width:       '680px',
+    bodyHtml:    _auFormHtml(isNew, u),
+    footerRight: UI.btnCancel('Cancel', 'auCloseDrawer()') + UI.btnPrimary('Save', 'auSave()', 'au-save-btn')
   });
 
-  if (!isNew) {
-    var u = _auUsers.filter(function(x) { return x.id === id; })[0];
-    if (u) {
-      var fFirst = document.getElementById('au-f-first');
-      var fLast  = document.getElementById('au-f-last');
-      var fEmail = document.getElementById('au-f-email');
-      if (fFirst) fFirst.value = u.firstName || '';
-      if (fLast)  fLast.value  = u.lastName  || '';
-      if (fEmail) fEmail.value = u.email     || '';
-      var mp = u.modulePermissions || {};
-      Object.keys(mp).forEach(function(modId) {
-        // back-compat: normalize legacy roles
-        var role = mp[modId];
-        if (role === 'admin' || role === 'team_member') role = 'editor';
-        var chk = document.getElementById('au-chk-' + modId);
-        if (chk) { chk.checked = true; auModToggle(modId); }
-        var rad = document.getElementById('au-rad-' + modId + '-' + role);
-        if (rad) rad.checked = true;
-      });
+  // Populate text fields + photo (permissionTable already pre-renders checked state)
+  if (!isNew && u) {
+    var fFirst    = document.getElementById('au-f-first');
+    var fLast     = document.getElementById('au-f-last');
+    var fEmail    = document.getElementById('au-f-email');
+    var fJobTitle = document.getElementById('au-f-jobtitle');
+    var fPhoto    = document.getElementById('au-f-photo');
+    if (fFirst)    fFirst.value    = u.firstName || '';
+    if (fLast)     fLast.value     = u.lastName  || '';
+    if (fEmail)    fEmail.value    = u.email     || '';
+    if (fJobTitle) fJobTitle.value = u.jobTitle  || '';
+    if (fPhoto)    fPhoto.value    = u.photoUrl  || '';
+
+    if (u.photoUrl) {
+      var btn = document.getElementById('au-photo-btn');
+      if (btn) {
+        btn.innerHTML         = '<img src="' + u.photoUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px" onerror="this.style.display=\'none\'">';
+        btn.style.borderColor = 'var(--accent)';
+      }
     }
+
+    // Enable/disable radio columns based on pre-rendered checked state
+    var mp = u.modulePermissions || {};
+    Object.keys(mp).forEach(function(modId) {
+      var chk = document.getElementById('aupt-' + modId + '-chk');
+      if (chk && chk.checked) auModToggle(modId);
+    });
   }
 }
 
+// ── Close drawer ──────────────────────────────────────────────────────────────
 function auCloseDrawer() {
-  var overlay = document.getElementById('au-drawer-overlay');
-  if (!overlay) return;
-  var backdrop = overlay.firstElementChild;
-  var panel    = overlay.lastElementChild;
-  if (backdrop) backdrop.style.background = 'rgba(0,0,0,0)';
-  if (panel)    panel.style.transform = 'translateX(100%)';
-  setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 300);
+  UI.closeDrawer('au-drawer-overlay');
 }
 
 // ── Permissions logic ─────────────────────────────────────────────────────────
+
+// Called by checkbox onchange in permissionTable
 function auModToggle(modId) {
-  var chk = document.getElementById('au-chk-' + modId);
+  var chk = document.getElementById('aupt-' + modId + '-chk');
   if (!chk) return;
   var enabled = chk.checked;
-  AU_ROLES.forEach(function(r) {
-    var rad = document.getElementById('au-rad-' + modId + '-' + r.val);
-    if (!rad) return;
-    rad.disabled = !enabled;
-    rad.style.opacity = enabled ? '1' : '.3';
-    if (!enabled) rad.checked = false;
+  var rads    = document.querySelectorAll('input[name="aupt-' + modId + '-perm"]');
+  rads.forEach(function(r) {
+    r.disabled      = !enabled;
+    r.style.opacity = enabled ? '1' : '.35';
+    if (!enabled) r.checked = false;
   });
+  // Also handle sub-row checkboxes (children of this module)
+  var allMods  = _auAllModules();
+  var children = allMods.filter(function(c) { return c.parent === modId; });
+  children.forEach(function(c) {
+    var subChk = document.getElementById('aupt-' + c.id + '-chk');
+    if (subChk) {
+      subChk.disabled      = !enabled;
+      subChk.style.opacity = enabled ? '1' : '.35';
+      if (!enabled) {
+        subChk.checked = false;
+        var subRads = document.querySelectorAll('input[name="aupt-' + c.id + '-perm"]');
+        subRads.forEach(function(r) { r.disabled = true; r.style.opacity = '.35'; r.checked = false; });
+      }
+    }
+  });
+  // Default to viewer when first enabling
   if (enabled) {
-    var anyChecked = AU_ROLES.some(function(r) {
-      var rad = document.getElementById('au-rad-' + modId + '-' + r.val);
-      return rad && rad.checked;
-    });
+    var anyChecked = !!document.querySelector('input[name="aupt-' + modId + '-perm"]:checked');
     if (!anyChecked) {
-      var def = document.getElementById('au-rad-' + modId + '-viewer');
-      if (def) def.checked = true;
+      var defRad = document.querySelector('input[name="aupt-' + modId + '-perm"][value="viewer"]');
+      if (defRad) defRad.checked = true;
     }
   }
 }
 
 function auSetAll(role) {
-  AU_MODULES.forEach(function(m) {
-    var chk = document.getElementById('au-chk-' + m.id);
+  _auAllModules().forEach(function(m) {
+    var chk = document.getElementById('aupt-' + m.id + '-chk');
     if (!chk) return;
     if (!role) {
       chk.checked = false; auModToggle(m.id);
     } else {
       chk.checked = true; auModToggle(m.id);
-      var rad = document.getElementById('au-rad-' + m.id + '-' + role);
+      var rad = document.querySelector('input[name="aupt-' + m.id + '-perm"][value="' + role + '"]');
       if (rad) rad.checked = true;
     }
   });
@@ -458,13 +640,11 @@ function auSetAll(role) {
 
 function auGetPermissions() {
   var mp = {};
-  AU_MODULES.forEach(function(m) {
-    var chk = document.getElementById('au-chk-' + m.id);
+  _auAllModules().forEach(function(m) {
+    var chk = document.getElementById('aupt-' + m.id + '-chk');
     if (!chk || !chk.checked) return;
-    AU_ROLES.forEach(function(r) {
-      var rad = document.getElementById('au-rad-' + m.id + '-' + r.val);
-      if (rad && rad.checked) mp[m.id] = r.val;
-    });
+    var rad = document.querySelector('input[name="aupt-' + m.id + '-perm"]:checked');
+    if (rad) mp[m.id] = rad.value;
   });
   return mp;
 }
@@ -480,17 +660,25 @@ function auSave() {
 
   var inviteMode = _auInviteMode;
 
+  function _showErr(msg) {
+    if (!errEl) return;
+    errEl.innerHTML     = UI.alertBanner('error', '', msg);
+    errEl.style.display = '';
+  }
+
   if (!first || !last || !email) {
-    errEl.textContent = 'First name, last name and email are required.';
-    errEl.style.display = 'block'; return;
+    _showErr('First name, last name and email are required.'); return;
   }
   if (_auEditId === null && !inviteMode && !pw) {
-    errEl.textContent = 'Password is required, or choose "Send invite email".';
-    errEl.style.display = 'block'; return;
+    _showErr('Password is required, or choose "Send invite email".'); return;
   }
-  errEl.style.display = 'none';
+  if (errEl) errEl.style.display = 'none';
 
-  var payload = { firstName: first, lastName: last, email: email, modulePermissions: auGetPermissions() };
+  var department = ((document.getElementById('au-f-team')     || {}).value || '').trim();
+  var jobTitle   = ((document.getElementById('au-f-jobtitle') || {}).value || '').trim();
+  var photoUrl   = ((document.getElementById('au-f-photo')    || {}).value || '').trim();
+
+  var payload = { firstName: first, lastName: last, email: email, department: department, jobTitle: jobTitle, photoUrl: photoUrl, modulePermissions: auGetPermissions() };
   if (pw && !inviteMode) payload.password = pw;
   if (_auEditId !== null) payload.id = _auEditId;
 
@@ -498,7 +686,6 @@ function auSave() {
 
   function _doSave() {
     if (btn) { btn.disabled = true; btn.textContent = inviteMode ? 'Sending invite…' : 'Saving…'; }
-
     fetch('/api/neon/users', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -518,19 +705,28 @@ function auSave() {
       });
     })
     .catch(function(e) {
-      if (errEl) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+      _showErr(e.message);
       if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
     });
   }
 
   if (!inviteMode) { _doSave(); return; }
 
-  // Confirmation before sending invite
-  var confirm_ = typeof snxConfirm === 'function' ? snxConfirm : function(msg, cb) { if (window.confirm(msg.replace(/<[^>]+>/g, ''))) cb(); };
   var confirmMsg = _auEditId === null
-    ? 'Send an invite email to <strong>' + _auEsc(email) + '</strong>?<br/><span style="font-size:11px;color:var(--muted)">They\'ll receive a link to set their own password.</span>'
-    : 'Send a password reset email to <strong>' + _auEsc(email) + '</strong>?<br/><span style="font-size:11px;color:var(--muted)">They\'ll receive a link to choose a new password.</span>';
-  confirm_(confirmMsg, _doSave);
+    ? 'Send a password setup link to <strong style="color:var(--text)">' + _auEsc(email) + '</strong>?<br/><span style="font-size:11px;color:var(--muted)">They\'ll receive an email with a link to set their own password. The link expires in 72 hours.</span>'
+    : 'Send a password reset link to <strong style="color:var(--text)">' + _auEsc(email) + '</strong>?<br/><span style="font-size:11px;color:var(--muted)">They\'ll receive an email with a link to choose a new password. The link expires in 72 hours.</span>';
+  window._auInviteDoSave = _doSave;
+  UI.openModal({
+    id: 'au-invite-confirm-modal',
+    title: _auEditId === null ? 'Send invite email' : 'Send reset email',
+    closeFn: 'UI.closeModal(\'au-invite-confirm-modal\')',
+    width: '400px',
+    bodyHtml: '<p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0">' + confirmMsg + '</p>'
+      + '<div id="au-invite-confirm-err" style="margin-top:10px;font-size:12px;color:#E5243B"></div>',
+    footerRight:
+      UI.btnCancel('Cancel', 'UI.closeModal(\'au-invite-confirm-modal\')')
+      + UI.btnPrimary('Send email', 'UI.closeModal(\'au-invite-confirm-modal\');if(window._auInviteDoSave)window._auInviteDoSave()')
+  });
 }
 
 // ── Delete ────────────────────────────────────────────────────────────────────
@@ -550,6 +746,50 @@ function auDelete(id) {
       auLoad();
     })
     .catch(function(e) { alert('Delete failed: ' + e.message); });
+  });
+}
+
+// ── Send invite email ─────────────────────────────────────────────────────────
+function auSendInvite(id) {
+  var u = _auUsers.filter(function(x) { return x.id === id; })[0];
+  if (!u) return;
+  var email = u.email || '';
+  var name  = ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || email;
+
+  UI.openModal({
+    id: 'au-send-invite-modal',
+    title: 'Send invite email',
+    closeFn: 'UI.closeModal(\'au-send-invite-modal\')',
+    width: '380px',
+    bodyHtml:
+      '<p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0">'
+      + 'Send a password setup link to <strong style="color:var(--text)">' + _auEsc(name) + '</strong>'
+      + ' (<span style="color:var(--accent)">' + _auEsc(email) + '</span>)?<br/><br/>'
+      + '<span style="font-size:11px">They\'ll receive a link to set their own password. The link expires in 72 hours.</span>'
+      + '</p>'
+      + '<div id="au-send-invite-err" style="margin-top:10px;font-size:12px;color:#E5243B"></div>',
+    footerRight:
+      UI.btnCancel('Cancel', 'UI.closeModal(\'au-send-invite-modal\')')
+      + UI.btnPrimary('Send email', 'auSendInviteConfirm(' + id + ')')
+  });
+}
+
+function auSendInviteConfirm(id) {
+  var errEl = document.getElementById('au-send-invite-err');
+  var btn   = document.querySelector('#au-send-invite-modal button[onclick*="auSendInviteConfirm"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  fetch('/api/neon/users', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'send', userId: id })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (!res.ok) throw new Error(res.error || 'Failed to send email');
+    UI.closeModal('au-send-invite-modal');
+  })
+  .catch(function(e) {
+    if (errEl) errEl.textContent = e.message;
+    if (btn) { btn.disabled = false; btn.textContent = 'Send email'; }
   });
 }
 

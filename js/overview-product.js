@@ -2,7 +2,7 @@
 
 // ── Data fetch & render ────────────────────────────────────────────────────
 
-function ovxLoad() {
+function ovxProductLoad() {
   var root = document.getElementById('ovx-root');
   if (!root) return;
 
@@ -39,11 +39,11 @@ function ovxLoad() {
 
 var OVX_DS = [
   { val: 'not-started', label: 'Not Started', color: '#8E8E93' },
-  { val: 'on-track',    label: 'On Track',    color: '#2EAD4B' },
+  { val: 'on-track',    label: 'On Track',    color: '#0EA5E9' },
   { val: 'at-risk',     label: 'At Risk',     color: '#E5A100' },
   { val: 'delayed',     label: 'Delayed',     color: '#E5243B' },
   { val: 'on-hold',     label: 'On Hold',     color: '#C2410C' },
-  { val: 'delivered',   label: 'Delivered',   color: '#1D4ED8' }
+  { val: 'delivered',   label: 'Delivered',   color: '#2EAD4B' }
 ];
 
 var OVX_DRIVER_COLORS = ['#6366F1','#06B6D4','#10B981','#F59E0B','#EF4444','#EC4899','#8B5CF6','#14B8A6','#F97316','#84CC16','#A78BFA','#38BDF8'];
@@ -284,11 +284,47 @@ function ovxRender(initiatives, members) {
     qDriverMaps[q] = { map: m, count: qItems.length };
   });
 
+  // ── Team distribution (Portfolio View donuts) ──
+  var allTeamItems = [];
+  yrInits.forEach(function(i) {
+    var t = i.team || '—';
+    if (allTeamItems.indexOf(t) === -1) allTeamItems.push(t);
+  });
+  allTeamItems.sort();
+  var yearTeamMap = {};
+  allTeamItems.forEach(function(t) { yearTeamMap[t] = 0; });
+  yrInits.forEach(function(i) { var t = i.team || '—'; yearTeamMap[t] = (yearTeamMap[t] || 0) + 1; });
+  var qTeamMaps = {};
+  ['Q1','Q2','Q3','Q4'].forEach(function(q) {
+    var qItems = qMap[q + ' ' + selYr] || [];
+    var m = {}; allTeamItems.forEach(function(t) { m[t] = 0; });
+    qItems.forEach(function(i) { var t = i.team || '—'; m[t] = (m[t] || 0) + 1; });
+    qTeamMaps[q] = { map: m, count: qItems.length };
+  });
+
+  // ── Theme distribution (Portfolio View donuts) ──
+  var allThemeItems = [];
+  yrInits.forEach(function(i) {
+    var t = i.theme || '—';
+    if (allThemeItems.indexOf(t) === -1) allThemeItems.push(t);
+  });
+  allThemeItems.sort();
+  var yearThemeMap = {};
+  allThemeItems.forEach(function(t) { yearThemeMap[t] = 0; });
+  yrInits.forEach(function(i) { var t = i.theme || '—'; yearThemeMap[t] = (yearThemeMap[t] || 0) + 1; });
+  var qThemeMaps = {};
+  ['Q1','Q2','Q3','Q4'].forEach(function(q) {
+    var qItems = qMap[q + ' ' + selYr] || [];
+    var m = {}; allThemeItems.forEach(function(t) { m[t] = 0; });
+    qItems.forEach(function(i) { var t = i.theme || '—'; m[t] = (m[t] || 0) + 1; });
+    qThemeMaps[q] = { map: m, count: qItems.length };
+  });
+
   // ── Quick-nav cards ──
   var navCards = [
-    { id: 'roadmap-neon',      label: 'Product Roadmap',               icon: ico.roadmap,  disabled: false },
+    { id: 'roadmap-neon',      label: 'Product Roadmap',               icon: ico.roadmap,  disabled: false, initTab: 'gantt' },
     { id: 'teamcapacity-neon', label: 'Team Capacity',                 icon: ico.capacity, disabled: false },
-    { id: null,                label: 'Submit Product Request',         icon: _ovxIdeaIcon, disabled: true },
+    { id: null,                label: 'Submit Product Request',         icon: _ovxIdeaIcon, disabled: false, onclick: 'piOpenAddModalWithData()' },
     { id: null,                label: 'OKR',                           icon: _ovxOkrIcon,  disabled: true }
   ];
 
@@ -515,10 +551,23 @@ function ovxRender(initiatives, members) {
       +   '</div>'   // close inner padding div
       + '</div>'     // close driver card
 
+    + '</div>'       // close 2-column portfolio grid
+
+    // ── By Team & By Theme donuts ──
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:stretch;margin-top:20px">'
+
+      // By Team card
+      + ovxDonutCard('By Team', 'team', allTeamItems, yearTeamMap, qTeamMaps, total, selYr)
+
+      // By Theme card
+      + ovxDonutCard('By Theme', 'theme', allThemeItems, yearThemeMap, qThemeMaps, total, selYr)
+
     + '</div>';
 
-  // Save driver data for async chart rendering
+  // Save driver/team/theme data for async chart rendering
   window._ovxDriverData = { allDrivers: allDrivers, yearDriverMap: yearDriverMap, qDriverMaps: qDriverMaps, total: total };
+  window._ovxTeamData   = { allItems: allTeamItems,  yearMap: yearTeamMap,  qMaps: qTeamMaps,  total: total };
+  window._ovxThemeData  = { allItems: allThemeItems, yearMap: yearThemeMap, qMaps: qThemeMaps, total: total };
 
   // Render charts after DOM is ready
   setTimeout(function() {
@@ -538,6 +587,32 @@ function ovxRender(initiatives, members) {
       });
     }
 
+    // Team donuts
+    var td = window._ovxTeamData;
+    if (td && td.allItems.length > 0) {
+      var teamColors = td.allItems.map(function(_, idx) { return OVX_DRIVER_COLORS[idx % OVX_DRIVER_COLORS.length]; });
+      ovxRenderDriverDonut('ovx-team-year', td.yearMap, td.allItems, teamColors);
+      ['Q1','Q2','Q3','Q4'].forEach(function(q) {
+        var qd = td.qMaps[q];
+        if (qd && qd.count > 0) {
+          ovxRenderDriverDonut('ovx-team-' + q.toLowerCase(), qd.map, td.allItems, teamColors);
+        }
+      });
+    }
+
+    // Theme donuts
+    var thd = window._ovxThemeData;
+    if (thd && thd.allItems.length > 0) {
+      var themeColors = thd.allItems.map(function(_, idx) { return OVX_DRIVER_COLORS[idx % OVX_DRIVER_COLORS.length]; });
+      ovxRenderDriverDonut('ovx-theme-year', thd.yearMap, thd.allItems, themeColors);
+      ['Q1','Q2','Q3','Q4'].forEach(function(q) {
+        var qd = thd.qMaps[q];
+        if (qd && qd.count > 0) {
+          ovxRenderDriverDonut('ovx-theme-' + q.toLowerCase(), qd.map, thd.allItems, themeColors);
+        }
+      });
+    }
+
     // AI Insights
     if (typeof renderInsightBox === 'function' && typeof ovxQuarterInsights === 'function') {
       renderInsightBox('ovx-quarter-insights', selQ,
@@ -548,6 +623,73 @@ function ovxRender(initiatives, members) {
         ovxPortfolioInsights(yrInits, selYr, quarters, qMap, byDs, pct, allDrivers, yearDriverMap));
     }
   }, 0);
+}
+
+// ── Reusable donut card (By Team / By Theme / By Driver) ──────────────────
+function ovxDonutCard(title, prefix, allItems, yearMap, qMaps, total, selYr) {
+  if (allItems.length === 0) {
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column">'
+      + '<div style="padding:16px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0">'
+      +   '<span style="font-size:13px;font-weight:600;color:var(--text)">' + title + '</span>'
+      + '</div>'
+      + '<div style="padding:16px 20px;flex:1;font-size:11px;color:var(--faint);text-align:center;padding-top:28px">No initiatives yet</div>'
+      + '</div>';
+  }
+  var colors = allItems.map(function(_, idx) { return OVX_DRIVER_COLORS[idx % OVX_DRIVER_COLORS.length]; });
+
+  return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column">'
+    + '<div style="padding:16px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0">'
+    +   '<span style="font-size:13px;font-weight:600;color:var(--text)">' + title + '</span>'
+    + '</div>'
+    + '<div style="padding:16px 20px;flex:1">'
+    + '<div style="display:flex;align-items:center;gap:0;width:100%">'
+
+      // Left: year donut + legend
+      + '<div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;padding-right:20px">'
+      +   '<div style="position:relative;width:130px;height:130px;margin-bottom:12px">'
+      +     '<canvas id="ovx-' + prefix + '-year" width="130" height="130"></canvas>'
+      +     '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;line-height:1">'
+      +       '<div style="font-size:24px;font-weight:700;color:var(--text)">' + total + '</div>'
+      +       '<div style="font-size:9px;color:var(--muted);margin-top:2px">total</div>'
+      +     '</div>'
+      +   '</div>'
+      +   '<div style="display:flex;flex-direction:column;align-items:flex-start;gap:4px">'
+      +   allItems.map(function(item, idx) {
+            var c = colors[idx];
+            return '<div style="display:flex;align-items:center;gap:5px">'
+              + '<div style="width:7px;height:7px;border-radius:50%;background:' + c + ';flex-shrink:0"></div>'
+              + '<span style="font-size:10px;color:var(--muted);white-space:nowrap">' + item + '</span>'
+              + '</div>';
+          }).join('')
+      +   '</div>'
+      + '</div>'
+
+      // Vertical divider
+      + '<div style="width:1px;background:var(--border);align-self:stretch;flex-shrink:0;margin:0 20px"></div>'
+
+      // Right: 2×2 quarterly donuts
+      + '<div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+      + ['Q1','Q2','Q3','Q4'].map(function(q) {
+          var qd = qMaps[q];
+          var isEmpty = !qd || qd.count === 0;
+          return '<div style="text-align:center">'
+            + '<div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:6px">' + q + '</div>'
+            + (isEmpty
+                ? '<div style="width:80px;height:80px;margin:0 auto;border-radius:50%;border:7px solid var(--border);display:flex;align-items:center;justify-content:center"><span style="font-size:14px;color:var(--faint)">—</span></div>'
+                : '<div style="position:relative;width:80px;height:80px;margin:0 auto">'
+                +   '<canvas id="ovx-' + prefix + '-' + q.toLowerCase() + '" width="80" height="80"></canvas>'
+                +   '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;line-height:1">'
+                +     '<div style="font-size:15px;font-weight:700;color:var(--text)">' + qd.count + '</div>'
+                +   '</div>'
+                + '</div>'
+              )
+            + '</div>';
+        }).join('')
+      + '</div>'
+
+    + '</div>'   // flex row
+    + '</div>'   // padding div
+    + '</div>';  // card
 }
 
 // ── Component builders ─────────────────────────────────────────────────────
@@ -591,11 +733,11 @@ function ovxRenderChart(key, allInits, selQ) {
     data: {
       labels: labels,
       datasets: [
-        { label: 'On Track',    data: labels.map(function(k){return groups[k]['on-track'];   }), backgroundColor: '#2EAD4B', borderRadius: 0 },
+        { label: 'On Track',    data: labels.map(function(k){return groups[k]['on-track'];   }), backgroundColor: '#0EA5E9', borderRadius: 0 },
         { label: 'At Risk',     data: labels.map(function(k){return groups[k]['at-risk'];    }), backgroundColor: '#E5A100', borderRadius: 0 },
         { label: 'Delayed',     data: labels.map(function(k){return groups[k]['delayed'];    }), backgroundColor: '#E5243B', borderRadius: 0 },
         { label: 'On Hold',     data: labels.map(function(k){return groups[k]['on-hold'];    }), backgroundColor: '#C2410C', borderRadius: 0 },
-        { label: 'Delivered',   data: labels.map(function(k){return groups[k]['delivered'];  }), backgroundColor: '#1D4ED8', borderRadius: 0 },
+        { label: 'Delivered',   data: labels.map(function(k){return groups[k]['delivered'];  }), backgroundColor: '#2EAD4B', borderRadius: 0 },
         { label: 'Not Started', data: labels.map(function(k){return groups[k]['not-started'];}), backgroundColor: '#C8C8C8', borderRadius: 0 }
       ]
     },
@@ -617,13 +759,9 @@ function ovxRenderRoiScatter(allInits, selQ) {
   var canvas = document.getElementById('ovx-group-chart');
   if (!canvas || typeof Chart === 'undefined') return;
 
-  // For ROI scatter use the full selected year (not just one quarter) — richer view
-  var selYr = window._ovxSelYear || new Date().getFullYear();
+  // Filter to selected quarter (same as all other charts)
   var subset = allInits.filter(function(i) {
-    var n = ovxNormalizeQ(i.quarter || '');
-    if (!n) return false;
-    var m = n.match(/Q\d\s+(\d{4})/);
-    return m && parseInt(m[1]) === selYr;
+    return ovxNormalizeQ(i.quarter || '') === selQ;
   });
 
   var drivers = [];
@@ -829,11 +967,20 @@ function ovxNavCard(c) {
     : 'cursor:pointer';
   var hoverAttrs = c.disabled ? '' :
     ' onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'\'"';
-  var clickAttr = c.disabled ? '' :
-    ' onclick="setPage(\'' + c.id + '\',\'' + c.label.replace(/'/g, "\\'") + '\')"';
+  var clickAttr;
+  if (c.disabled) {
+    clickAttr = '';
+  } else if (c.href) {
+    clickAttr = ' onclick="window.open(\'' + c.href + '\',\'_blank\')"';
+  } else {
+    var _itCall = c.initTab ? 'window._rnxInitTab=\'' + c.initTab + '\';' : '';
+    clickAttr = ' onclick="' + _itCall + 'setPage(\'' + c.id + '\',\'' + c.label.replace(/'/g, "\\'") + '\')"';
+  }
   var rightIcon = c.disabled
     ? '<span style="margin-left:auto;font-size:10px;font-weight:500;color:var(--faint);white-space:nowrap">Coming Soon</span>'
-    : '<svg style="margin-left:auto;color:var(--muted)" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    : c.href
+      ? '<svg style="margin-left:auto;color:var(--muted)" width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M6 3h7v7M13 3 5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      : '<svg style="margin-left:auto;color:var(--muted)" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;transition:background .12s;margin-bottom:4px;' + disabledStyle + '"'
     + clickAttr + hoverAttrs + '>'
     + '<span style="width:28px;height:28px;border-radius:7px;background:var(--subtle);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0">' + c.icon + '</span>'
@@ -852,7 +999,17 @@ function ovxNavTile(c) {
   var base = 'position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 4px 8px;border-radius:8px;border:1px solid var(--border);text-align:center;transition:background .12s,border-color .12s;height:100%';
   var dis  = disabled ? ';opacity:.55;cursor:default' : ';cursor:pointer';
   var hover = disabled ? '' : ' onmouseenter="this.style.background=\'var(--subtle)\';this.style.borderColor=\'var(--border-md)\'" onmouseleave="this.style.background=\'\';this.style.borderColor=\'var(--border)\'"';
-  var click = disabled ? '' : ' onclick="setPage(\'' + c.id + '\',\'' + c.label.replace(/'/g, "\\'") + '\')"';
+  var click;
+  if (disabled) {
+    click = '';
+  } else if (c.onclick) {
+    click = ' onclick="' + c.onclick + '"';
+  } else if (c.href) {
+    click = ' onclick="window.open(\'' + c.href + '\',\'_blank\')"';
+  } else {
+    var _initTabCall = c.initTab ? 'window._rnxInitTab=\'' + c.initTab + '\';' : '';
+    click = ' onclick="' + _initTabCall + 'setPage(\'' + c.id + '\',\'' + c.label.replace(/'/g, "\\'") + '\')"';
+  }
   var badge = disabled
     ? '<div style="position:absolute;top:5px;right:5px;font-size:7px;font-weight:600;color:var(--muted);background:var(--subtle);border:1px solid var(--border);border-radius:4px;padding:1px 4px;line-height:1.4;letter-spacing:.2px">Soon</div>'
     : '';

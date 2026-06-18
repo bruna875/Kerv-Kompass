@@ -108,6 +108,8 @@ export default async function handler(req, res) {
     const {
       title,
       type            = 'Task',
+      description,
+      parentKey,      // optional: epic key to set as parent (next-gen) or epic link (classic)
       storyPoints,
       assigneeAccountId,
       project         = DEFAULT_PROJECT,
@@ -117,13 +119,22 @@ export default async function handler(req, res) {
     if (!title) return res.status(400).json({ ok: false, error: 'title required' });
 
     const jiraType = TYPE_MAP[type] || 'Task';
+
+    // Jira REST API v3 requires Atlassian Document Format for description
+    const descriptionAdf = description ? {
+      type: 'doc', version: 1,
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: String(description) }] }]
+    } : undefined;
+
     const fields = {
       project:   { key: project },
       summary:   title,
       issuetype: { name: jiraType },
-      ...(storyPoints != null    ? { customfield_10016: Number(storyPoints) } : {}),
-      ...(assigneeAccountId      ? { assignee: { accountId: assigneeAccountId } } : {}),
-      ...(type === 'Spike'       ? { labels: ['spike'] } : {})
+      ...(descriptionAdf             ? { description: descriptionAdf } : {}),
+      ...(parentKey                  ? { parent: { key: parentKey } } : {}),
+      ...(storyPoints != null        ? { customfield_10016: Number(storyPoints) } : {}),
+      ...(assigneeAccountId          ? { assignee: { accountId: assigneeAccountId } } : {}),
+      ...(type === 'Spike'           ? { labels: ['spike'] } : {})
     };
 
     try {

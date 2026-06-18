@@ -24,7 +24,7 @@ function createKanbanAnalysis(config) {
   // ── Pin system (identical to sprint-analysis) ─────────────────────────────
 
   function loadPins(cb) {
-    fetch('/api/neon/lookup?pageId=' + encodeURIComponent(id))
+    fetch('/api/neon/pinned-links?pageId=' + encodeURIComponent(id))
       .then(function(r) { return r.json(); })
       .then(function(rows) { pinnedLinks = Array.isArray(rows) ? rows : []; if (cb) cb(); })
       .catch(function() { pinnedLinks = []; if (cb) cb(); });
@@ -125,7 +125,7 @@ function createKanbanAnalysis(config) {
       if (errEl) errEl.style.display = 'none';
       if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
       var payload = link ? { action: 'pin-update', id: link.id, label: lbl, url: urlVal } : { action: 'pin-create', pageId: id, label: lbl, url: urlVal };
-      fetch('/api/neon/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      fetch('/api/neon/pinned-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         .then(function(r) { return r.json(); })
         .then(function(res) {
           if (!res.ok) throw new Error(res.error || 'Save failed');
@@ -176,7 +176,7 @@ function createKanbanAnalysis(config) {
     document.getElementById(_p('pc-cancel')).onclick = closeConfirm;
     document.getElementById(_p('pc-ok')).onclick = function() {
       closeConfirm();
-      fetch('/api/neon/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pin-delete', id: linkId }) })
+      fetch('/api/neon/pinned-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pin-delete', id: linkId }) })
         .then(function() { pinnedLinks = pinnedLinks.filter(function(l) { return String(l.id) !== String(linkId); }); _refreshPinDd(); });
     };
   }
@@ -216,7 +216,10 @@ function createKanbanAnalysis(config) {
       +     '<div style="width:36px;height:36px;border-radius:8px;background:rgba(99,102,241,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#6366F1">' + BOARD_ICON + '</div>'
       +     '<div>'
       +       '<div style="font-size:20px;font-weight:600;color:var(--text);letter-spacing:-.3px">' + _esc(config.teamName) + '</div>'
-      +       '<div style="font-size:12px;color:var(--muted);margin-top:1px">' + _esc(config.subtitle) + '</div>'
+      +       '<div style="display:flex;align-items:center;gap:8px;margin-top:1px">'
+      +         '<div style="font-size:12px;color:var(--muted)">' + _esc(config.subtitle) + '</div>'
+      +         '<span style="font-size:10px;font-weight:600;letter-spacing:.3px;color:#10B981;background:rgba(16,185,129,.1);border-radius:20px;padding:2px 8px">Kanban</span>'
+      +       '</div>'
       +     '</div>'
       +   '</div>'
       +   '<div style="display:flex;align-items:center;gap:8px">'
@@ -287,9 +290,9 @@ function createKanbanAnalysis(config) {
   // ── Jira loading ──────────────────────────────────────────────────────────
 
   function loadFromJira() {
-    var root = document.getElementById(_p('root'));
-    if (root) {
-      root.innerHTML = '<div style="padding:40px 0;text-align:center;font-size:12px;color:var(--muted)">'
+    var statsEl = document.getElementById(_p('stats'));
+    if (statsEl) {
+      statsEl.innerHTML = '<div style="grid-column:1/-1;padding:20px;text-align:center;font-size:12px;color:var(--muted)">'
         + '<span style="display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:ld-spin .7s linear infinite;vertical-align:middle;margin-right:8px"></span>'
         + 'Loading Kanban data from Jira…</div>';
     }
@@ -301,19 +304,17 @@ function createKanbanAnalysis(config) {
         if (!data.ok) throw new Error(data.error || 'Jira API error');
         if (!data.kanban) throw new Error('No Kanban metrics in response — board may be Scrum');
         kData = data.kanban;
-        if (root) root.innerHTML = shell();
         renderAll();
       })
       .catch(function(e) {
         console.error('[ka:' + id + '] load failed:', e.message);
-        if (root) root.innerHTML = ''
-          + '<div style="padding:32px 0">'
-          +   '<div style="font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.3px;margin-bottom:8px">' + _esc(config.teamName) + '</div>'
-          +   '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:480px">'
-          +     '<div style="font-size:13px;font-weight:600;color:#EF4444;margin-bottom:6px">Could not load Jira data</div>'
-          +     '<div style="font-size:12px;color:var(--muted);font-family:monospace">' + _esc(e.message) + '</div>'
-          +   '</div>'
-          + '</div>';
+        var errEl = document.getElementById(_p('stats'));
+        if (errEl) {
+          errEl.innerHTML = '<div style="grid-column:1/-1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:480px">'
+            + '<div style="font-size:13px;font-weight:600;color:#EF4444;margin-bottom:6px">Could not load Jira data</div>'
+            + '<div style="font-size:12px;color:var(--muted);font-family:monospace">' + _esc(e.message) + '</div>'
+            + '</div>';
+        }
       });
   }
 
@@ -619,7 +620,7 @@ function createKanbanAnalysis(config) {
   // ── Public API ────────────────────────────────────────────────────────────
 
   function render() {
-    return '<div id="' + _p('root') + '"></div>';
+    return '<div id="' + _p('root') + '">' + shell() + '</div>';
   }
 
   function init() {

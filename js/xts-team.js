@@ -13,7 +13,7 @@ function _sdGetJiraProjects(cb) {
     cb(_rnxJiraProjects);
     return;
   }
-  fetch('/api/neon/lookup?t=jira-projects')
+  fetch('/api/neon/jira-projects')
     .then(function(r) { return r.json(); })
     .then(function(rows) { cb(Array.isArray(rows) ? rows : []); })
     .catch(function() { cb([]); });
@@ -141,6 +141,39 @@ function _sdRenderInner(dbId, projObjs, activeKey) {
   setTimeout(function() { inst.init(); }, 50);
 }
 
+// Called by sprint-analysis.js after the Kanban shell replaces the SA shell,
+// to re-inject the edit pencil next to the Kanban title.
+function _sdAfterKanbanRender(rootEl) {
+  if (!rootEl) return;
+  var canManage = typeof _kervUser !== 'undefined' && _kervUser &&
+    (_kervUser.superAdmin || (_kervUser.permissions && _kervUser.permissions['settings-neon'] === 'editor'));
+  if (!canManage) return;
+  // Walk up to find sd-outer-{dbId}
+  var outer = rootEl;
+  while (outer && !/^sd-outer-/.test(outer.id)) outer = outer.parentElement;
+  if (!outer) return;
+  var dbId = parseInt(outer.id.replace('sd-outer-', ''), 10);
+  if (!dbId) return;
+  // Find the Kanban title inside rootEl
+  var titleEl = rootEl.querySelector('[style*="font-size:20px"]');
+  if (!titleEl || !titleEl.parentNode) return;
+  // Don't double-inject
+  if (titleEl.parentNode.getAttribute('data-sd-pencil')) return;
+  var wrapper = document.createElement('div');
+  wrapper.style.cssText = 'display:flex;align-items:center;gap:6px';
+  wrapper.setAttribute('data-sd-pencil', '1');
+  titleEl.parentNode.insertBefore(wrapper, titleEl);
+  wrapper.appendChild(titleEl);
+  var editEl = document.createElement('button');
+  editEl.title = 'Edit dashboard';
+  editEl.setAttribute('onclick', '_sdOpenEditModal(' + dbId + ')');
+  editEl.style.cssText = 'padding:0;border:none;background:none;color:var(--faint);cursor:pointer;display:inline-flex;align-items:center;transition:color .15s;flex-shrink:0';
+  editEl.setAttribute('onmouseenter', "this.style.color='var(--accent)'");
+  editEl.setAttribute('onmouseleave', "this.style.color='var(--faint)'");
+  editEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+  wrapper.appendChild(editEl);
+}
+
 // Switch to a different project chip
 function _sdSwitch(dbId, jiraId) {
   var dash = null;
@@ -206,10 +239,15 @@ function _sdBuildModal(dash) {
     } else {
       var boxes = jiraProjects.map(function(p) {
         var checked = currentKeys.indexOf(p.jira_id) !== -1;
+        var isKanban = (p.board_type || 'scrum') === 'kanban';
+        var typeColor = isKanban ? '#10B981' : '#6366F1';
+        var typeBg    = isKanban ? 'rgba(16,185,129,.1)' : 'rgba(99,102,241,.1)';
+        var typeLabel = isKanban ? 'Kanban' : 'Scrum';
         return '<label style="display:flex;align-items:center;gap:8px;padding:7px 0;cursor:pointer;font-size:13px;color:var(--text);border-bottom:1px solid var(--border)">'
           + '<input type="checkbox" data-jira="' + p.jira_id + '" ' + (checked ? 'checked' : '') + ' style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">'
           + '<span style="font-weight:600;color:var(--accent);min-width:60px">' + p.jira_id + '</span>'
-          + '<span style="color:var(--muted)">' + p.team_name + '</span>'
+          + '<span style="color:var(--muted);flex:1">' + p.team_name + '</span>'
+          + '<span style="font-size:10px;font-weight:600;letter-spacing:.3px;color:' + typeColor + ';background:' + typeBg + ';border-radius:20px;padding:2px 8px;flex-shrink:0">' + typeLabel + '</span>'
           + '</label>';
       }).join('');
       projectsHtml = '<div style="margin-bottom:14px">'
@@ -220,7 +258,7 @@ function _sdBuildModal(dash) {
 
     card.innerHTML = ''
       + '<div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">'
-      +   '<div style="font-size:15px;font-weight:600;letter-spacing:-.3px;color:var(--text)">' + (isNew ? 'Add Sprint Dashboard' : 'Edit Sprint Dashboard') + '</div>'
+      +   '<div style="font-size:15px;font-weight:600;letter-spacing:-.3px;color:var(--text)">' + (isNew ? 'Add Analysis Dashboard' : 'Edit Analysis Dashboard') + '</div>'
       +   '<button onclick="_sdCloseModal()" style="width:30px;height:30px;border:1px solid var(--border-md);border-radius:7px;background:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .15s" onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'" onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
       +     '<svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
       +   '</button>'
@@ -293,10 +331,10 @@ function _sdSave(dbId, name, keys) {
   var errEl  = document.getElementById('sd-modal-err');
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
-  var payload = { t: 'sprint-dashboards', name: name, project_keys: keys };
+  var payload = { name: name, project_keys: keys };
   if (dbId) payload.id = dbId;
 
-  fetch('/api/neon/lookup', {
+  fetch('/api/neon/dashboards', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -327,10 +365,10 @@ function _sdDelete(dbId) {
     : function(msg, cb) { if (window.confirm(msg.replace(/<[^>]+>/g, ''))) cb(); };
 
   confirm_('Delete this sprint dashboard? This cannot be undone.', function() {
-    fetch('/api/neon/lookup', {
+    fetch('/api/neon/dashboards', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ t: 'sprint-dashboards', id: dbId })
+      body: JSON.stringify({ id: dbId })
     })
     .then(function(r) { return r.json(); })
     .then(function(res) {

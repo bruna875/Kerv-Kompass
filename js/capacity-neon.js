@@ -12,6 +12,22 @@ var cnxMembers        = [];   // team members (for avatar photos)
 var cnxActiveTab      = 'allocation';
 var cnxQ              = null; // active quarter
 
+// ── Module-scope constants for tab and quarter navigation ──────────────────
+
+var CNX_TABS = [
+  { id: 'allocation', label: 'Team Allocation' },
+  { id: 'englead',    label: 'By Eng Lead'     },
+  { id: 'prodlead',   label: 'By Prod Lead'    }
+];
+
+var CNX_Q_OPTS = [
+  { id: 'Q1',  label: 'Q1'       },
+  { id: 'Q2',  label: 'Q2'       },
+  { id: 'Q3',  label: 'Q3'       },
+  { id: 'Q4',  label: 'Q4'       },
+  { id: 'all', label: 'All Year' }
+];
+
 // ── Colour maps (imported from roadmap-neon globals if available) ──────────
 // Falls back to its own palette so this module is truly independent.
 
@@ -27,7 +43,8 @@ function cnxBuildColorMaps() {
   });
   ds.sort(); ts.sort();
   cnxDriverColors = {}; cnxThemeColors = {};
-  ds.forEach(function(d, i) { cnxDriverColors[d] = CNX_PALETTE[i % CNX_PALETTE.length]; });
+  // driver colors: delegate to kervDriverColor() for consistency with Roadmap
+  ds.forEach(function(d)    { cnxDriverColors[d] = typeof kervDriverColor === 'function' ? kervDriverColor(d) : CNX_PALETTE[ds.indexOf(d) % CNX_PALETTE.length]; });
   ts.forEach(function(t, i) { cnxThemeColors[t]  = CNX_GREENS[i  % CNX_GREENS.length]; });
 }
 
@@ -55,12 +72,6 @@ function cnxMemberAvatar(name, size) {
   var initials = name ? name.split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2) : '?';
   return '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:var(--subtle);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:' + Math.round(size*0.38) + 'px;font-weight:600;color:var(--muted)">' + initials + '</div>';
 }
-
-function cnxBadge(text, color) {
-  return '<span class="badge" style="background:' + color + '18;color:' + color + '">' + text + '</span>';
-}
-function cnxDriverBadge(v) { return cnxBadge(v || '—', cnxDriverColors[v] || '#8E8E93'); }
-function cnxThemeBadge(v)  { return cnxBadge(v || '—', cnxThemeColors[v]  || '#8E8E93'); }
 
 // ── Budget helpers ─────────────────────────────────────────────────────────
 
@@ -178,58 +189,45 @@ function cnxScorecardHtml(label, used, budget) {
 function cnxTeamBlock(teamName, used, budget, inits, fte) {
   function fmtFte(n) { n = parseFloat(n) || 0; return n % 1 === 0 ? String(n) : parseFloat(n.toFixed(1)).toString(); }
   var totalUsed = used.design + used.engineering + used.product;
-  function cnxAvatarCell(name) {
-    if (!name) return '<td style="padding:6px 8px">—</td>';
-    return '<td style="padding:6px 8px" title="' + name + '">'
-      + '<div style="display:flex;align-items:center;gap:6px;overflow:hidden">'
-      +   cnxMemberAvatar(name, 22)
-      +   '<span style="font-size:11px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + name.split(' ')[0] + '</span>'
-      + '</div>'
-      + '</td>';
+
+  function _avCellHtml(name) {
+    if (!name) return '—';
+    return '<div style="display:flex;align-items:center;gap:6px;overflow:hidden">'
+      + cnxMemberAvatar(name, 22)
+      + '<span style="font-size:11px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + name.split(' ')[0] + '</span>'
+      + '</div>';
   }
 
+  var cols = [
+    { label: 'Initiative',  width: '22%'                     },
+    { label: 'Driver',      width: '15%'                     },
+    { label: 'Theme',       width: '14%'                     },
+    { label: 'Prod Lead',   width: '10%'                     },
+    { label: 'Eng Lead',    width: '10%'                     },
+    { label: 'Eng',         width: '6%',  align: 'right'    },
+    { label: 'Prod',        width: '6%',  align: 'right'    },
+    { label: 'Des',         width: '6%',  align: 'right'    },
+    { label: 'Total',       width: '6%',  align: 'right'    },
+    { label: 'ROI',         width: '5%',  align: 'right'    }
+  ];
+
   var initRows = inits.map(function(ini) {
-    return '<tr style="border-top:0.5px solid var(--border)">'
-      + '<td style="padding:8px 8px 8px 0;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + ini.title + '">' + ini.title + '</td>'
-      + '<td style="padding:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + cnxDriverBadge(ini.driver) + '</td>'
-      + '<td style="padding:8px;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ini.theme || '—') + '</td>'
-      + cnxAvatarCell(ini.productOwner)
-      + cnxAvatarCell(ini.techLead)
-      + '<td style="padding:8px;text-align:right;color:var(--muted)">'    + (ini.engineering ? Math.round(ini.engineering) + 'd' : '—') + '</td>'
-      + '<td style="padding:8px;text-align:right;color:var(--muted)">'    + (ini.product     ? Math.round(ini.product)     + 'd' : '—') + '</td>'
-      + '<td style="padding:8px;text-align:right;color:var(--muted)">'    + (ini.design      ? Math.round(ini.design)      + 'd' : '—') + '</td>'
-      + '<td style="padding:8px;text-align:right;font-weight:500;color:var(--text)">' + Math.round(ini.total) + 'd</td>'
-      + '<td style="padding:8px 0 8px 8px;text-align:right">' + cnxRoiHtml(ini.roi) + '</td>'
-      + '</tr>';
+    return UI.trReadOnly([
+      '<div style="font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + ini.title + '">' + ini.title + '</div>',
+      UI.badge(ini.driver || '—', cnxDriverColors[ini.driver] || '#8E8E93', (cnxDriverColors[ini.driver] || '#8E8E93') + '18'),
+      '<span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">' + (ini.theme || '—') + '</span>',
+      _avCellHtml(ini.productOwner),
+      _avCellHtml(ini.techLead),
+      '<div style="text-align:right;color:var(--muted)">' + (ini.engineering ? Math.round(ini.engineering) + 'd' : '—') + '</div>',
+      '<div style="text-align:right;color:var(--muted)">' + (ini.product     ? Math.round(ini.product)     + 'd' : '—') + '</div>',
+      '<div style="text-align:right;color:var(--muted)">' + (ini.design      ? Math.round(ini.design)      + 'd' : '—') + '</div>',
+      '<div style="text-align:right;font-weight:500;color:var(--text)">' + Math.round(ini.total) + 'd</div>',
+      '<div style="text-align:right">' + cnxRoiHtml(ini.roi) + '</div>'
+    ]);
   }).join('');
 
-  var TH = 'text-align:left;padding:4px 8px';
-  var TR = 'text-align:right;padding:4px 8px';
-  var initTable = '<table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">'
-    + '<colgroup>'
-    +   '<col style="width:160px">'
-    +   '<col style="width:110px">'
-    +   '<col style="width:110px">'
-    +   '<col style="width:96px">'
-    +   '<col style="width:96px">'
-    +   '<col style="width:72px">'
-    +   '<col style="width:72px">'
-    +   '<col style="width:72px">'
-    +   '<col style="width:60px">'
-    +   '<col style="width:56px">'
-    + '</colgroup>'
-    + '<thead><tr style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint)">'
-    + '<th style="' + TH + ';padding-left:0">Initiative</th>'
-    + '<th style="' + TH + '">Driver</th>'
-    + '<th style="' + TH + '">Theme</th>'
-    + '<th style="' + TH + '">Prod Lead</th>'
-    + '<th style="' + TH + '">Eng Lead</th>'
-    + '<th style="' + TR + '">Engineering</th>'
-    + '<th style="' + TR + '">Product</th>'
-    + '<th style="' + TR + '">Design</th>'
-    + '<th style="' + TR + '">Total</th>'
-    + '<th style="text-align:right;padding:4px 0 4px 8px">ROI</th>'
-    + '</tr></thead><tbody style="border-top:0.5px solid var(--border)">' + initRows + '</tbody></table>';
+  var tableId  = 'cnx-team-tbl-' + teamName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+  var initTable = UI.tableScroll(cols, initRows, tableId, 0, '', { inCard: true, tableLayout: 'fixed' });
 
   var fteLabel = fte
     ? [
@@ -239,76 +237,85 @@ function cnxTeamBlock(teamName, used, budget, inits, fte) {
       ].map(function(x) { return fmtFte(x.n) + ' ' + x.l; }).join(' · ')
     : '';
 
-  return '<div class="cap-team-block">'
-    + '<div class="cap-team-head">'
-    +   '<div style="display:flex;align-items:baseline;gap:8px">'
-    +     '<div class="cap-team-name">' + teamName + '</div>'
-    +     (fteLabel ? '<span style="font-size:11px;color:var(--faint);font-weight:400">' + fteLabel + '</span>' : '')
-    +   '</div>'
-    +   '<span class="cap-team-meta">' + inits.length + ' initiative' + (inits.length !== 1 ? 's' : '') + ' · ' + Math.round(totalUsed) + ' days</span>'
-    + '</div>'
-    + '<div class="cap-team-body">'
-    +   '<div class="cap-bar-row"><div class="cap-bar-label">Engineering</div>' + cnxBarHtml(used.engineering, budget.engineering) + cnxStatsHtml(used.engineering, budget.engineering) + '</div>'
-    +   '<div class="cap-bar-row"><div class="cap-bar-label">Product</div>'     + cnxBarHtml(used.product,     budget.product)     + cnxStatsHtml(used.product,     budget.product)     + '</div>'
-    +   '<div class="cap-bar-row"><div class="cap-bar-label">Design</div>'      + cnxBarHtml(used.design,      budget.design)      + cnxStatsHtml(used.design,      budget.design)      + '</div>'
-    +   '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">' + initTable + '</div>'
-    + '</div></div>';
+  var robBadge = (fte && fte.eng_rob_pct != null)
+    ? '<span style="font-size:10px;font-weight:400;color:#9A3412;background:#FFF7ED;border-radius:4px;padding:2px 6px;white-space:nowrap">Engineering Run of Business: ' + fte.eng_rob_pct + '%</span>'
+    : '';
+
+  var titleHtml = '<div style="display:flex;align-items:baseline;gap:8px">'
+    + '<div style="font-size:14px;font-weight:600;color:var(--text)">' + teamName + '</div>'
+    + (fteLabel ? '<span style="font-size:11px;color:var(--faint);font-weight:400">' + fteLabel + '</span>' : '')
+    + '</div>';
+
+  var headerRight = '<div style="display:flex;align-items:center;gap:8px">'
+    + robBadge
+    + '<span class="cap-team-meta">' + inits.length + ' initiative' + (inits.length !== 1 ? 's' : '') + ' · ' + Math.round(totalUsed) + ' days</span>'
+    + '</div>';
+
+  var barsHtml = '<div class="cap-team-body" style="padding:16px 20px 16px">'
+    + '<div class="cap-bar-row"><div class="cap-bar-label">Engineering</div>' + cnxBarHtml(used.engineering, budget.engineering) + cnxStatsHtml(used.engineering, budget.engineering) + '</div>'
+    + '<div class="cap-bar-row"><div class="cap-bar-label">Product</div>'     + cnxBarHtml(used.product,     budget.product)     + cnxStatsHtml(used.product,     budget.product)     + '</div>'
+    + '<div class="cap-bar-row"><div class="cap-bar-label">Design</div>'      + cnxBarHtml(used.design,      budget.design)      + cnxStatsHtml(used.design,      budget.design)      + '</div>'
+    + '</div>';
+
+  var bodyHtml = barsHtml
+    + '<div style="border-top:1px solid var(--border)">' + initTable + '</div>';
+
+  return UI.cardHeader({
+    titleHtml:   titleHtml,
+    headerRight: headerRight,
+    bodyHtml:    bodyHtml,
+    padding:     '0',
+    style:       'margin-bottom:16px'
+  });
 }
 
 // ── Leader block ───────────────────────────────────────────────────────────
 
 function cnxLeaderBlock(name, role, inits) {
   var total = 0;
+
+  var cols = [
+    { label: 'Initiative',  width: '25%'                    },
+    { label: 'Team',        width: '11%'                    },
+    { label: 'Driver',      width: '17%'                    },
+    { label: 'Theme',       width: '17%'                    },
+    { label: 'Eng',         width: '6%',  align: 'right'   },
+    { label: 'Prod',        width: '6%',  align: 'right'   },
+    { label: 'Des',         width: '6%',  align: 'right'   },
+    { label: 'Total',       width: '7%',  align: 'right'   },
+    { label: 'ROI',         width: '5%',  align: 'right'   }
+  ];
+
   var initRows = inits.map(function(ini) {
     total += ini.total;
-    return '<tr style="border-top:0.5px solid var(--border)">'
-      + '<td style="padding:8px 8px 8px 0;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + ini.title + '">' + ini.title + '</td>'
-      + '<td style="padding:8px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ini.team || '—') + '</td>'
-      + '<td style="padding:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + cnxDriverBadge(ini.driver) + '</td>'
-      + '<td style="padding:8px;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ini.theme || '—') + '</td>'
-      + '<td style="padding:8px;text-align:right;color:var(--muted)">'    + (ini.engineering ? Math.round(ini.engineering) + 'd' : '—') + '</td>'
-      + '<td style="padding:8px;text-align:right;color:var(--muted)">'    + (ini.product     ? Math.round(ini.product)     + 'd' : '—') + '</td>'
-      + '<td style="padding:8px;text-align:right;color:var(--muted)">'    + (ini.design      ? Math.round(ini.design)      + 'd' : '—') + '</td>'
-      + '<td style="padding:8px;text-align:right;font-weight:500;color:var(--text)">' + Math.round(ini.total) + 'd</td>'
-      + '<td style="padding:8px 0 8px 8px;text-align:right">' + cnxRoiHtml(ini.roi) + '</td>'
-      + '</tr>';
+    return UI.trReadOnly([
+      '<div style="font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + ini.title + '">' + ini.title + '</div>',
+      '<span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">' + (ini.team || '—') + '</span>',
+      UI.badge(ini.driver || '—', cnxDriverColors[ini.driver] || '#8E8E93', (cnxDriverColors[ini.driver] || '#8E8E93') + '18'),
+      '<span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">' + (ini.theme || '—') + '</span>',
+      '<div style="text-align:right;color:var(--muted)">' + (ini.engineering ? Math.round(ini.engineering) + 'd' : '—') + '</div>',
+      '<div style="text-align:right;color:var(--muted)">' + (ini.product     ? Math.round(ini.product)     + 'd' : '—') + '</div>',
+      '<div style="text-align:right;color:var(--muted)">' + (ini.design      ? Math.round(ini.design)      + 'd' : '—') + '</div>',
+      '<div style="text-align:right;font-weight:500;color:var(--text)">' + Math.round(ini.total) + 'd</div>',
+      '<div style="text-align:right">' + cnxRoiHtml(ini.roi) + '</div>'
+    ]);
   }).join('');
 
-  return '<div class="cap-leader-block">'
-    + '<div class="cap-leader-head">'
-    +   '<div style="display:flex;align-items:center;gap:10px">'
-    +     cnxMemberAvatar(name, 32)
-    +     '<div><div class="cap-leader-name">' + name + '</div><div class="cap-leader-role">' + role + '</div></div>'
-    +   '</div>'
-    +   '<span class="cap-team-meta">' + inits.length + ' initiative' + (inits.length !== 1 ? 's' : '') + ' · ' + Math.round(total) + 'd total</span>'
-    + '</div>'
-    + '<div class="cap-leader-body">'
-    +   '<table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">'
-    +     '<colgroup>'
-    +       '<col style="width:160px">'
-    +       '<col style="width:90px">'
-    +       '<col style="width:110px">'
-    +       '<col style="width:110px">'
-    +       '<col style="width:72px">'
-    +       '<col style="width:72px">'
-    +       '<col style="width:72px">'
-    +       '<col style="width:60px">'
-    +       '<col style="width:56px">'
-    +     '</colgroup>'
-    +     '<thead><tr style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--faint)">'
-    +       '<th style="text-align:left;padding:12px 8px 4px 0">Initiative</th>'
-    +       '<th style="text-align:left;padding:12px 8px 4px">Team</th>'
-    +       '<th style="text-align:left;padding:12px 8px 4px">Driver</th>'
-    +       '<th style="text-align:left;padding:12px 8px 4px">Theme</th>'
-    +       '<th style="text-align:right;padding:12px 8px 4px">Engineering</th>'
-    +       '<th style="text-align:right;padding:12px 8px 4px">Product</th>'
-    +       '<th style="text-align:right;padding:12px 8px 4px">Design</th>'
-    +       '<th style="text-align:right;padding:12px 8px 4px">Total</th>'
-    +       '<th style="text-align:right;padding:12px 0 4px 8px">ROI</th>'
-    +     '</tr></thead>'
-    +     '<tbody>' + initRows + '</tbody>'
-    +   '</table>'
-    + '</div></div>';
+  var m       = cnxMembers.filter(function(x) { return x.name === name; })[0];
+  var imgSrc  = m && m.pictureUrl ? m.pictureUrl : null;
+  var titleHtml   = UI.avatar(name, role, { size: 32, imgSrc: imgSrc });
+  var headerRight = '<span class="cap-team-meta">' + inits.length + ' initiative' + (inits.length !== 1 ? 's' : '') + ' · ' + Math.round(total) + 'd total</span>';
+
+  var tableId  = 'cnx-leader-tbl-' + name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+  var tableHtml = UI.tableScroll(cols, initRows, tableId, 0, '', { inCard: true, tableLayout: 'fixed' });
+
+  return UI.cardHeader({
+    titleHtml:   titleHtml,
+    headerRight: headerRight,
+    bodyHtml:    tableHtml,
+    padding:     '0',
+    style:       'margin-bottom:16px'
+  });
 }
 
 // ── Tab renders ────────────────────────────────────────────────────────────
@@ -376,25 +383,6 @@ function cnxRenderByProdLead(q) {
   return names.map(function(n) { return cnxLeaderBlock(n, 'Product Lead', leaders[n]); }).join('');
 }
 
-// ── Quarter filter ─────────────────────────────────────────────────────────
-
-function cnxQFilter() {
-  var cq = cnxCurrentQ();
-  var opts = ['Q1','Q2','Q3','Q4','all'];
-  return '<div class="qfilter">' + opts.map(function(q) {
-    var lbl = q === 'all' ? 'All Year' : q;
-    return '<button id="cnx-btn-' + q + '" class="qfilter-btn' + (q === cq ? ' act' : '') + '"'
-      + ' data-cnxq="' + q + '">' + lbl + '</button>';
-  }).join('') + '</div>';
-}
-
-function cnxSetQAct(q) {
-  ['Q1','Q2','Q3','Q4','all'].forEach(function(b) {
-    var el = document.getElementById('cnx-btn-' + b);
-    if (el) el.classList.toggle('act', b === q);
-  });
-}
-
 // ── Budget modal ───────────────────────────────────────────────────────────
 
 function cnxBudgetModalHtml() {
@@ -407,8 +395,8 @@ function cnxBudgetModalHtml() {
     +     '</button>'
     +   '</div>'
     +   '<div style="margin-bottom:14px">'
-    +     '<label for="cnx-bud-quarter" style="display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px">Quarter</label>'
-    +     '<select id="cnx-bud-quarter" onchange="cnxRefreshBudgetForm()" style="width:100%;box-sizing:border-box;padding:7px 10px;font-size:13px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text)">'
+    +     '<label for="cnx-bud-quarter" style="' + UI.LB + '">Quarter</label>'
+    +     '<select id="cnx-bud-quarter" onchange="cnxRefreshBudgetForm()" style="width:100%;height:36px;box-sizing:border-box;' + UI.IF + '">'
     +       ['Q1','Q2','Q3','Q4'].map(function(q) { return '<option value="'+q+'">'+q+'</option>'; }).join('')
     +     '</select>'
     +   '</div>'
@@ -416,14 +404,14 @@ function cnxBudgetModalHtml() {
     +   '<div style="margin-bottom:14px">'
     +     '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">Add new team</div>'
     +     '<div style="display:flex;gap:8px">'
-    +       '<input id="cnx-bud-newteam" placeholder="Team name" style="flex:1;padding:7px 10px;font-size:13px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text)" />'
-    +       '<button onclick="cnxAddBudgetRow()" style="padding:7px 14px;font-size:13px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Add</button>'
+    +       '<input id="cnx-bud-newteam" placeholder="Team name" style="flex:1;' + UI.IF + ';height:36px;box-sizing:border-box" />'
+    +       UI.btnSecondary('Add', 'cnxAddBudgetRow()')
     +     '</div>'
     +   '</div>'
     +   '<div id="cnx-bud-err" style="font-size:12px;color:#E5243B;margin-bottom:10px;display:none"></div>'
     +   '<div style="display:flex;justify-content:flex-end;gap:10px;padding-top:8px;border-top:1px solid var(--border)">'
-    +     '<button onclick="cnxCloseBudgetModal()" style="padding:7px 16px;font-size:13px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Cancel</button>'
-    +     '<button onclick="cnxSaveBudgets()" style="padding:7px 18px;font-size:13px;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:500">Save Budgets</button>'
+    +     UI.btnCancel('Cancel', 'cnxCloseBudgetModal()')
+    +     UI.btnPrimary('Save Budgets', 'cnxSaveBudgets()', 'cnx-bud-save-btn')
     +   '</div>'
     + '</div></div>';
 }
@@ -459,7 +447,6 @@ function cnxRefreshBudgetForm() {
     return;
   }
 
-  var IF = 'width:100%;box-sizing:border-box;padding:6px 8px;font-size:13px;border:1px solid var(--border-md);border-radius:5px;background:var(--surface);color:var(--text)';
   container.innerHTML = '<div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px">'
     + '<div style="font-size:11px;font-weight:500;color:var(--faint);text-transform:uppercase;letter-spacing:.4px">Team</div>'
     + '<div style="font-size:11px;font-weight:500;color:var(--faint);text-transform:uppercase;letter-spacing:.4px;text-align:right">Engineering d</div>'
@@ -470,9 +457,9 @@ function cnxRefreshBudgetForm() {
         var b = cnxGetBudget(t, q);
         return '<div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px;align-items:center">'
           + '<div style="font-size:12px;font-weight:500;color:var(--text)">' + t + '</div>'
-          + '<input type="number" min="0" class="cnx-bud-input" data-team="'+t+'" data-disc="engineering"  value="'+(b.engineering || 0)+'" style="'+IF+';text-align:right" />'
-          + '<input type="number" min="0" class="cnx-bud-input" data-team="'+t+'" data-disc="product"      value="'+(b.product     || 0)+'" style="'+IF+';text-align:right" />'
-          + '<input type="number" min="0" class="cnx-bud-input" data-team="'+t+'" data-disc="design"       value="'+(b.design      || 0)+'" style="'+IF+';text-align:right" />'
+          + '<input type="number" min="0" class="cnx-bud-input" data-team="'+t+'" data-disc="engineering"  value="'+(b.engineering || 0)+'" style="'+UI.IF+';text-align:right" />'
+          + '<input type="number" min="0" class="cnx-bud-input" data-team="'+t+'" data-disc="product"      value="'+(b.product     || 0)+'" style="'+UI.IF+';text-align:right" />'
+          + '<input type="number" min="0" class="cnx-bud-input" data-team="'+t+'" data-disc="design"       value="'+(b.design      || 0)+'" style="'+UI.IF+';text-align:right" />'
           + '</div>';
       }).join('');
 }
@@ -503,7 +490,7 @@ function cnxSaveBudgets() {
   var teams = Object.keys(byTeam);
   if (!teams.length) { cnxCloseBudgetModal(); return; }
 
-  var btn = document.querySelector('#cnx-budget-modal button[onclick="cnxSaveBudgets()"]');
+  var btn = document.getElementById('cnx-bud-save-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
   var promises = teams.map(function(team) {
@@ -536,7 +523,8 @@ function cnxSaveBudgets() {
 
 function cnxSwitchQ(q) {
   cnxQ = q;
-  cnxSetQAct(q);
+  var qEl = document.getElementById('cnx-qfilter');
+  if (qEl) qEl.innerHTML = UI.chipsNavSm(CNX_Q_OPTS, q, 'cnxSwitchQ');
   cnxRerenderTabContent();
 }
 
@@ -554,11 +542,11 @@ function cnxRerenderTabContent() {
 
 function cnxSwitchTab(tab) {
   cnxActiveTab = tab;
+  var pillsEl = document.getElementById('cnx-tabpills');
+  if (pillsEl) pillsEl.innerHTML = UI.pills(CNX_TABS, tab, 'cnxSwitchTab');
   ['allocation','englead','prodlead'].forEach(function(t) {
-    var btn = document.querySelector('[data-cnxtab="' + t + '"]');
-    var el  = document.getElementById('cnx-tab-' + t);
-    if (btn) btn.classList.toggle('act', t === tab);
-    if (el)  el.style.display = t === tab ? '' : 'none';
+    var el = document.getElementById('cnx-tab-' + t);
+    if (el) el.style.display = t === tab ? '' : 'none';
   });
 }
 
@@ -592,10 +580,9 @@ function cnxLoadAndRender() {
     container.innerHTML = cnxBuildInner();
     var cnxYnEl = document.getElementById('cnx-year-nav');
     if (cnxYnEl) cnxYnEl.innerHTML = rnxBuildYearNav('cnx', cnxAllInitiatives, cnxSelYear);
-    cnxInitEvents();
   })
   .catch(function(err) {
-    container.innerHTML = '<div style="padding:40px 32px;font-size:13px;color:#C0392B">Failed to load data.<br><br>' + err + '</div>';
+    container.innerHTML = UI.alertBanner('error', 'Failed to load data', String(err));
   });
 }
 
@@ -604,34 +591,14 @@ function cnxLoadAndRender() {
 function cnxBuildInner() {
   var q = cnxQ || cnxCurrentQ();
 
-  function tab(id, label) {
-    return '<button class="tabitem cnx-tabitem' + (id === cnxActiveTab ? ' act' : '') + '" data-cnxtab="' + id + '">' + label + '</button>';
-  }
-
-  return '<div class="tabnav">'
-    + tab('allocation', 'Team Allocation')
-    + tab('englead',    'By Eng Lead')
-    + tab('prodlead',   'By Prod Lead')
-    + '</div>'
-    + cnxQFilter()
+  return UI.pageNavBar({
+    tabs:       CNX_TABS,    activeTab:  cnxActiveTab, onTabFn:   'cnxSwitchTab', pillsId:   'cnx-tabpills',
+    chips:      CNX_Q_OPTS,  activeChip: q,            onChipFn:  'cnxSwitchQ',   chipsId:   'cnx-qfilter'
+  })
     + '<div id="cnx-tab-allocation" style="' + (cnxActiveTab==='allocation'?'':'display:none') + '">' + cnxRenderAllocation(q) + '</div>'
     + '<div id="cnx-tab-englead"    style="' + (cnxActiveTab==='englead'   ?'':'display:none') + '">' + cnxRenderByEngLead(q)  + '</div>'
     + '<div id="cnx-tab-prodlead"   style="' + (cnxActiveTab==='prodlead'  ?'':'display:none') + '">' + cnxRenderByProdLead(q) + '</div>'
     + cnxBudgetModalHtml();
-}
-
-// ── Event wiring ───────────────────────────────────────────────────────────
-
-function cnxInitEvents() {
-  // Tab buttons
-  document.querySelectorAll('.cnx-tabitem').forEach(function(btn) {
-    btn.addEventListener('click', function() { cnxSwitchTab(btn.dataset.cnxtab); });
-  });
-
-  // Quarter buttons
-  document.querySelectorAll('[data-cnxq]').forEach(function(btn) {
-    btn.addEventListener('click', function() { cnxSwitchQ(btn.dataset.cnxq); });
-  });
 }
 
 // ── Main render ────────────────────────────────────────────────────────────
@@ -644,40 +611,37 @@ function cnxSetYear(y) {
   var container = document.getElementById('cnx-content');
   if (container) {
     container.innerHTML = cnxBuildInner();
-    cnxInitEvents();
   }
   var cnxYnEl = document.getElementById('cnx-year-nav');
   if (cnxYnEl) cnxYnEl.innerHTML = rnxBuildYearNav('cnx', cnxAllInitiatives, cnxSelYear);
 }
 
 function renderTeamCapacityNeon() {
-  var html = '<div class="page-header">'
-    + '<div>'
-    +   '<div style="display:flex;align-items:center;gap:12px">'
-    +     '<div class="ptitle">Team Capacity</div>'
-    +     '<div id="cnx-year-nav" style="display:inline-block"></div>'
-    +   '</div>'
-    +   '<div class="psub">Capacity Budget utilization by team and discipline</div>'
-    + '</div>'
-    + '<div style="display:flex;align-items:center;gap:8px">'
-    + (typeof _kervCan === 'function' && _kervCan('roadmap-neon', 'editor')
-        ? '<button onclick="window._rnxPendingModal=null;setPage(\'roadmap-neon\',\'Product Roadmap\')" style="padding:7px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;transition:opacity .15s" onmouseenter="this.style.opacity=\'.85\'" onmouseleave="this.style.opacity=\'1\'">'
-        +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
-        +   'Add Initiative'
-        + '</button>'
-        : '')
-    +   rnxToolsMenuHtml()
-    + (typeof _kervCan === 'function' && (_kervCan('roadmap-neon', 'editor') || _kervCan('teamcapacity-neon', 'editor'))
-        ? '<button onclick="rnxOpenSettings()" title="Settings"'
-        +   ' style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s"'
-        +   ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
-        +   ' onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
-        +   '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><circle cx="12" cy="4" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="14" cy="20" r="2"/></svg>'
-        + '</button>'
-        : '')
-    + '</div>'
-    + '</div>'
-    + '<div id="cnx-content"></div>';
+  var canEdit   = typeof _kervCan === 'function' && _kervCan('roadmap-neon', 'editor');
+  var canManage = typeof _kervCan === 'function' && (_kervCan('roadmap-neon', 'editor') || _kervCan('teamcapacity-neon', 'editor'));
+
+  var PLUS_SVG     = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  var SETTINGS_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><circle cx="12" cy="4" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="14" cy="20" r="2"/></svg>';
+
+  var addBtn      = UI.btnPrimary('<span style="display:inline-flex;align-items:center;gap:6px">' + PLUS_SVG + 'Add Initiative</span>', 'window._rnxPendingModal=null;setPage(\'roadmap-neon\',\'Product Roadmap\')');
+  var settingsBtn = UI.btnIconBordered('rnxOpenSettings()', 'Settings', SETTINGS_SVG);
+  var toolsMenu   = rnxToolsMenuHtml();
+
+  var yearNavHtml = '<div id="cnx-year-nav" style="display:inline-flex"></div>';
+  var rightHtml   = '<div style="display:flex;align-items:center;gap:8px">'
+    + (canEdit ? addBtn : '')
+    + toolsMenu
+    + (canManage ? settingsBtn : '')
+    + '</div>';
+
+  var html = UI.pageHeaderWithYear({
+    title:       'Team Capacity',
+    yearNavHtml: yearNavHtml,
+    subtitle:    'Capacity Budget utilization by team and discipline',
+    titleRight:  rightHtml,
+    mb:          '28px'
+  })
+  + '<div id="cnx-content"></div>';
 
   setTimeout(cnxLoadAndRender, 0);
   return html;

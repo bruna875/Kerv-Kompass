@@ -19,7 +19,7 @@ var KERV_DRIVER_PALETTE = [
 
 // Explicit overrides — take priority over the hash when two drivers land on similar colours
 var KERV_DRIVER_OVERRIDES = {
-  'Retention / Upsell': '#E6A800' // bright ochre — distinct from orange (Strategic) and violet (Operational)
+  'Retention and Expansion': '#E6A800' // bright ochre — distinct from orange (Strategic) and violet (Operational)
 };
 
 function kervDriverColor(name) {
@@ -71,15 +71,18 @@ var NAV_CONFIG = [
     ]
   },
   {
-    section: 'Product',
+    section: 'Company OKRs',
+    items: [
+      { id: 'company-okrs', label: 'Company OKRs', icon: ico.okrs }
+    ],
+    dividerAfter: true
+  },
+  {
+    section: 'Product & Tech',
     items: [
       { id: 'roadmap-neon',      label: 'Product Roadmap', icon: ico.roadmap  },
       { id: 'teamcapacity-neon', label: 'Team Capacity',   icon: ico.capacity }
     ]
-  },
-  {
-    section: 'OKRs',
-    items: []
   },
   {
     section: 'Finance',
@@ -89,21 +92,39 @@ var NAV_CONFIG = [
     section: 'Sales',
     items: []
   },
+  {
+    section: 'Strategy',
+    items: []
+  },
+  {
+    section: 'Operations',
+    items: []
+  },
+  {
+    section: 'People & Culture',
+    items: []
+  },
+  {
+    section: 'Marketing',
+    items: []
+  },
 ];
 
 // ── Pages map ──
 var PAGES = {
   'overview':          renderOverview,
+  'company-okrs':      renderCompanyOkrs,
   'roadmap-neon':      renderRoadmapNeon,
   'teamcapacity-neon': renderTeamCapacityNeon,
   'settings-neon':     renderSettingsNeon,
-  'admin-users':       renderAdminUsers
+  'admin-users':       renderAdminUsers,
+  'product-ideas':     renderProductIdeas
 };
 
 // ── Nav ──
 
 // Sections collapsed by default (by section label)
-var navCollapsed = {};
+var navCollapsed = { 'Company OKRs': true, 'Product & Tech': true, 'Finance': true, 'Sales': true, 'Strategy': true, 'Operations': true, 'People & Culture': true, 'Marketing': true };
 
 function toggleNavSection(section) {
   navCollapsed[section] = !navCollapsed[section];
@@ -154,7 +175,7 @@ function buildNav() {
     }).join('');
 
     // Inject sprint dashboard nav items into Product section
-    if (sec.section === 'Product') {
+    if (sec.section === 'Product & Tech') {
       var canManage = _kervUser && (_kervUser.superAdmin || (_kervUser.permissions && _kervUser.permissions['settings-neon'] === 'editor'));
       var sprintItems = _kervDashboards.filter(function(d) {
         if (!_kervUser) return false;
@@ -164,11 +185,20 @@ function buildNav() {
         return !!(_kervUser.permissions && _kervUser.permissions['sprint-db-' + d.id]);
       });
 
-      // Divider + section label
-      items += '<div style="height:1px;background:var(--border);margin:4px 12px"></div>'
-        + '<div style="padding:6px 16px 2px;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--faint)">Sprint Analysis</div>';
+      // Product Req / Ideas — right after Team Capacity, no divider
+      var canSeeIdeas = _kervUser.superAdmin || (_kervUser.permissions && _kervUser.permissions['product-ideas']);
+      if (canSeeIdeas) {
+        items += '<div class="nitem' + ('product-ideas' === activeId ? ' act' : '') + '" data-page="product-ideas" data-label="Product Req / Ideas">'
+          + ('product-ideas' === activeId ? '<div class="nbar"></div>' : '')
+          + '<div class="nico">' + ico.ideas + '</div>'
+          + '<span class="nlabel">Product Req / Ideas</span>'
+          + '</div>';
+      }
 
-      // Dashboard items (above Add button)
+      // Team Analysis sublabel (no divider)
+      items += '<div class="seclabel" style="padding:6px 16px 2px;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--faint)">Team Analysis</div>';
+
+      // Dashboard items
       sprintItems.forEach(function(d) {
         var pid = 'sprint-db-' + d.id;
         var act = pid === activeId;
@@ -181,19 +211,11 @@ function buildNav() {
 
       // Add Sprint Dashboard button
       if (canManage) {
-        items += '<div onclick="_sdOpenAddModal()" style="margin:2px 12px;padding:4px 10px;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;border-radius:6px;color:var(--faint);transition:color .15s" onmouseenter="this.style.color=\'var(--accent)\'" onmouseleave="this.style.color=\'var(--faint)\'">'
+        items += '<div class="nsoon" onclick="_sdOpenAddModal()" style="margin:2px 12px;padding:4px 10px;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;border-radius:6px;color:var(--faint);transition:color .15s" onmouseenter="this.style.color=\'var(--accent)\'" onmouseleave="this.style.color=\'var(--faint)\'">'
           + '<svg width="11" height="11" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
-          + '<span style="font-size:11px;font-weight:500;letter-spacing:.1px">Add Sprint Dashboard</span>'
+          + '<span style="font-size:11px;font-weight:500;letter-spacing:.1px">Add Analysis Dashboard</span>'
           + '</div>';
       }
-
-      // Divider + Product Ideas (Soon)
-      items += '<div style="height:1px;background:var(--border);margin:4px 12px"></div>'
-        + '<div class="nitem" style="opacity:.45;cursor:default;pointer-events:none">'
-        + '<div class="nico">' + ico.ideas + '</div>'
-        + '<span class="nlabel">Product Req / Ideas</span>'
-        + '<span class="nsoon" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:var(--subtle);color:var(--muted);font-size:8px;font-weight:700;padding:2px 6px;border-radius:10px;letter-spacing:.4px;white-space:nowrap">Soon</span>'
-        + '</div>';
     }
 
     // Sections with noHeader render items directly (no toggle header)
@@ -209,12 +231,16 @@ function buildNav() {
       + '<span>' + sec.section + '</span>'
       + '<span class="seclabel-chevron">' + chevron + '</span>'
       + '</div>';
-    return '<div>' + header + (col ? '' : items) + '</div>';
+    var body = col ? '' : (items || '<div style="margin:4px 12px 8px;padding:5px 10px;background:rgba(237,0,94,.04);border-radius:6px;font-size:10px;font-weight:500;color:rgba(237,0,94,.35);letter-spacing:.2px">Coming soon</div>');
+    var block = '<div>' + header + body + '</div>';
+    if (sec.dividerAfter) block += '<div style="height:1px;background:var(--border);margin:6px 0"></div>';
+    return block;
   }).join('');
 }
 
 function setPage(id, label, noPush) {
   activeId = id;
+  window._kervCurrentPageId = id;
   // close admin dropdown if open
   var adminDd = document.getElementById('adminDd');
   if (adminDd) adminDd.classList.remove('open');
@@ -241,9 +267,11 @@ function setPage(id, label, noPush) {
   var pageHtml = PAGES[id] ? PAGES[id]() : '<div class="ptitle">' + label + '</div>';
   content.innerHTML = (id === 'overview' ? '' : '<div id="content-bc" class="content-bc">' + label + '</div>') + pageHtml;
   buildNav();
-  if (id === 'overview')      setTimeout(ovxLoad, 0);
-  if (id === 'roadmap-neon')  setTimeout(rnxGanttTooltipInit, 50);
-  if (id === 'admin-users')   setTimeout(auLoad, 0);
+  if (id === 'overview')        setTimeout(ovxLoad, 0);
+  if (id === 'company-okrs')   setTimeout(cokrLoad, 0);
+  if (id === 'roadmap-neon')   setTimeout(rnxGanttTooltipInit, 50);
+  if (id === 'admin-users')    setTimeout(auLoad, 0);
+  if (id === 'product-ideas')  setTimeout(piLoad, 0);
   if (!noPush) history.pushState({ id: id, label: label }, '', '/' + id);
 }
 
@@ -281,6 +309,9 @@ function pageFromPath() {
       if (_kervDashboards[di].id === dbId) return { id: path, label: _kervDashboards[di].name };
     }
   }
+
+  // product-ideas is visible to all auth users but not in NAV_CONFIG (rendered separately)
+  if (path === 'product-ideas') return { id: 'product-ideas', label: 'Product Req / Ideas' };
 
   // find matching nav item (including children)
   var found = null;
@@ -330,7 +361,7 @@ function toggleSb() {
 // ── Sprint Dashboards loader ──────────────────────────────────────────────────
 
 function _kervLoadDashboards(cb) {
-  fetch('/api/neon/lookup?t=sprint-dashboards')
+  fetch('/api/neon/dashboards')
     .then(function(r) { return r.json(); })
     .then(function(rows) {
       _kervDashboards = Array.isArray(rows) ? rows : [];
@@ -368,6 +399,7 @@ function _applySession(data, instant) {
     email:       data.email      || '',
     firstName:   data.firstName  || '',
     lastName:    data.lastName   || '',
+    photoUrl:    data.photoUrl   || '',
     permissions: data.permissions || {},
     superAdmin:  !!data.superAdmin
   };
@@ -386,7 +418,18 @@ function _applySession(data, instant) {
   var name     = (_kervUser.firstName || '').trim() || (_kervUser.email || '').split('@')[0];
   var initials = ((_kervUser.firstName || ' ')[0] + (_kervUser.lastName || ' ')[0]).toUpperCase().trim();
   document.getElementById('un').textContent = name;
-  document.getElementById('av').textContent = initials || name.slice(0, 2).toUpperCase();
+  var avEl = document.getElementById('av');
+  if (_kervUser.photoUrl) {
+    avEl.textContent = '';
+    avEl.style.backgroundImage  = 'url(' + _kervUser.photoUrl + ')';
+    avEl.style.backgroundSize   = 'cover';
+    avEl.style.backgroundPosition = 'center';
+    avEl.style.fontSize         = '0';
+  } else {
+    avEl.style.backgroundImage  = '';
+    avEl.textContent = initials || name.slice(0, 2).toUpperCase();
+    avEl.style.fontSize         = '';
+  }
   var uroleEl = document.getElementById('urole');
   if (uroleEl) uroleEl.textContent = _kervUser.email || '';
 

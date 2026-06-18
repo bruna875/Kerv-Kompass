@@ -7,6 +7,54 @@
 var _saInstances = {};
 function _sa(id) { return _saInstances[id]; }
 
+// ── Custom dropdown helpers (shared across all sprint-analysis instances) ──
+(function() {
+  var s = document.createElement('style');
+  s.textContent =
+    '.sa-dd-wrap{position:relative;display:inline-block}'
+    + '.sa-dd-btn{display:inline-flex;align-items:center;gap:6px;padding:4px 8px 4px 10px;font-size:11px;font-weight:500;font-family:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border-md);border-radius:7px;cursor:pointer;white-space:nowrap;transition:border-color .15s}'
+    + '.sa-dd-btn:hover{border-color:var(--accent)}'
+    + '.sa-dd-btn svg{color:var(--muted);flex-shrink:0}'
+    + '.sa-dd-panel{display:none;position:absolute;top:calc(100% + 4px);right:0;min-width:130px;background:var(--surface);border:1px solid var(--border-md);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.10);padding:4px;z-index:3000;max-height:200px;overflow-y:auto}'
+    + '.sa-dd-panel.open{display:block}'
+    + '.sa-dd-opt{padding:6px 10px;font-size:11px;color:var(--text);border-radius:5px;cursor:pointer;transition:background .1s}'
+    + '.sa-dd-opt:hover{background:var(--bg)}'
+    + '.sa-dd-opt.sel{background:var(--bg);font-weight:500;color:var(--accent)}';
+  document.head.appendChild(s);
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest || !e.target.closest('.sa-dd-wrap')) {
+      document.querySelectorAll('.sa-dd-panel.open').forEach(function(p) { p.classList.remove('open'); });
+    }
+  }, true);
+})();
+
+function saDdToggle(btn) {
+  var panel = btn.parentNode.querySelector('.sa-dd-panel');
+  if (!panel) return;
+  var isOpen = panel.classList.contains('open');
+  document.querySelectorAll('.sa-dd-panel.open').forEach(function(p) { p.classList.remove('open'); });
+  if (!isOpen) panel.classList.add('open');
+}
+
+function saDdSelect(opt, value, label) {
+  var wrap = opt.closest('.sa-dd-wrap');
+  if (!wrap) return;
+  wrap.dataset.value = value;
+  var valEl = wrap.querySelector('.sa-dd-val');
+  if (valEl) valEl.textContent = label;
+  wrap.querySelectorAll('.sa-dd-opt').forEach(function(o) { o.classList.toggle('sel', o === opt); });
+  wrap.querySelector('.sa-dd-panel').classList.remove('open');
+  // Trigger re-render — find which instance owns this element
+  var rootEl = wrap.closest('[id$="-root"]');
+  if (rootEl) {
+    var instId = rootEl.id.replace(/-root$/, '');
+    if (_saInstances[instId]) { _saInstances[instId].renderMemberTrend(); return; }
+  }
+  // fallback: call all instances
+  Object.keys(_saInstances).forEach(function(k) { _saInstances[k].renderMemberTrend(); });
+}
+
 function createSprintAnalysis(config) {
   // config: { id, teamName, subtitle, projectKey }
   var id = config.id;
@@ -29,7 +77,7 @@ function createSprintAnalysis(config) {
   function _esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
   function loadPins(cb) {
-    fetch('/api/neon/lookup?pageId=' + encodeURIComponent(id))
+    fetch('/api/neon/pinned-links?pageId=' + encodeURIComponent(id))
       .then(function(r) { return r.json(); })
       .then(function(rows) { pinnedLinks = Array.isArray(rows) ? rows : []; if (cb) cb(); })
       .catch(function() { pinnedLinks = []; if (cb) cb(); });
@@ -184,7 +232,7 @@ function createSprintAnalysis(config) {
         ? { action: 'pin-update', id: link.id, label: lbl, url: urlVal }
         : { action: 'pin-create', pageId: id, label: lbl, url: urlVal };
 
-      fetch('/api/neon/lookup', {
+      fetch('/api/neon/pinned-links', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
@@ -257,7 +305,7 @@ function createSprintAnalysis(config) {
     document.getElementById(_p('pin-conf-cancel')).onclick = closeConfirm;
     document.getElementById(_p('pin-conf-ok')).onclick = function() {
       closeConfirm();
-      fetch('/api/neon/lookup', {
+      fetch('/api/neon/pinned-links', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'pin-delete', id: linkId })
       }).then(function() {
@@ -300,7 +348,11 @@ function createSprintAnalysis(config) {
               projectKey: config.projectKey
             });
             var root = document.getElementById(_p('root'));
-            if (root) root.innerHTML = kaInst.render();
+            if (root) {
+              root.innerHTML = kaInst.render();
+              // Re-inject edit pencil (was on SA title, now replaced by Kanban shell)
+              if (typeof _sdAfterKanbanRender === 'function') _sdAfterKanbanRender(root);
+            }
             kaInst.init();
           } else {
             // fallback if kanban-analysis.js not loaded
@@ -400,21 +452,49 @@ function createSprintAnalysis(config) {
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">'
       +   '<div>'
       +     '<div style="font-size:20px;font-weight:600;color:var(--text);letter-spacing:-.3px">' + config.teamName + '</div>'
-      +     '<div style="font-size:12px;color:var(--muted);margin-top:2px">' + config.subtitle + '</div>'
+      +     '<div style="display:flex;align-items:center;gap:8px;margin-top:2px">'
+      +       '<div style="font-size:12px;color:var(--muted)">' + config.subtitle + '</div>'
+      +       '<span style="font-size:10px;font-weight:600;letter-spacing:.3px;color:#6366F1;background:rgba(99,102,241,.1);border-radius:20px;padding:2px 8px">Scrum</span>'
+      +     '</div>'
       +   '</div>'
       +   '<div style="display:flex;align-items:center;gap:10px">'
-      +     '<button id="' + _p('pptx-btn') + '" onclick="_sa(\'' + id + '\').exportToPptx()" title="Export to PowerPoint"'
-      +       ' style="width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s,background .15s;flex-shrink:0"'
-      +       ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
-      +       ' onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
-      +       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h2l2 3 2-3h2"/></svg>'
-      +     '</button>'
       +     '<button id="' + _p('pin-btn') + '" onclick="_sa(\'' + id + '\').togglePinDd()" title="Pinned links"'
       +       ' style="width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s,background .15s;flex-shrink:0"'
       +       ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
       +       ' onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
       +       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.638 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v3.417"/><path d="M14.62 18.8A2.25 2.25 0 1 1 18 15.836a2.25 2.25 0 1 1 3.38 2.966l-2.626 2.856a.998.998 0 0 1-1.507 0z"/></svg>'
       +     '</button>'
+      +     '<div style="position:relative">'
+      +       '<button id="' + _p('tools-btn') + '" onclick="_sa(\'' + id + '\').toggleToolsDd(event)"'
+      +         ' style="display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 12px;font-size:12px;font-weight:500;font-family:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border-md);border-radius:8px;cursor:pointer;transition:border-color .15s,color .15s;white-space:nowrap;flex-shrink:0"'
+      +         ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
+      +         ' onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--text)\'">'
+      +         '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+      +         'Tools'
+      +         '<svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      +       '</button>'
+      +       '<div id="' + _p('tools-dd') + '" style="display:none;position:absolute;top:calc(100% + 4px);right:0;min-width:250px;background:var(--surface);border:1px solid var(--border-md);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:4000;padding:4px">'
+      +         '<div onclick="_sa(\'' + id + '\').exportToPptx();_sa(\'' + id + '\').closeToolsDd()"'
+      +           ' style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;font-size:13px;color:var(--text);cursor:pointer;transition:background .1s"'
+      +           ' onmouseenter="this.style.background=\'var(--bg)\'" onmouseleave="this.style.background=\'none\'">'
+      +           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h2l2 3 2-3h2"/></svg>'
+      +           'Download EOS PPT'
+      +         '</div>'
+      +         '<div style="height:1px;background:var(--border);margin:4px 0"></div>'
+      +         '<div style="position:relative">'
+      +           '<div onclick="_sa(\'' + id + '\').openCapMonths()"'
+      +             ' style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-radius:6px;font-size:13px;color:var(--text);cursor:pointer;transition:background .1s;white-space:nowrap"'
+      +             ' onmouseenter="this.style.background=\'var(--bg)\'" onmouseleave="this.style.background=\'none\'">'
+      +             '<span style="display:flex;align-items:center;gap:8px;white-space:nowrap">'
+      +               '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
+      +               'Monthly Capitalization Report'
+      +             '</span>'
+      +             '<svg id="' + _p('cap-chevron') + '" width="6" height="10" viewBox="0 0 6 10" fill="none" style="flex-shrink:0;transition:transform .15s"><path d="M1 1l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      +           '</div>'
+      +           '<div id="' + _p('cap-months-list') + '" style="display:none;position:absolute;left:calc(100% + 8px);top:0;min-width:190px;background:var(--surface);border:1px solid var(--border-md);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:4001;padding:4px"></div>'
+      +         '</div>'
+      +       '</div>'
+      +     '</div>'
       +     '<div style="width:1px;height:20px;background:var(--border-md);flex-shrink:0"></div>'
       +     '<div id="' + _p('sprint-badge') + '"></div>'
       +   '</div>'
@@ -433,7 +513,13 @@ function createSprintAnalysis(config) {
       +     '<div style="' + _card + ';padding:12px;flex:1">'
       +       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
       +         '<span style="font-size:11px;font-weight:600;color:var(--text)">Points trend</span>'
-      +         '<select id="' + _p('member-sel') + '" onchange="' + _c + 'renderMemberTrend()" style="font-size:11px;font-family:inherit;font-weight:500;border:1px solid var(--border-md);border-radius:7px;background:var(--surface);color:var(--text);padding:4px 8px;outline:none;cursor:pointer;transition:border-color .15s;-webkit-appearance:none;appearance:none;padding-right:24px;background-image:url(\'data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%23A8A8A0\' stroke-width=\'1.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3C/svg%3E\');background-repeat:no-repeat;background-position:right 7px center"></select>'
+      +         '<div class="sa-dd-wrap" id="' + _p('member-sel') + '" data-value="All">'
+      +   '<button class="sa-dd-btn" onclick="saDdToggle(this)">'
+      +     '<span class="sa-dd-val">All members</span>'
+      +     '<svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      +   '</button>'
+      +   '<div class="sa-dd-panel"></div>'
+      + '</div>'
       +       '</div>'
       +       '<canvas id="' + _p('member-trend-chart') + '" height="100"></canvas>'
       +     '</div>'
@@ -468,8 +554,8 @@ function createSprintAnalysis(config) {
       // ── Sprint summary ──
       + '<div id="' + _p('summary') + '" style="margin-bottom:20px"></div>'
 
-      // ── Capacity + Ticket mix ──
-      + '<div style="display:grid;grid-template-columns:1fr 220px;gap:12px;margin-bottom:12px;align-items:stretch">'
+      // ── Capacity + Ticket mix + Capitalization mix ──
+      + '<div style="display:grid;grid-template-columns:1fr 220px 220px;gap:12px;margin-bottom:12px;align-items:stretch">'
       +   '<div style="' + _card + ';display:flex;flex-direction:column">'
       +     '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">Capacity — <span id="' + _p('cap-sprint-lbl') + '" style="color:var(--accent)"></span></div>'
       +     '<div style="font-size:10px;color:var(--muted);margin-bottom:12px">Story points assigned vs completed per engineer</div>'
@@ -480,6 +566,12 @@ function createSprintAnalysis(config) {
       +     '<div style="font-size:10px;color:var(--muted);margin-bottom:12px">By type</div>'
       +     '<canvas id="' + _p('ticket-type-chart') + '" height="140"></canvas>'
       +     '<div id="' + _p('ticket-type-legend') + '" style="margin-top:10px"></div>'
+      +   '</div>'
+      +   '<div style="' + _card + '">'
+      +     '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">Capital. mix — <span id="' + _p('cap-mix-sprint-lbl') + '" style="color:var(--accent)"></span></div>'
+      +     '<div style="font-size:10px;color:var(--muted);margin-bottom:12px">Capitalizable vs non-capitalizable tickets</div>'
+      +     '<canvas id="' + _p('cap-mix-chart') + '" height="140"></canvas>'
+      +     '<div id="' + _p('cap-mix-legend') + '" style="margin-top:10px"></div>'
       +   '</div>'
       + '</div>'
 
@@ -845,13 +937,21 @@ function createSprintAnalysis(config) {
     });
     allMembers.sort();
 
-    // Populate selector (only on first render)
-    if (sel && sel.options.length === 0) {
-      sel.innerHTML = '<option value="All">All members</option>'
-        + allMembers.map(function(n) { return '<option value="' + n + '">' + n.split(' ')[0] + '</option>'; }).join('');
+    // Populate custom dropdown (only on first render)
+    if (sel && !sel.dataset.populated) {
+      sel.dataset.populated = '1';
+      var panel = sel.querySelector('.sa-dd-panel');
+      var opts = [{ v: 'All', l: 'All members' }].concat(
+        allMembers.map(function(n) { return { v: n, l: n.split(' ')[0] }; })
+      );
+      if (panel) panel.innerHTML = opts.map(function(o) {
+        return '<div class="sa-dd-opt' + (o.v === (sel.dataset.value || 'All') ? ' sel' : '') + '"'
+          + ' onclick="saDdSelect(this,\'' + o.v.replace(/'/g, "\\'") + '\',\'' + o.l.replace(/'/g, "\\'") + '\')">'
+          + o.l + '</div>';
+      }).join('');
     }
 
-    var member = sel ? sel.value : 'All';
+    var member = sel ? (sel.dataset.value || 'All') : 'All';
     var labels = sprints.map(function(s) { return s.name.replace(config.projectKey + ' ', ''); });
 
     var assigned  = sprints.map(function(s) {
@@ -915,6 +1015,49 @@ function createSprintAnalysis(config) {
 
   function renderTicketCharts() {
     renderTicketType();
+    renderCapitalizationMix();
+  }
+
+  function renderCapitalizationMix() {
+    if (charts.capMix) { charts.capMix.destroy(); delete charts.capMix; }
+    var canvas = document.getElementById(_p('cap-mix-chart'));
+    var legEl  = document.getElementById(_p('cap-mix-legend'));
+    var lbl    = document.getElementById(_p('cap-mix-sprint-lbl'));
+    if (!canvas) return;
+
+    var s = sprints.filter(function(x) { return x.id === selectedId; })[0];
+    if (!s) return;
+    if (lbl) lbl.textContent = s.name;
+
+    var tix = tickets[selectedId] || [];
+    var capPts    = tix.filter(function(t) { return t.capitalizable === true;  }).length;
+    var nonCapPts = tix.filter(function(t) { return t.capitalizable === false; }).length;
+    var unsetPts  = tix.filter(function(t) { return t.capitalizable === null;  }).length;
+
+    var labels = ['Capitalizable', 'Non-cap.', 'Not set'];
+    var data   = [capPts, nonCapPts, unsetPts];
+    var colors = ['#2EAD4B', '#9CA3AF', '#E5E7EB'];
+
+    charts.capMix = new Chart(canvas.getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverOffset: 4 }] },
+      options: {
+        responsive: true, cutout: '68%',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return ' ' + ctx.label + ': ' + ctx.raw + ' tickets'; } } } }
+      }
+    });
+
+    if (legEl) {
+      legEl.innerHTML = labels.map(function(l, i) {
+        return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">'
+          + '<div style="display:flex;align-items:center;gap:5px">'
+          +   '<span style="width:7px;height:7px;border-radius:2px;background:' + colors[i] + ';flex-shrink:0"></span>'
+          +   '<span style="font-size:10px;color:var(--text)">' + l + '</span>'
+          + '</div>'
+          + '<span style="font-size:10px;font-weight:600;color:var(--text)">' + data[i] + ' tickets</span>'
+          + '</div>';
+      }).join('');
+    }
   }
 
   function renderTicketType() {
@@ -1024,15 +1167,19 @@ function createSprintAnalysis(config) {
       return;
     }
 
+    var COL = '88px 1fr 140px 70px 72px 40px 100px 56px';
     el.innerHTML = ''
-      + '<div style="display:grid;grid-template-columns:88px 1fr 140px 70px 72px 40px 100px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);padding:8px 20px;border-bottom:1px solid var(--border)">'
-      +   '<div>ID</div><div>Title</div><div>Epic</div><div>Type</div><div>Assignee</div><div style="text-align:center">Pts</div><div>Status</div>'
+      + '<div style="display:grid;grid-template-columns:' + COL + ';font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);padding:8px 20px;border-bottom:1px solid var(--border)">'
+      +   '<div>ID</div><div>Title</div><div>Epic</div><div>Type</div><div>Assignee</div><div style="text-align:center">Pts</div><div>Status</div><div style="text-align:center">Cap.</div>'
       + '</div>'
       + sprintTickets.map(function(t) {
           var tc = TYPE_COLORS[t.type] || '#9CA3AF';
           var sc = STS_COLORS[t.status] || '#9CA3AF';
           var sl = STS_LABELS[t.status] || t.status;
-          return '<div style="display:grid;grid-template-columns:88px 1fr 140px 70px 72px 40px 100px;align-items:center;padding:9px 20px;border-bottom:1px solid var(--border-lt);font-size:12px">'
+          var capHtml = t.capitalizable === true  ? '<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px;background:#F0FDF4;color:#2EAD4B">Yes</span>'
+                      : t.capitalizable === false ? '<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px;background:var(--subtle);color:var(--muted)">No</span>'
+                      : '<span style="color:var(--faint)">—</span>';
+          return '<div style="display:grid;grid-template-columns:' + COL + ';align-items:center;padding:9px 20px;border-bottom:1px solid var(--border-lt);font-size:12px">'
             + '<div style="font-family:monospace;font-size:11px;color:var(--muted)">' + t.id + '</div>'
             + '<div style="color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:10px">' + t.title + '</div>'
             + '<div style="padding-right:8px;overflow:hidden">' + (t.epic ? '<span style="font-size:10px;font-weight:500;color:var(--accent);background:var(--accent-light);border-radius:4px;padding:2px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;max-width:100%">' + t.epic + '</span>' : '<span style="color:var(--faint)">—</span>') + '</div>'
@@ -1040,6 +1187,7 @@ function createSprintAnalysis(config) {
             + '<div style="font-size:11px;color:var(--muted)">' + t.assignee.split(' ')[0] + '</div>'
             + '<div style="text-align:center;font-weight:600;color:var(--text)">' + t.pts + '</div>'
             + '<div><span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px;background:' + sc + '22;color:' + sc + '">' + sl + '</span></div>'
+            + '<div style="text-align:center">' + capHtml + '</div>'
             + '</div>';
         }).join('');
   }
@@ -1061,7 +1209,7 @@ function createSprintAnalysis(config) {
     if (!sprint) return;
     var sprintIdx = sprints.indexOf(sprint);
     var nextSprint = (sprintIdx >= 0 && sprintIdx < sprints.length - 1) ? sprints[sprintIdx + 1] : null;
-    var btn = document.getElementById(_p('pptx-btn'));
+    var btn = document.getElementById(_p('tools-btn'));
     function doExport() {
       sprintPptxExport({
         teamName: config.teamName,
@@ -1091,6 +1239,7 @@ function createSprintAnalysis(config) {
     // Load tickets on-demand if not yet cached for this sprint
     if (tickets[sprintId] !== undefined) {
       renderTicketTable();
+      renderCapitalizationMix();
       renderSummary(); // re-render with epic data
     } else {
       var tbl = document.getElementById(_p('ticket-table'));
@@ -1099,6 +1248,7 @@ function createSprintAnalysis(config) {
         + 'Loading tickets…</div>';
       loadSprintTickets(sprintId, function() {
         renderTicketTable();
+        renderCapitalizationMix();
         renderSummary(); // re-render once epics are loaded
       });
     }
@@ -1125,6 +1275,177 @@ function createSprintAnalysis(config) {
     return result;
   }
 
+  // ── Tools dropdown ───────────────────────────────────────────────────────
+
+  function toggleToolsDd(e) {
+    if (e) e.stopPropagation();
+    var dd = document.getElementById(_p('tools-dd'));
+    if (!dd) return;
+    var isOpen = dd.style.display !== 'none';
+    if (isOpen) { dd.style.display = 'none'; return; }
+    dd.style.display = 'block';
+    setTimeout(function() {
+      document.addEventListener('click', function _close(ev) {
+        var btn = document.getElementById(_p('tools-btn'));
+        var ddEl = document.getElementById(_p('tools-dd'));
+        if (!ddEl) { document.removeEventListener('click', _close); return; }
+        if (!ddEl.contains(ev.target) && (!btn || !btn.contains(ev.target))) {
+          ddEl.style.display = 'none';
+          document.removeEventListener('click', _close);
+        }
+      });
+    }, 0);
+  }
+
+  function closeToolsDd() {
+    var dd = document.getElementById(_p('tools-dd'));
+    if (dd) dd.style.display = 'none';
+  }
+
+  function openCapMonths() {
+    var listEl  = document.getElementById(_p('cap-months-list'));
+    var chevron = document.getElementById(_p('cap-chevron'));
+    if (!listEl) return;
+
+    // Toggle
+    if (listEl.style.display !== 'none' && listEl.style.display !== '') {
+      listEl.style.display = 'none';
+      if (chevron) chevron.style.transform = '';
+      return;
+    }
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+
+    // Populate only once (or if empty)
+    if (!listEl.dataset.populated) {
+      var months = _capMonths();
+      var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      listEl.innerHTML = months.length
+        ? '<div style="padding:4px 10px 2px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--faint)">Select month</div>'
+          + months.map(function(m) {
+              return '<div onclick="_sa(\'' + id + '\').downloadCapReport(' + m.year + ',' + m.month + ',this)"'
+                + ' style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-radius:6px;font-size:12px;color:var(--text);cursor:pointer;white-space:nowrap;transition:background .1s"'
+                + ' onmouseenter="this.style.background=\'var(--bg)\'" onmouseleave="this.style.background=\'none\'">'
+                + '<span>' + MONTH_NAMES[m.month - 1] + ' ' + m.year + '</span>'
+                + '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:12px;flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+                + '</div>';
+            }).join('')
+        : '<div style="padding:8px 12px;font-size:12px;color:var(--faint)">No completed sprints found.</div>';
+      listEl.dataset.populated = '1';
+    }
+    listEl.style.display = 'block';
+  }
+
+  // Derive unique months from sprint ISO dates — newest first
+  function _capMonths() {
+    var set = {};
+    sprints.forEach(function(s) {
+      if (s.status === 'future') return;
+      [s.startIso, s.endIso].forEach(function(iso) {
+        if (!iso) return;
+        var d = new Date(iso);
+        if (isNaN(d)) return;
+        var key = d.getFullYear() + '-' + d.getMonth();
+        set[key] = { year: d.getFullYear(), month: d.getMonth() + 1 };
+      });
+    });
+    return Object.values(set).sort(function(a, b) {
+      return (b.year * 12 + b.month) - (a.year * 12 + a.month);
+    });
+  }
+
+  function downloadCapReport(year, month, itemEl) {
+    var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var monthName = MONTH_NAMES[month - 1];
+
+    // Which sprints overlap this month?
+    var sprintsForMonth = sprints.filter(function(s) {
+      if (s.status === 'future') return false;
+      if (!s.startIso && !s.endIso) return true; // include if no dates
+      var start = s.startIso ? new Date(s.startIso) : null;
+      var end   = s.endIso   ? new Date(s.endIso)   : null;
+      var mFirst = new Date(year, month - 1, 1);
+      var mLast  = new Date(year, month, 0);
+      if (start && end) return start <= mLast && end >= mFirst;
+      if (end)   return end   >= mFirst && end   <= mLast;
+      if (start) return start >= mFirst && start <= mLast;
+      return false;
+    });
+
+    // Load any missing tickets, then generate
+    var toLoad = sprintsForMonth.filter(function(s) { return tickets[s.id] === undefined; });
+    if (!toLoad.length) { _generateCapExcel(year, month, monthName); return; }
+
+    if (itemEl) { itemEl.style.opacity = '.5'; itemEl.style.pointerEvents = 'none'; }
+    var done = 0;
+    toLoad.forEach(function(s) {
+      loadSprintTickets(s.id, function() {
+        done++;
+        if (done === toLoad.length) {
+          if (itemEl) { itemEl.style.opacity = '1'; itemEl.style.pointerEvents = ''; }
+          _generateCapExcel(year, month, monthName);
+        }
+      });
+    });
+  }
+
+  function _generateCapExcel(year, month, monthName) {
+    if (typeof XLSX === 'undefined') {
+      alert('Excel library not loaded — please refresh the page.');
+      return;
+    }
+
+    // Collect all done tickets whose resolutionDate is in this month;
+    // fallback: sprint endIso in this month for tickets without resolutionDate.
+    var seen = {};
+    var rows = [];
+    sprints.forEach(function(s) {
+      (tickets[s.id] || []).forEach(function(t) {
+        if (seen[t.id]) return;
+        if (t.status !== 'done') return;
+
+        var completionDate = null;
+        if (t.resolutionDate) {
+          var d = new Date(t.resolutionDate);
+          if (d.getFullYear() === year && d.getMonth() + 1 === month) completionDate = d;
+        }
+        if (!completionDate && s.endIso) {
+          var de = new Date(s.endIso);
+          if (de.getFullYear() === year && de.getMonth() + 1 === month) completionDate = de;
+        }
+        if (!completionDate) return;
+
+        seen[t.id] = true;
+        rows.push([
+          completionDate.toLocaleDateString('en-GB'),
+          t.id,
+          s.name,
+          t.type || '—',
+          t.title,
+          t.epic || '—',
+          t.capitalizable === true ? 'Yes' : t.capitalizable === false ? 'No' : '—',
+          t.pts != null ? t.pts : '—'
+        ]);
+      });
+    });
+
+    // Sort by date
+    rows.sort(function(a, b) {
+      return new Date(a[0].split('/').reverse().join('-')) - new Date(b[0].split('/').reverse().join('-'));
+    });
+
+    var headers = [['Completion Date', 'Ticket ID', 'Sprint', 'Type', 'Title', 'Epic', 'Capitalizable', 'Story Points']];
+    var ws = XLSX.utils.aoa_to_sheet(headers.concat(rows));
+    ws['!cols'] = [{ wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 10 }, { wch: 52 }, { wch: 32 }, { wch: 14 }, { wch: 14 }];
+
+    // Style header row bold (requires full xlsx-style or just use basic sheetjs)
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, monthName.slice(0, 3) + ' ' + year);
+
+    var filename = 'Capitalization Report | ' + config.teamName + ' | ' + monthName + ' ' + year + '.xlsx';
+    XLSX.writeFile(wb, filename);
+    closeToolsDd();
+  }
+
   // ── Public instance ──
   var inst = {
     render:            function() { return '<div id="' + _p('root') + '">' + shell() + '</div>'; },
@@ -1134,7 +1455,11 @@ function createSprintAnalysis(config) {
     togglePinDd:       function() { togglePinDd(); },
     openPinModal:      function(linkIdOrNull) { openPinModal(linkIdOrNull); },
     deletePinLink:     function(linkId) { deletePinLink(linkId); },
-    exportToPptx:      function() { exportToPptx(); }
+    exportToPptx:      function() { exportToPptx(); },
+    toggleToolsDd:     function(e) { toggleToolsDd(e); },
+    closeToolsDd:      function() { closeToolsDd(); },
+    openCapMonths:     function() { openCapMonths(); },
+    downloadCapReport: function(y, m, el) { downloadCapReport(y, m, el); }
   };
   _saInstances[id] = inst;
   return inst;

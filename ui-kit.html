@@ -1,0 +1,2978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KERV UI Kit</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
+<style>
+  /* ── Storybook shell ───────────────────────────────────────────────────── */
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+  /* Top bar */
+  .kb-topbar{position:sticky;top:0;z-index:200;height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px}
+  .kb-topbar-logo{font-size:14px;font-weight:700;letter-spacing:-.3px;color:var(--text)}
+  .kb-topbar-sep{width:1px;height:18px;background:var(--border)}
+  .kb-topbar-sub{font-size:12px;color:var(--muted)}
+  .kb-topbar-version{margin-left:auto;font-size:11px;color:var(--faint);background:var(--subtle);padding:2px 8px;border-radius:5px}
+
+  /* Layout */
+  .kb-layout{display:flex;flex:1;min-height:0}
+
+  /* Sidebar */
+  .kb-sidebar{width:200px;flex-shrink:0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;border-right:1px solid var(--border);padding:20px 0}
+  .kb-sidebar-group{margin-bottom:4px}
+  .kb-sidebar-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--faint);padding:8px 20px 4px}
+  .kb-sidebar-item{display:block;padding:6px 20px;font-size:12px;color:var(--muted);cursor:pointer;transition:color .12s,background .12s;text-decoration:none;border-radius:0}
+  .kb-sidebar-item:hover,.kb-sidebar-item.act{color:var(--text);background:var(--subtle)}
+  .kb-sidebar-item.act{color:var(--accent);font-weight:500}
+
+  /* Main */
+  .kb-main{flex:1;overflow-y:auto;padding:40px 48px}
+
+  /* Component section */
+  .kb-section{margin-bottom:60px}
+  .kb-section-title{font-size:20px;font-weight:700;letter-spacing:-.4px;color:var(--text);margin-bottom:4px}
+  .kb-section-desc{font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.5}
+
+  /* Card = preview + code */
+  .kb-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+  .kb-card-label{font-size:11px;font-weight:600;color:var(--faint);padding:12px 18px 0;text-transform:uppercase;letter-spacing:.4px}
+  .kb-card-preview{padding:28px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--surface)}
+  .kb-card-preview.column{flex-direction:column;align-items:flex-start}
+  .kb-card-preview.padded{padding:32px 28px}
+  .kb-code{background:var(--subtle);border-top:1px solid var(--border);padding:14px 18px;font-size:11px;font-family:'SFMono-Regular',Consolas,monospace;color:var(--muted);white-space:pre;overflow-x:auto;line-height:1.6}
+
+  /* Token table */
+  .kb-token-table{width:100%;border-collapse:collapse}
+  .kb-token-table td{padding:8px 12px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+  .kb-token-table td:first-child{font-family:monospace;color:var(--accent);width:200px}
+  .kb-token-table td:last-child{font-family:monospace;font-size:11px;color:var(--faint)}
+  .kb-swatch{display:inline-block;width:18px;height:18px;border-radius:4px;border:1px solid var(--border);vertical-align:middle;margin-right:8px}
+
+  /* Divider */
+  .kb-divider{height:1px;background:var(--border);margin:40px 0}
+
+  /* Table previews — block layout, no padding, scroll horizontally */
+  .kb-card-preview.table{display:block;padding:0;overflow-x:auto}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="kb-topbar">
+  <span class="kb-topbar-logo">KERV</span>
+  <div class="kb-topbar-sep"></div>
+  <span class="kb-topbar-sub">UI Kit &amp; Design System</span>
+  <span class="kb-topbar-version">v1.3 · May 2026</span>
+</div>
+
+<div class="kb-layout">
+
+  <!-- Sidebar nav -->
+  <nav class="kb-sidebar" id="kb-sidebar">
+    <div class="kb-sidebar-group">
+      <div class="kb-sidebar-label">Foundations</div>
+      <a class="kb-sidebar-item" href="#tokens">Design Tokens</a>
+    </div>
+    <div class="kb-sidebar-group">
+      <div class="kb-sidebar-label">Components</div>
+      <a class="kb-sidebar-item" href="#alerts">Alerts</a>
+      <a class="kb-sidebar-item" href="#ai-insights">AI Insights</a>
+      <a class="kb-sidebar-item" href="#avatar">Avatar</a>
+      <a class="kb-sidebar-item" href="#badges">Badges &amp; Status</a>
+      <a class="kb-sidebar-item" href="#breadcrumb">Breadcrumb &amp; Header</a>
+      <a class="kb-sidebar-item" href="#buttons">Buttons</a>
+      <a class="kb-sidebar-item" href="#cards">Cards</a>
+      <a class="kb-sidebar-item" href="#checkbox">Checkbox</a>
+      <a class="kb-sidebar-item" href="#drawers">Drawers</a>
+      <a class="kb-sidebar-item" href="#dropdowns">Dropdowns</a>
+      <a class="kb-sidebar-item" href="#filters-bar">Filters Bar</a>
+      <a class="kb-sidebar-item" href="#forms">Form Fields &amp; Selects</a>
+      <a class="kb-sidebar-item" href="#modals">Modals</a>
+      <a class="kb-sidebar-item" href="#navigation">Navigation</a>
+      <a class="kb-sidebar-item" href="#permission-table">Permission Table</a>
+      <a class="kb-sidebar-item" href="#progress-bars">Progress Bars</a>
+      <a class="kb-sidebar-item" href="#radio">Radio Button</a>
+      <a class="kb-sidebar-item" href="#roi-table">ROI Calculator Table</a>
+      <a class="kb-sidebar-item" href="#searchbar">Search Bar</a>
+      <a class="kb-sidebar-item" href="#accordion">Accordion</a>
+      <a class="kb-sidebar-item" href="#steppers">Steppers</a>
+      <a class="kb-sidebar-item" href="#tables">Tables</a>
+      <a class="kb-sidebar-item" href="#tooltip">Tooltip</a>
+      <a class="kb-sidebar-item" href="#yearnav">Year / Quarter Nav</a>
+    </div>
+    <div class="kb-sidebar-group">
+      <div class="kb-sidebar-label">Usage</div>
+      <a class="kb-sidebar-item" href="#howto">How to use</a>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="kb-main" id="kb-main">
+
+    <!-- ── Intro ─────────────────────────────────────────────────────────── -->
+    <div style="margin-bottom:48px">
+      <h1 style="font-size:28px;font-weight:700;letter-spacing:-.6px;margin-bottom:8px">KERV Design System</h1>
+      <p style="font-size:14px;color:var(--muted);line-height:1.6;max-width:560px">
+        All UI components are defined once in <code style="font-size:12px;background:var(--subtle);padding:1px 6px;border-radius:4px">js/ui-kit.js</code>
+        as functions on the global <code style="font-size:12px;background:var(--subtle);padding:1px 6px;border-radius:4px">UI</code> object.
+        Use them in every page/module — never write inline styles from scratch.
+      </p>
+    </div>
+
+    <!-- ── Design Tokens ─────────────────────────────────────────────────── -->
+    <section class="kb-section" id="tokens">
+      <div class="kb-section-title">Design Tokens</div>
+      <div class="kb-section-desc">CSS custom properties defined in <code>css/style.css</code>. Use them everywhere — never hardcode colour values.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Colour palette</div>
+        <div class="kb-card-preview column" id="tokens-preview"></div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Status Colors  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">full (text/icon) · light (chip background)</span></div>
+        <div class="kb-card-preview column" style="padding:18px 24px" id="status-colors-preview"></div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Driver Colors  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">5 canonical drivers · chip style · UI.driverChip(name) · UI.DRIVER_OPTS</span></div>
+        <div class="kb-card-preview column" style="padding:18px 24px" id="driver-colors-preview"></div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Chart Colors — 24 canonical pairs  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">UI.CHART_COLORS_FULL (vivid) · UI.CHART_COLORS_LIGHT (tint) · index-matched</span></div>
+        <div class="kb-card-preview column" style="padding:18px 24px" id="chart-palette-preview"></div>
+        <pre class="kb-code">// Full — lines, bars, donut segments
+new Chart(ctx, { data: { datasets: [{ backgroundColor: UI.CHART_COLORS_FULL }] } })
+UI.CHART_COLORS_FULL   // → ['#F47843', '#F4A234', …]  (24 hex)
+
+// Light — fills, area charts, badge backgrounds
+UI.CHART_COLORS_LIGHT  // → ['#FDE4D4', '#FDEACC', …]  (24 hex, index-matched)
+
+// Pair: CHART_COLORS_FULL[i] strokes, CHART_COLORS_LIGHT[i] fills the same series</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Typography tokens (UI object)</div>
+        <div class="kb-card-preview column" style="padding:18px 24px">
+          <table class="kb-token-table">
+            <tr><td>UI.IF</td><td>Base style string for input / select / textarea</td></tr>
+            <tr><td>UI.LB</td><td>Label style — 10px, uppercase, muted, 0.5px tracking</td></tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Buttons ───────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="buttons">
+      <div class="kb-section-title">Buttons</div>
+      <div class="kb-section-desc">Five variants + two icon variants. Always use these — never write button styles inline.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Primary · Cancel · Danger</div>
+        <div class="kb-card-preview" id="btn-preview"></div>
+        <pre class="kb-code">UI.btnPrimary('Save',    'mySaveFn()', 'my-btn-id')    // filled accent
+UI.btnCancel('Cancel',  'myCloseFn()')                // ghost / secondary
+UI.btnDanger('Delete',  'myDeleteFn()')               // red outline</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Secondary  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">"Tools ▾" style — muted at rest, accent on hover</span></div>
+        <div class="kb-card-preview" id="btn-secondary-preview"></div>
+        <pre class="kb-code">// Pair with a chevron SVG + ddPanel for dropdown trigger buttons
+var CHEV = '&lt;svg width="10" height="6"…&gt;&lt;path d="M1 1l4 4 4-4"…/&gt;&lt;/svg&gt;';
+UI.btnSecondary('Tools ' + CHEV, "UI.ddToggle('tools-dd','tools-btn')", 'tools-btn')</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Slim  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">"Copy form link" / "+ Add Idea" style — 11px, surface bg</span></div>
+        <div class="kb-card-preview" id="btn-slim-preview"></div>
+        <pre class="kb-code">var LINK_ICO = '&lt;svg width="11" height="11"…/&gt;';
+var PLUS_ICO = '&lt;svg width="11" height="11"…/&gt;';
+UI.btnSlim(LINK_ICO + 'Copy form link', 'myFn()')
+UI.btnSlim(PLUS_ICO + 'Add Request / Idea', 'myFn()')</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Text button  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">no border, no bg — inline actions: "+ Add", "Clear all"</span></div>
+        <div class="kb-card-preview" id="btn-text-preview"></div>
+        <pre class="kb-code">UI.btnText('+ Add', 'myAddFn()')                    // accent (default)
+UI.btnText('+ Add', 'myAddFn()', '#ea580c')         // custom color
+UI.btnText('Clear all', 'myClearFn()', 'var(--muted)')
+UI.btnText('View all →', 'myFn()', 'var(--accent)')</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Icon button (28 × 28 borderless) · Icon button bordered (36 × 36)</div>
+        <div class="kb-card-preview" id="iconbtn-preview"></div>
+        <pre class="kb-code">// 28×28 borderless — inside table rows / drawers
+UI.btnIcon('myFn()', 'Edit', '&lt;svg…/&gt;')
+UI.btnIcon('myFn()', 'Delete', '&lt;svg…/&gt;', 'var(--faint)', '#E5243B', '#FFF0F0')
+
+// 36×36 bordered — toolbar actions (Filter, Export, Settings…)
+UI.btnIconBordered('myFilterFn()', 'Filter', '&lt;svg…/&gt;')
+UI.btnIconBordered('myFn()', 'Settings', '&lt;svg…/&gt;', 32)  // custom size</pre>
+      </div>
+    </section>
+
+    <!-- ── Avatar ──────────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="avatar">
+      <div class="kb-section-title">Avatar</div>
+      <div class="kb-section-desc">Inline avatar with initials (or photo) + name/subtitle. Use <code>UI.avatar()</code> for standalone display (cards, headers, drawers). Use <code>UI.avatarCell()</code> inside table rows — it renders the same circle but without the name text block.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Avatar + Name</div>
+        <div class="kb-card-preview" id="avatar-name-preview"></div>
+        <pre class="kb-code">UI.avatar('Adam Shukur')                          // 34px default
+UI.avatar('Bruna Pellegrini', null, { size: 26 }) // 26px — compact rows
+UI.avatar('Sam Okafor',       null, { size: 38 }) // 38px — profile headers</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Avatar + Name + Subtitle</div>
+        <div class="kb-card-preview" id="avatar-subtitle-preview"></div>
+        <pre class="kb-code">UI.avatar('Adam Shukur',       'Engineering Lead')
+UI.avatar('Bruna Pellegrini', 'Product Manager', { size: 38 })</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Size variants</div>
+        <div class="kb-card-preview" style="gap:24px;align-items:center" id="avatar-sizes-preview"></div>
+        <pre class="kb-code">UI.avatar('Sam Okafor', 'Designer', { size: 26 }) // table row
+UI.avatar('Sam Okafor', 'Designer', { size: 34 }) // default
+UI.avatar('Sam Okafor', 'Designer', { size: 42 }) // profile card</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Avatar + Name + Dept chip + Subtitle  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">chip inline with name · use UI.avatarChip()</span></div>
+        <div class="kb-card-preview" style="gap:20px;flex-wrap:wrap;align-items:center" id="avatar-chip-preview"></div>
+        <pre class="kb-code">UI.avatarChip('Aron Schatz',     UI.deptChipSm('Product'), 'Principal Product Manager', { size: 26 })
+UI.avatarChip('Bruna Coppolino', UI.deptChipSm('Design'),  'Head of Design',            { size: 26 })
+UI.avatarChip('Rich Kentopp',    UI.deptChipSm('Tech'),    'Engineering Lead',          { size: 26 })
+
+// chipHtml accepts any HTML — deptChipSm, badge, statusChip, etc.
+// size defaults to 26 if omitted</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">User Tile  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">bordered card · avatar + name + dept chip + subtitle</span></div>
+        <div class="kb-card-preview" style="gap:16px;flex-wrap:wrap" id="user-tile-preview"></div>
+        <pre class="kb-code">UI.userTile('Aron Schatz',     'Product',  'Principal Product Manager, Ad Tags')
+UI.userTile('Bruna Coppolino', 'Design',   'Head of Design')
+UI.userTile('Rich Kentopp',    'Tech',     'Engineering Lead')
+
+// With photo
+UI.userTile('Sam Okafor', 'Strategy', 'VP Strategy', { imgSrc: '/img/sam.jpg' })</pre>
+      </div>
+    </section>
+
+    <!-- ── Badges & Status ───────────────────────────────────────────────── -->
+    <section class="kb-section" id="badges">
+      <div class="kb-section-title">Badges &amp; Status</div>
+      <div class="kb-section-desc">Free-colour <code>badge()</code> for custom labels, <code>statusChip()</code> for the 6 delivery statuses, and <code>deptChip()</code> for fixed-color department tags.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Badge  (free colour)</div>
+        <div class="kb-card-preview" id="badge-preview"></div>
+        <pre class="kb-code">UI.badge('In Progress', '#6366F1', 'rgba(99,102,241,.1)')
+UI.badge('Done',        '#2EAD4B', 'rgba(46,173,75,.1)')
+UI.badge('Blocked',     '#E5243B', 'rgba(229,36,59,.08)')
+UI.badge('Draft')                                  // default (muted on subtle)</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Counter Badge  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">small numeric pill — inline in tabs, cells, labels</span></div>
+        <div class="kb-card-preview" id="counter-badge-preview"></div>
+        <pre class="kb-code">UI.counterBadge(2)          // default — subtle bg, muted text
+UI.counterBadge(12)         // auto-widens for 2+ digits
+UI.counterBadge(99)
+
+// Custom colours
+UI.counterBadge(3,  'rgba(99,102,241,.12)', '#6366F1')   // indigo
+UI.counterBadge(5,  'rgba(237,0,94,.10)',   'var(--accent)')  // accent
+
+// Returns '' for falsy values — safe to always call:
+UI.counterBadge(0)   // → ''
+UI.counterBadge(null)// → ''
+
+// Used automatically by UI.pills() when t.count is set:
+UI.pills([
+  {id:'open',   label:'Open',   count:2},
+  {id:'closed', label:'Closed', count:12}
+], 'open', 'myTabFn')</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Status chip  (delivery status — uses ds-* CSS classes)</div>
+        <div class="kb-card-preview" id="status-preview"></div>
+        <pre class="kb-code">UI.statusChip('not-started')   // → Not Started (gray)
+UI.statusChip('on-track')      // → On Track    (blue)
+UI.statusChip('at-risk')       // → At Risk     (yellow)
+UI.statusChip('delayed')       // → Delayed     (red)
+UI.statusChip('on-hold')       // → On Hold     (orange)
+UI.statusChip('delivered')     // → Delivered   (green)
+
+// All values available as an array for building selects:
+UI.STATUS_OPTS  // [{val:'not-started',label:'Not Started'}, …]</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Department chip  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">fixed colour per department · UI.deptChip(name) · UI.DEPT_OPTS</span></div>
+        <div class="kb-card-preview" style="flex-wrap:wrap;gap:8px" id="dept-chip-preview"></div>
+        <pre class="kb-code">UI.deptChip('Product')          // amber
+UI.deptChip('Tech')             // indigo
+UI.deptChip('Design')           // violet
+UI.deptChip('Marketing')        // pink
+UI.deptChip('Sales')            // emerald
+UI.deptChip('Strategy')         // sky
+UI.deptChip('People &amp; Culture') // rose
+UI.deptChip('Operations')       // cyan
+UI.deptChip('Finance')          // green
+
+// Ready-made options array for cellCustomSelect / customSelect:
+UI.DEPT_OPTS  // [{val:'Product', label:'Product', html: deptChip(…)}, …]</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Department chip — Small  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">9.5px · 1px 6px padding · use inside compact components (avatarChip, userTile)</span></div>
+        <div class="kb-card-preview" style="flex-wrap:wrap;gap:8px;align-items:center" id="dept-chip-sm-preview"></div>
+        <pre class="kb-code">UI.deptChipSm('Product')
+UI.deptChipSm('Tech')
+UI.deptChipSm('Design')
+// …same palette, smaller size
+
+// Used automatically inside UI.userTile() and UI.avatarChip()</pre>
+      </div>
+    </section>
+
+    <!-- ── Progress Bars ─────────────────────────────────────────────────── -->
+    <section class="kb-section" id="progress-bars">
+      <div class="kb-section-title">Progress Bars</div>
+      <div class="kb-section-desc">Three variants for different contexts. <code>progressBarStatus(pct)</code> coloured by delivery stage · <code>progressBarFlat(pct, color)</code> fixed colour, caller chooses · <code>progressBarCapacity(pct)</code> green/yellow/red by load level.</div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px">
+        <div class="kb-card-label">Status Progress  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">0% gray · 1–30% yellow · 31–90% blue · 91–100% green · optional label below</span></div>
+        <div class="kb-card-preview column" style="padding:16px 24px;gap:0" id="pb-status-preview"></div>
+        <pre class="kb-code">UI.progressBarStatus(0)                  // no label
+UI.progressBarStatus(20)
+UI.progressBarStatus(60)
+UI.progressBarStatus(95, 'Q2 Delivery')  // with label below</pre>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px">
+        <div class="kb-card-label">Flat Progress  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">same colour 0→100%, caller passes the colour · optional label below</span></div>
+        <div class="kb-card-preview column" style="padding:16px 24px;gap:0" id="pb-flat-preview"></div>
+        <pre class="kb-code">UI.progressBarFlat(40, 'var(--accent)')
+UI.progressBarFlat(65, '#6366F1')
+UI.progressBarFlat(80, '#2EAD4B', 'Budget spent')  // with label below</pre>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px">
+        <div class="kb-card-label">Capacity Progress  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">0–75% green · 76–100% yellow · &gt;100% red (bar capped, label shows real value) · optional label below</span></div>
+        <div class="kb-card-preview column" style="padding:16px 24px;gap:0" id="pb-capacity-preview"></div>
+        <pre class="kb-code">UI.progressBarCapacity(50)
+UI.progressBarCapacity(85)
+UI.progressBarCapacity(110, 'Team load')  // with label below</pre>
+      </div>
+
+    </section>
+
+    <!-- ── Form Fields ───────────────────────────────────────────────────── -->
+    <section class="kb-section" id="forms">
+      <div class="kb-section-title">Form Fields &amp; Selects</div>
+      <div class="kb-section-desc">Always wrap inputs with <code>UI.field()</code> to get the uppercase label. Three select variants: custom (recommended), native (simple inline), multi-select with search.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Text input</div>
+        <div class="kb-card-preview column padded" id="input-preview"></div>
+        <pre class="kb-code">UI.field('Title', UI.input('my-title', 'text', 'e.g. Drive growth', value), true)
+UI.field('Notes', UI.textarea('my-notes', 'Optional…', value, 3))</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Custom Select  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">(recommended — fully styled)</span></div>
+        <div class="kb-card-preview column padded" id="custom-select-preview"></div>
+        <pre class="kb-code">// Fully custom dropdown — matches the app's Theme / Status selectors.
+// Value is always readable via: document.getElementById('my-q').value
+UI.field('Theme', UI.customSelect('my-q', [
+  {val:'',         label:'—'},
+  {val:'ad-fmt',   label:'Ad Formats'},
+  {val:'ad-svc',   label:'Ad Serving &amp; Management'},
+  {val:'analytics',label:'Analytics &amp; Reporting'}
+], 'ad-fmt', 'myOnChangeFn'))
+
+// onChangeFn is called as: myOnChangeFn(val) on every pick</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Native Select  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">(simple inline use only)</span></div>
+        <div class="kb-card-preview column padded" id="select-preview"></div>
+        <pre class="kb-code">// Use only inside tight spaces where a custom panel would overflow.
+// The chevron and appearance come from browser; styling is limited on some OSes.
+UI.field('Quarter', UI.select('my-q', [
+  {val:'Q1',label:'Q1'}, {val:'Q2',label:'Q2'},
+  {val:'Q3',label:'Q3'}, {val:'Q4',label:'Q4'},
+  {val:'Backlog',label:'Backlog'}
+], 'Q2'))</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Multi-select with search  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">(used in Initiative form · Jira modal)</span></div>
+        <div class="kb-card-preview" id="sc-dd-preview" style="min-height:260px;align-items:flex-start;padding:24px"></div>
+        <pre class="kb-code">// Full-width select-style trigger + panel — keep in a position:relative wrapper.
+// Values: call document.querySelectorAll('#my-sc input:checked') to collect.
+'&lt;div style="position:relative"&gt;'
++ '&lt;button id="my-sc-btn" onclick="UI.ddToggle(\'my-sc\',\'my-sc-btn\')"
+    style="width:100%;height:36px;padding:0 36px 0 11px;font-size:13px;font-family:inherit;
+           border:1px solid var(--border-md);border-radius:7px;background:var(--surface);
+           color:var(--text);cursor:pointer;display:flex;align-items:center;position:relative"&gt;
+  &lt;span style="flex:1;text-align:left;color:var(--muted)"&gt;Select owners…&lt;/span&gt;
+  &lt;!-- chevron SVG --&gt;
+&lt;/button&gt;'
++ UI.searchCheckboxPanel({
+    id:          'my-sc',
+    placeholder: 'Search people…',
+    items: members.map(function(m) {
+      return { val: m.id, label: m.name, checked: selected.indexOf(m.id) !== -1 };
+    }),
+    onChangeFn: 'myToggleOwnerFn'   // called as myToggleOwnerFn(val, checked)
+  })
++ '&lt;/div&gt;'</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Jira Epic Select  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">search + checkbox, key · title · status</span></div>
+        <div class="kb-card-preview" id="jira-dd-preview" style="min-height:300px;align-items:flex-start;padding:24px"></div>
+        <pre class="kb-code">// Same trigger pattern as multi-select, different panel function
+'&lt;div style="position:relative"&gt;'
++ '&lt;button id="my-jira-btn" onclick="UI.ddToggle(\'my-jira\',\'my-jira-btn\')" …&gt;
+    Select epics… + chevron SVG
+  &lt;/button&gt;'
++ UI.jiraSelectPanel({
+    id:          'my-jira',
+    placeholder: 'Filter epics…',
+    items: epics.map(function(e) {
+      return {
+        val:         e.id,
+        key:         e.key,          // 'SDT-8'  — shown in accent colour
+        title:       e.summary,
+        status:      e.statusLabel,  // 'In corso' / 'Da completare'
+        statusColor: e.statusColor,  // CSS colour, default var(--faint)
+        checked:     selected.indexOf(e.id) !== -1
+      };
+    }),
+    onChangeFn: 'myToggleEpicFn'
+  })
++ '&lt;/div&gt;'</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Section divider  (inside drawer body)</div>
+        <div class="kb-card-preview column padded" id="section-preview"></div>
+        <pre class="kb-code">UI.section('Module Permissions')
+UI.section('Departments', '&lt;button…&gt;Select All&lt;/button&gt;')  // optional right slot</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Section label  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">"DESCRIPTION" style — standalone uppercase label, no border</span></div>
+        <div class="kb-card-preview column padded" id="section-label-preview"></div>
+        <pre class="kb-code">UI.sectionLabel('Description')        // → DESCRIPTION (10px, uppercase, muted)
+UI.sectionLabel('Team', '12px')       // custom margin-bottom
+// Use for area headings in content views — NOT inside form fields
+// (for form fields use UI.field() which wraps with its own label)</pre>
+      </div>
+    </section>
+
+    <!-- ── Filters Bar ──────────────────────────────────────────────────── -->
+    <section class="kb-section" id="filters-bar">
+      <div class="kb-section-title">Filters Bar</div>
+      <div class="kb-section-desc">Composable filter toolbar: search input + one or more filter dropdowns + Reset. Each dropdown shows muted text at rest and turns accent-bordered when a value is active.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Full bar  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">search · dropdowns · reset</span></div>
+        <div class="kb-card-preview" id="filters-bar-preview" style="padding:20px 24px;display:block"></div>
+        <pre class="kb-code">UI.filtersBar({
+  searchId:          'my-search',
+  searchPlaceholder: 'Search initiatives…',
+  onSearchFn:        'applyFilters()',
+  searchWidth:       200,            // px, default 200
+  filters: [
+    { id: 'f-driver', placeholder: 'All Drivers', options: driverOpts, onChangeFn: 'applyFilters' },
+    { id: 'f-team',   placeholder: 'All Teams',   options: teamOpts,   onChangeFn: 'applyFilters' },
+    { id: 'f-status', placeholder: 'All Statuses',options: statusOpts, onChangeFn: 'applyFilters' },
+  ],
+  resetFn: 'resetFilters()'
+})
+
+// Read values:
+document.getElementById('my-search').value      // search text
+document.getElementById('f-driver').value       // selected driver (hidden input)
+
+// Read via data attribute (on wrapper):
+document.getElementById('f-driver-wrap').dataset.value</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Single dropdown  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">UI.filterDd — use standalone in tight spaces</span></div>
+        <div class="kb-card-preview" id="filter-dd-preview" style="padding:20px 24px;display:block"></div>
+        <pre class="kb-code">UI.filterDd('f-status', 'All Statuses', [
+  { val: 'not-started', label: 'Not Started' },
+  { val: 'on-track',    label: 'On Track'    },
+  { val: 'at-risk',     label: 'At Risk'     },
+  { val: 'delivered',   label: 'Delivered'   },
+], 'applyFilters')
+
+// Reset a single dropdown programmatically:
+UI._fdPick('f-status', '', 'All Statuses')</pre>
+      </div>
+    </section>
+
+    <!-- ── Checkbox ─────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="checkbox">
+      <div class="kb-section-title">Checkbox</div>
+      <div class="kb-section-desc">Styled checkbox using the accent color. Three states: unchecked, checked, disabled. Always uses <code>accent-color:var(--accent)</code> so it matches the brand.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">States</div>
+        <div class="kb-card-preview column padded" id="checkbox-preview"></div>
+        <pre class="kb-code">UI.checkbox('my-chk', 'Enable feature')
+UI.checkbox('my-chk-on', 'Already active', true)
+UI.checkbox('my-chk-dis', 'Not available', false, null, true)
+UI.checkbox('my-chk-dis-on', 'Locked on', true, null, true)
+
+// Read value:
+document.getElementById('my-chk').checked  // → boolean
+
+// With change handler:
+UI.checkbox('my-chk', 'Notify me', false, 'handleToggle(this.checked)')</pre>
+      </div>
+    </section>
+
+    <!-- ── Permission Table ─────────────────────────────────────────────── -->
+    <section class="kb-section" id="permission-table">
+      <div class="kb-section-title">Permission Table</div>
+      <div class="kb-section-desc">Access matrix with checkboxes (enable/disable module) and radio buttons (permission level). Section headers use <code>var(--bg)</code>; sub-rows are indented and auto-disabled when the parent is unchecked.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Example — modules with View / Edit columns</div>
+        <div class="kb-card-preview" id="permission-table-preview" style="padding:20px 24px;display:block"></div>
+        <pre class="kb-code">UI.permissionTable(
+  [
+    {
+      label: 'Product &amp; Tech',
+      rows: [
+        {
+          id:         'roadmap',
+          label:      'Product Roadmap',
+          checked:    true,
+          radioValue: '2',          // '1' = View, '2' = Edit
+          sub: [
+            { id:'roadmap-asmp', label:'Assumptions', checked:false, radioValue:'' }
+          ]
+        },
+        { id:'capacity', label:'Team Capacity',      checked:false, radioValue:'' },
+        { id:'sprint',   label:'XTS Team (Sprint)',  checked:false, radioValue:'' },
+        { id:'ideas',    label:'Product Req / Ideas',checked:false, radioValue:'' },
+      ]
+    }
+  ],
+  ['View', 'Edit']   // radio column headers — length = number of radio columns
+)
+
+// Handlers wired via onCheckFn / onRadioFn on each row:
+{ id:'roadmap', label:'Product Roadmap', checked:true,
+  onCheckFn: 'auToggleModule(this.checked,\'roadmap\')',
+  onRadioFn: 'auSetPermission' }   // called as auSetPermission(val)</pre>
+      </div>
+    </section>
+
+    <!-- ── Radio Button ──────────────────────────────────────────────────── -->
+    <section class="kb-section" id="radio">
+      <div class="kb-section-title">Radio Button</div>
+      <div class="kb-section-desc">Single-choice selector. Group multiple radios with the same <code>name</code> — the browser enforces mutual exclusion. Uses <code>accent-color:var(--accent)</code>.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Group</div>
+        <div class="kb-card-preview column padded" id="radio-preview"></div>
+        <pre class="kb-code">UI.radio('r-monthly',  'period', 'Monthly',  'monthly',  true)
+UI.radio('r-quarterly','period', 'Quarterly','quarterly', false)
+UI.radio('r-annual',   'period', 'Annual',   'annual',    false)
+UI.radio('r-disabled', 'period', 'Disabled', 'disabled',  false, null, true)
+
+// Read selected value:
+var el = document.querySelector('input[name="period"]:checked');
+el ? el.value : null   // → 'monthly'
+
+// With change handler:
+UI.radio('r-m', 'view', 'Monthly', 'monthly', true, 'handleViewChange(this.value)')</pre>
+      </div>
+    </section>
+
+    <!-- ── Search Bar ────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="searchbar">
+      <div class="kb-section-title">Search Bar</div>
+      <div class="kb-section-desc">Text input with a leading search icon. Accent-colored border on focus. Works standalone or inside a toolbar / table header.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Default</div>
+        <div class="kb-card-preview column padded" id="searchbar-preview"></div>
+        <pre class="kb-code">// Basic — full width of its container
+UI.searchBar('my-search', 'Search items…')
+
+// With live-filter callback
+UI.searchBar('my-search', 'Search users…', 'filterTable(this.value)')
+
+// With pre-filled value
+UI.searchBar('my-search', 'Search…', 'filterTable(this.value)', 'acme')
+
+// Read value:
+document.getElementById('my-search').value</pre>
+      </div>
+    </section>
+
+    <!-- ── Navigation ───────────────────────────────────────────────────── -->
+    <section class="kb-section" id="navigation">
+      <div class="kb-section-title">Navigation</div>
+      <div class="kb-section-desc">All navigation primitives: Chips (section-switching &amp; grouping), Pills (tab-style with count badge), Drawer Nav (page/drawer tab bar).</div>
+
+      <!-- Chips -->
+      <div class="kb-card-label" style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Chips</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Large  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">Settings "Teams &amp; Capacity" style — 36px, accent-filled active</span></div>
+        <div class="kb-card-preview" id="chips-lg-preview" style="flex-wrap:wrap"></div>
+        <pre class="kb-code">UI.chipsNavLg([
+  {id:'ads',      label:'Ads / Radius'},
+  {id:'content',  label:'Content / APIs'},
+  {id:'data',     label:'Data'},
+  {id:'kerv-one', label:'KERV One'}
+], 'ads', 'mySetTeamFn',
+  'myAddTeamFn',    // optional: shows dashed "+ Add team" button at the end
+  '+ Add team'      // optional: custom label (default '+ Add')
+)</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Small  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">Product Roadmap "Group by" style — 28px, same accent logic</span></div>
+        <div class="kb-card-preview" id="chips-sm-preview" style="flex-wrap:wrap"></div>
+        <pre class="kb-code">UI.chipsNavSm([
+  {id:'team',   label:'Team'},
+  {id:'theme',  label:'Theme'},
+  {id:'driver', label:'Driver'}
+], 'driver', 'mySetGroupByFn')</pre>
+      </div>
+
+      <!-- Pills -->
+      <div class="kb-card-label" style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:16px;margin-bottom:8px">Pills</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Standard pills</div>
+        <div class="kb-card-preview" id="pills-preview"></div>
+        <pre class="kb-code">UI.pills([
+  {id:'all',    label:'All'},
+  {id:'product',label:'Product', count:4},   // ← count renders UI.counterBadge()
+  {id:'tech',   label:'Tech',    count:2},
+  {id:'design', label:'Design'}
+], 'product', 'mySetTabFn')
+
+// Counter badge standalone (e.g. inside a table cell or card header):
+UI.counterBadge(2)                                      // default (subtle/muted)
+UI.counterBadge(5, 'rgba(237,0,94,.10)', 'var(--accent)')  // accent</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Quarter pills  (alias)</div>
+        <div class="kb-card-preview" id="qpills-preview"></div>
+        <pre class="kb-code">UI.quarterPills(['Q1','Q2','Q3','Q4','Backlog'], 'Q2', 'mySetQFn')</pre>
+      </div>
+
+      <!-- Drawer Nav -->
+      <div class="kb-card-label" style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:16px;margin-bottom:8px">Drawer Nav</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Page / drawer tab bar  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">.tabnav · .tabitem · .act — used in Settings drawer, Roadmap modal</span></div>
+        <div class="kb-card-preview column" style="padding:20px 24px" id="drawernav-preview"></div>
+        <pre class="kb-code">UI.drawerNav([
+  { id: 'teams',   label: 'Teams &amp; Capacity' },
+  { id: 'members', label: 'Team Members'    },
+  { id: 'drivers', label: 'Drivers'         },
+  { id: 'themes',  label: 'Themes'          }
+], 'members', 'mySetTabFn')</pre>
+      </div>
+    </section>
+
+    <!-- ── Tooltip ──────────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="tooltip">
+      <div class="kb-section-title">Tooltip</div>
+      <div class="kb-section-desc">Dark hover popovers and the "How it works" formula panel. Use <code>UI.tooltip(trigger, text)</code> for any icon, label, or button — it wraps the element and shows a floating label on hover. Use <code>UI.formulaCard()</code> for inline formula explanations paired with a trigger link.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Hover tooltip — all positions  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">dark bg · 11px · wraps any trigger</span></div>
+        <div class="kb-card-preview" style="gap:24px;justify-content:center;padding:36px 24px" id="tooltip-pos-preview"></div>
+        <pre class="kb-code">// Round info icon — thicker strokes, no button outline
+var INFO_ICO = '&lt;span style="display:inline-flex;align-items:center;justify-content:center;'
+  + 'width:22px;height:22px;color:var(--muted);cursor:default"&gt;'
+  + '&lt;svg width="15" height="15" viewBox="0 0 16 16" fill="none"&gt;'
+  + '&lt;circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="2"/&gt;'
+  + '&lt;path d="M8 7v4.5M8 5v.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/&gt;'
+  + '&lt;/svg&gt;&lt;/span&gt;';
+
+UI.tooltip(INFO_ICO, 'Saved automatically')                          // top (default)
+UI.tooltip(INFO_ICO, 'Saved automatically',                {pos:'bottom'})
+UI.tooltip(INFO_ICO, 'Saved automatically',                {pos:'right'})
+UI.tooltip(INFO_ICO, 'Multi-line tooltip that wraps',      {pos:'left'})
+UI.tooltip(INFO_ICO, 'Long explanation here',              {pos:'top', maxWidth:'140px'})</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Tooltip on text / custom trigger  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">wrap any element — icon, label, column header</span></div>
+        <div class="kb-card-preview" style="gap:24px;padding:28px 24px" id="tooltip-text-preview"></div>
+        <pre class="kb-code">// Wrap any HTML element as trigger
+UI.tooltip(INFO_ICO, 'Formula explained below', {pos:'right'})
+
+// Muted text label
+UI.tooltip('&lt;span style="font-size:12px;color:var(--muted);border-bottom:1px dashed var(--border-md);cursor:default"&gt;Weighted Score&lt;/span&gt;', 'Value × Impact × Confidence / Effort')</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Formula Card — "How it works"  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">subtle pink bg · monospace formula boxes · optional dismiss · pair with trigger link</span></div>
+        <div class="kb-card-preview column padded" id="formula-card-preview" style="gap:12px"></div>
+        <pre class="kb-code">// Trigger link (ⓘ How it works) — toggles the panel
+'&lt;button onclick="document.getElementById(\'fc\').style.display = …"
+  style="color:var(--accent);…"&gt;ⓘ How it works&lt;/button&gt;'
+
+// Panel
+UI.formulaCard(
+  'Enhancement Attribution Model',
+  'Attributes a share of existing product revenue to this initiative based on its estimated contribution to growth.',
+  [
+    'Added Value = Product Revenue (last year) × Contribution to Growth%',
+    'ROI = (Added Value − Project Cost) / Project Cost'
+  ],
+  'myCloseFn()'   // optional — omit to hide the × button
+)</pre>
+      </div>
+    </section>
+
+    <!-- ── Year / Quarter nav ─────────────────────────────────────────────── -->
+    <section class="kb-section" id="yearnav">
+      <div class="kb-section-title">Year &amp; Quarter Nav</div>
+      <div class="kb-section-desc">The <code>← 2026 →</code> navigator. Uses the exact same pixels as <code>ovxYearNav</code> in overview-product.js.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Year nav</div>
+        <div class="kb-card-preview" id="yearnav-preview"></div>
+        <pre class="kb-code">UI.yearNav(
+  _myYear,              // current year
+  _myAvailableYears,    // array from DB: [2025, 2026, 2027]
+  'myChangeYearFn'      // called with (+1 or -1)
+)</pre>
+      </div>
+    </section>
+
+    <!-- ── Breadcrumb & Header ──────────────────────────────────────────── -->
+    <section class="kb-section" id="breadcrumb">
+      <div class="kb-section-title">Breadcrumb &amp; Page Header</div>
+      <div class="kb-section-desc">Three variants of page header. <code>pageHeader()</code> static · <code>pageHeaderEditable()</code> pencil renames inline · <code>pageHeaderModal()</code> pencil opens drawer. All share the same breadcrumb + h1 + right slot + subtitle structure.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Breadcrumb</div>
+        <div class="kb-card-preview column padded" id="breadcrumb-preview"></div>
+        <pre class="kb-code">// Items array — last item is current page (no link, muted text)
+UI.breadcrumb([
+  {label:'Home',            href:'/'},
+  {label:'Product Roadmap', href:'/roadmap'},
+  {label:'Q2 2026'}         // current page
+])
+
+// With onclick handlers (no href)
+UI.breadcrumb([
+  {label:'Settings', onclick:'openSettings()'},
+  {label:'Team Members'}
+])</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Page Header  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">breadcrumb + title + right slot + subtitle</span></div>
+        <div class="kb-card-preview column padded" id="pageheader-preview"></div>
+        <pre class="kb-code">UI.pageHeader({
+  breadcrumb: [{label:'Product'}, {label:'Product Roadmap'}],
+  title:      'Product Roadmap',
+  titleRight: UI.yearNav(2026, [2024,2025,2026,2027], 'myChangeYearFn'),
+  subtitle:   'Quarterly initiatives and progress status'
+})
+
+// Minimal (title only)
+UI.pageHeader({ title: 'Team Members' })</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Page Header · inline edit  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">pencil next to h1 · click to rename · Enter or ✓ to save · Esc to cancel</span></div>
+        <div class="kb-card-preview column padded" id="pageheader-inline-preview"></div>
+        <pre class="kb-code">UI.pageHeaderEditable({
+  id:          'my-ph',
+  breadcrumb:  [{label:'Settings'}, {label:'Team Capacity'}],
+  title:       'Ads / Radius',
+  subtitle:    'Sprint velocity and capacity planning',
+  titleRight:  UI.yearNav(2026, [2025,2026,2027], 'myChangeYearFn'),
+  onSaveFn:    'myRenameFn'   // called as myRenameFn(newTitle) on save
+})
+
+// Helpers also available for external triggers:
+UI._cheEdit('my-ph')      // → switch to edit mode
+UI._cheSave('my-ph')      // → confirm
+UI._cheCancel('my-ph')    // → discard</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Page Header · modal edit  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">pencil calls onEditFn — opens a drawer or modal with full edit form</span></div>
+        <div class="kb-card-preview column padded" id="pageheader-modal-preview"></div>
+        <pre class="kb-code">UI.pageHeaderModal({
+  breadcrumb:  [{label:'Product'}, {label:'Product Roadmap'}],
+  title:       'Analytics dashboard 2.0',
+  subtitle:    'Q2 2026 · At Risk',
+  titleRight:  UI.yearNav(2026, [2025,2026,2027], 'myChangeYearFn'),
+  onEditFn:    'myOpenEditDrawer()'   // opens drawer with full edit form
+})
+
+function myOpenEditDrawer() {
+  UI.openDrawer({ id: 'edit-drawer', title: 'Edit Initiative', … });
+}</pre>
+      </div>
+    </section>
+
+    <!-- ── Cards ─────────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="cards">
+      <div class="kb-section-title">Cards</div>
+      <div class="kb-section-desc">Four card variants. <code>card()</code> plain surface · <code>cardStat()</code> KPI/progress · <code>cardHeader()</code> titled header bar · <code>cardCollapsable()</code> animated toggle.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Card — normal  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">plain surface wrapper with border</span></div>
+        <div class="kb-card-preview column padded" id="card-normal-preview"></div>
+        <pre class="kb-code">UI.card({
+  bodyHtml: '&lt;p style="font-size:13px;color:var(--muted)"&gt;Any content here.&lt;/p&gt;',
+  padding:  '20px 24px'   // default
+})</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Card — stat / KPI  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">large figure + badge + stacked bar + dot list</span></div>
+        <div class="kb-card-preview" id="card-stat-preview" style="flex-wrap:wrap;align-items:flex-start;gap:16px"></div>
+        <pre class="kb-code">UI.cardStat({
+  value:  35,
+  label:  'Total initiatives in Q2 2026',
+  badge:  UI.badge('Q2 2026', '#6366F1', 'rgba(99,102,241,.1)'),
+  bar: [
+    {color:'#2EAD4B', pct:11, label:'Delivered'},
+    {color:'#0EA5E9', pct:14, label:'On Track'},
+    {color:'#E5A100', pct:5,  label:'At Risk'},
+    {color:'#E5243B', pct:3,  label:'Delayed'},
+    {color:'#F97316', pct:2,  label:'On Hold'}
+  ],
+  stats: [
+    {color:'#2EAD4B', label:'Delivered', value:11},
+    {color:'#0EA5E9', label:'On Track',  value:14},
+    {color:'#E5A100', label:'At Risk',   value: 5},
+    {color:'#E5243B', label:'Delayed',   value: 3},
+    {color:'#F97316', label:'On Hold',   value: 2}
+  ]
+})</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Card — with header  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">same look as collapsable, always open, no chevron</span></div>
+        <div class="kb-card-preview column padded" id="card-header-preview"></div>
+        <pre class="kb-code">UI.cardHeader({
+  title:       'Team Members',
+  subtitle:    '· 5 people',
+  headerRight: UI.btnSlim('+ Add member', 'myAddFn()'),
+  bodyHtml:    '…table or content…',
+  padding:     '0'   // often no padding when body is a table
+})</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Card — collapsable  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">animated chevron toggle, hover bg</span></div>
+        <div class="kb-card-preview column padded" id="card-collapse-preview" style="gap:10px"></div>
+        <pre class="kb-code">UI.cardCollapsable({
+  id:          'analysis-q2',
+  title:       'Analysis Q2 2026',
+  subtitle:    '· 35 initiatives',
+  bodyHtml:    '&lt;p style="font-size:13px;color:var(--muted)"&gt;Analysis content here…&lt;/p&gt;',
+  defaultOpen: true
+})
+
+// Collapsed by default
+UI.cardCollapsable({
+  id:      'notes-card',
+  title:   'Notes',
+  bodyHtml:'&lt;p style="font-size:13px;color:var(--muted)"&gt;…&lt;/p&gt;'
+})</pre>
+      </div>
+    </section>
+
+    <!-- ── Dropdowns ─────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="dropdowns">
+      <div class="kb-section-title">Dropdowns</div>
+      <div class="kb-section-desc">Action dropdown panel attached to a button trigger. Uses <code>.tb-admin-dd</code> from <code>style.css</code>.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Action dropdown  (e.g. "Add New ▾")</div>
+        <div class="kb-card-preview" id="dd-preview" style="min-height:180px;align-items:flex-start;padding-top:24px"></div>
+        <pre class="kb-code">// Use btnSecondary as the trigger — same style as all dropdown buttons
+'&lt;div style="position:relative"&gt;'
++ UI.btnSecondary('Add New ' + SVG_CHEV, 'UI.ddToggle(\'my-dd\',\'my-btn\')', 'my-btn')
++ UI.ddPanel('my-dd', [
+    {label:'Add Objective', onclick:'myAddObjFn()', svgHtml:'&lt;svg…/&gt;'},
+    'divider',
+    {label:'Add Key Result', onclick:'myAddKrFn()'}
+  ])
++ '&lt;/div&gt;'</pre>
+      </div>
+    </section>
+
+    <!-- ── Drawers ───────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="drawers">
+      <div class="kb-section-title">Drawers</div>
+      <div class="kb-section-desc">Right-side slide-in panel — for detailed forms, multi-step flows, complex editing. Opens with <code>UI.openDrawer()</code>, closes with <code>UI.closeDrawer(id)</code>. Footer has left (Delete) and right (Cancel + Save) slots. For shorter confirmations and quick edits use <strong>Modals</strong> instead.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Example — opens a live drawer</div>
+        <div class="kb-card-preview">
+          <button onclick="kbOpenExampleDrawer()"
+            style="height:34px;padding:0 18px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;transition:opacity .15s"
+            onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
+            Open example drawer
+          </button>
+        </div>
+        <pre class="kb-code">function myOpenDrawer() {
+  UI.openDrawer({
+    id:          'my-drawer',
+    width:       '520px',
+    title:       'Edit Objective',
+    subtitle:    'Set title, description and departments',
+    closeFn:     'myCloseDrawer',
+    bodyHtml:
+      UI.field('Title',       UI.input('obj-title','text','e.g. Drive growth', title), true) +
+      UI.field('Description', UI.textarea('obj-desc','Optional…', desc, 3))  +
+      UI.section('Departments'),
+    footerLeft:  UI.btnDanger('Delete', 'myDeleteFn()'),
+    footerRight: UI.btnCancel('Cancel','myCloseDrawer()') + UI.btnPrimary('Save','mySaveFn()','save-btn')
+  });
+}
+function myCloseDrawer() { UI.closeDrawer('my-drawer'); }</pre>
+      </div>
+    </section>
+
+    <!-- ── Modals ─────────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="modals">
+      <div class="kb-section-title">Modals</div>
+      <div class="kb-section-desc">Centered dialog — for confirmations, quick forms, short edits. Scales in from center, backdrop click closes. Same API as <code>openDrawer()</code> but rendered as a floating box. Use <strong>Drawers</strong> for complex multi-field forms.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Example — opens a live modal</div>
+        <div class="kb-card-preview">
+          <button onclick="kbOpenExampleModal()"
+            style="height:34px;padding:0 18px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;transition:opacity .15s"
+            onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
+            Open example modal
+          </button>
+        </div>
+        <pre class="kb-code">function myOpenModal() {
+  UI.openModal({
+    id:          'my-modal',
+    width:       '480px',       // default — narrower than drawer
+    title:       'Edit Initiative',
+    subtitle:    'Update status, owner and quarter',
+    closeFn:     'myCloseModal',
+    bodyHtml:
+      UI.field('Title',   UI.input('m-title','text','Initiative name', title), true) +
+      UI.field('Status',  UI.customSelect('m-status', UI.STATUS_OPTS, status)) +
+      UI.field('Owner',   UI.customSelect('m-owner', ownerOpts, owner)) +
+      UI.field('Quarter', UI.customSelect('m-q', quarterOpts, quarter)),
+    footerLeft:  UI.btnDanger('Delete', 'myDeleteFn()'),
+    footerRight: UI.btnCancel('Cancel','myCloseModal()') + UI.btnPrimary('Save','mySaveFn()','m-save')
+  });
+}
+function myCloseModal() { UI.closeModal('my-modal'); }
+
+// Drawer vs Modal cheatsheet:
+// Drawer → detailed form, many fields, side panel, stays open while browsing
+// Modal  → quick edit, confirmation, ≤ 6 fields, must resolve before continuing</pre>
+      </div>
+      <div class="kb-card">
+        <div class="kb-card-label">Multi-step modal — with sidebar stepper  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">split layout · UI.stepperV() · 2-col form grid · status pill row</span></div>
+        <div class="kb-card-preview">
+          <button onclick="kbOpenMultiStepModal()"
+            style="height:34px;padding:0 18px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;transition:opacity .15s"
+            onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
+            Open multi-step modal
+          </button>
+        </div>
+        <pre class="kb-code">UI.openModal({
+  id:    'add-initiative-modal',
+  width: '860px',
+  title: 'Add Initiative',
+  closeFn: 'closeAddInitiative',
+  bodyHtml:
+    // Split layout: negate modal padding, split left/right
+    '&lt;div style="display:flex;margin:-20px -24px;min-height:460px"&gt;'
+    // Left — stepper sidebar
+    + '&lt;div style="width:240px;flex-shrink:0;padding:28px 20px;background:var(--bg);border-right:1px solid var(--border)"&gt;'
+    +   UI.stepperV(steps.map(function(s,i){ return {label:s.label, status: i&lt;active?'done':i===active?'active':'pending'}; }))
+    + '&lt;/div&gt;'
+    // Right — step content
+    + '&lt;div style="flex:1;padding:28px 24px;overflow-y:auto"&gt;'
+    +   '&lt;div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px"&gt;'
+    +     UI.field('Quarter', UI.customSelect('ai-q', quarterOpts, 'Q2')) + …
+    +   '&lt;/div&gt;'
+    + '&lt;/div&gt;'
+    + '&lt;/div&gt;',
+  footerRight: UI.btnCancel('Cancel','closeAddInitiative()') + UI.btnPrimary('Next →','nextStep()','ai-next')
+});</pre>
+      </div>
+    </section>
+
+    <!-- ── Alerts ──────────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="alerts">
+      <div class="kb-section-title">Alerts</div>
+      <div class="kb-section-desc">Inline feedback banners — for form validation, async results, and contextual notices. Four semantic variants via <code>UI.alertBanner(type, title, message, closeFn?)</code>.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Full — icon · title · message</div>
+        <div class="kb-card-preview column padded" id="alerts-full-preview" style="gap:10px"></div>
+        <pre class="kb-code">UI.alertBanner('error',   'Something went wrong',  'The request failed. Check your input and try again.')
+UI.alertBanner('success', 'Changes saved',          'Your initiative has been updated successfully.')
+UI.alertBanner('info',    'Heads up',               'This action will affect all team members in the selected quarter.')
+UI.alertBanner('warning', 'Unsaved changes',        'You have unsaved edits. Review before leaving this page.')</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Icon + text — no title  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">pass empty string as title</span></div>
+        <div class="kb-card-preview column padded" id="alerts-icon-preview" style="gap:10px"></div>
+        <pre class="kb-code">UI.alertBanner('error',   '', 'Something went wrong — check your input and try again.')
+UI.alertBanner('success', '', 'Changes saved successfully.')
+UI.alertBanner('info',    '', 'This action will affect all team members.')
+UI.alertBanner('warning', '', 'You have unsaved changes.')</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Text only — no icon  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">pass empty title + noIcon:true</span></div>
+        <div class="kb-card-preview column padded" id="alerts-text-preview" style="gap:10px"></div>
+        <pre class="kb-code">UI.alertBanner('error',   '', 'Something went wrong — check your input and try again.',   null, true)
+UI.alertBanner('success', '', 'Changes saved successfully.',                                null, true)
+UI.alertBanner('info',    '', 'This action will affect all team members.',                  null, true)
+UI.alertBanner('warning', '', 'You have unsaved changes.',                                  null, true)</pre>
+      </div>
+
+    </section>
+
+    <!-- ── AI Insights ───────────────────────────────────────────────────── -->
+    <section class="kb-section" id="ai-insights">
+      <div class="kb-section-title">AI Insights</div>
+      <div class="kb-section-desc">Contextual summary banner with a subtle pink bg + left accent border. Items render in a responsive grid — up to 5 columns, collapses automatically on smaller containers. Use <code>UI.aiInsights(items, opts)</code> in any page header or section.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Default — 3-column grid</div>
+        <div class="kb-card-preview column padded" id="ai-insights-preview"></div>
+        <pre class="kb-code">UI.aiInsights([
+  { icon: '⚠️', html: 'Delivery at &lt;strong&gt;6%&lt;/strong&gt; — 33 initiatives still to land this quarter.' },
+  { icon: '🗂️', html: '&lt;strong&gt;1 initiative at risk&lt;/strong&gt; — needs immediate attention.' },
+  { icon: '👥', html: '&lt;strong&gt;Content / APIs&lt;/strong&gt; is the most active team this quarter with 17 initiatives.' },
+  { icon: '💡', html: '&lt;strong&gt;Design&lt;/strong&gt; has capacity headroom — consider pulling in more work.' },
+], { quarter: 'Q2 2026' })</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">No quarter label · custom minColWidth</div>
+        <div class="kb-card-preview column padded" id="ai-insights-2-preview"></div>
+        <pre class="kb-code">UI.aiInsights([
+  { icon: '✅', text: 'All OKRs on track this quarter.' },
+  { icon: '📈', text: 'Revenue up 12% month-over-month.' },
+], { minColWidth: 280 })   // wider columns → fewer cols on small screens</pre>
+      </div>
+    </section>
+
+    <!-- ── Tables ────────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="tables">
+      <div class="kb-section-title">Tables</div>
+      <div class="kb-section-desc">Ghost cell components are invisible at rest and reveal their border on hover / focus. Five live table demos show how the components compose: <strong>Generic</strong> (no frozen cols, all ghost variants · like User Management editable), <strong>Read Only</strong> (<code>UI.trReadOnly</code> + <code>UI.cellReadOnly</code> · identical structure to Generic but no edit affordances), <strong>Product Roadmap</strong> (first 2 cols sticky, full ghost set), <strong>Team Capacity</strong> (outlined inputs with FTE helper, quarterly columns, read-only computed rows), and <strong>Settings Table + Add Row</strong> (filterable header, ghost rows, solid new-row, pink Add button).</div>
+
+      <!-- ── Ghost Cell Components ────────────────────────────────────────── -->
+      <div class="kb-card">
+        <div class="kb-card-label">Ghost Cell Components  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">transparent at rest · border-md on hover · accent ring on focus / open</span></div>
+        <div class="kb-card-preview column" style="padding:16px 0;gap:0" id="ghost-cells-preview"></div>
+        <pre class="kb-code">// Text input — saves on blur
+UI.cellInput('my-id', value, 'Placeholder', 'mySaveFn()')
+
+// Custom select — simple lists (Quarter, Role…) delegates to cellCustomSelect
+UI.cellSelect('my-id', ['Q1','Q2','Q3','Q4','Backlog'], 'Q2')
+
+// Custom · Status Chip
+UI.cellCustomSelect('my-id', UI.STATUS_OPTS.map(function(o) {
+  return { val: o.val, label: o.label, html: UI.statusChip(o.val) }
+}), 'on-track')
+
+// Custom · Avatar + Name  (owner columns)
+UI.cellCustomSelect('my-id', owners.map(function(n) {
+  var ini = n.split(' ').map(function(w){return w[0]}).join('');
+  var bg  = UI._avatarColor(n);
+  return { val: n, label: n,
+    html: '&lt;span style="display:inline-flex;align-items:center;gap:6px"&gt;'
+        + '&lt;span style="...avatar circle..."&gt;' + ini + '&lt;/span&gt;' + n + '&lt;/span&gt;' }
+}), owner)
+
+// Custom · Badge  (role / team columns)
+UI.cellCustomSelect('my-id', teams.map(function(t) {
+  return { val: t.val, label: t.label, html: UI.badge(t.label, t.color, t.bg) }
+}), team)
+
+// ROI Button — empty state → "Calculate est. ROI" dashed button
+UI.cellRoi(null, 'myCalcFn()')
+
+// ROI Button — calculated state → coloured value + recalculate icon
+UI.cellRoi('+45%', 'myCalcFn()')
+UI.cellRoi('-12%', 'myCalcFn()')
+
+// ── Read-only cell — static counterpart to all ghost variants ────────────
+// Same 2px 5px padding + 11px font as ghost cells at rest. No border, no
+// interaction. Use when a column in an editable table must be non-editable.
+// Pass any HTML — plain text, UI.badge(), UI.deptChip(), avatar chip, etc.
+// null / undefined / '' → renders an em-dash in var(--faint).
+UI.cellReadOnly('Plain text value')
+UI.cellReadOnly(UI.badge('On Track', '#2EAD4B', 'rgba(46,173,75,.09)'))
+UI.cellReadOnly(UI.deptChip('Product'))
+UI.cellReadOnly(null)   // → —</pre>
+      </div>
+
+      <!-- ── Outlined Cell Input + Select ─────────────────────────────────── -->
+      <div class="kb-card">
+        <div class="kb-card-label">Outlined Cell Input &amp; Select  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">always-visible border · accent ring on focus · use together in the same row</span></div>
+        <div class="kb-card-preview column" style="padding:16px 0;gap:0" id="outlined-cells-preview"></div>
+        <pre class="kb-code">// Text input — saves on blur
+UI.cellOutlinedInput('my-id', value, 'Placeholder', 'mySaveFn()')
+
+// With right-side helper label
+UI.cellOutlinedInput('my-id', value, '0', 'mySaveFn()', 'FTE')
+UI.cellOutlinedInput('my-id', value, '0', 'mySaveFn()', '$')
+UI.cellOutlinedInput('my-id', value, '0', 'mySaveFn()', '%')
+
+// Dropdown — same outlined border, use _cosPick() to restore saved value
+UI.cellOutlinedSelect('my-id', [{val:'XS',label:'XS'},{val:'M',label:'M'}…], '', 'mySaveFn()')
+UI._cosPick('my-id', savedVal, savedVal)   // restore on load</pre>
+      </div>
+
+      <!-- ── Table View — Generic ──────────────────────────────────────── -->
+      <div class="kb-card">
+        <div class="kb-card-label">Table View — Generic  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">no frozen cols · all ghost cell variants · like User Management</span></div>
+        <div class="kb-card-preview table" id="generic-table-preview"></div>
+        <pre class="kb-code">UI.tableScroll(cols, rows.map(function(r) {
+  return '&lt;tr&gt;'
+    + '&lt;td&gt;' + UI.cellCustomSelect('owner-'+r.id, ownerOpts, r.owner) + '&lt;/td&gt;'
+    + '&lt;td&gt;' + UI.cellInput('title-'+r.id, r.title, 'Initiative name', 'save('+r.id+')') + '&lt;/td&gt;'
+    + '&lt;td&gt;' + UI.cellSelect('role-'+r.id, roleOpts, r.role) + '&lt;/td&gt;'
+    + '&lt;td&gt;' + UI.cellCustomSelect('team-'+r.id, teamBadgeOpts, r.team) + '&lt;/td&gt;'
+    + '&lt;td&gt;' + UI.btnIcon('del('+r.id+')', 'Delete', trashSvg, …) + '&lt;/td&gt;'
+    + '&lt;/tr&gt;';
+}).join(''), 'gt-table-body')</pre>
+      </div>
+
+      <!-- ── Table View — Read Only ───────────────────────────────────── -->
+      <div class="kb-card">
+        <div class="kb-card-label">Table View — Read Only  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">identical to Table View Generic · no edit affordances · like User Management</span></div>
+        <div class="kb-card-preview table" id="readonly-table-preview"></div>
+        <pre class="kb-code">// UI.trReadOnly(cells, opts?)
+// Pixel-identical to tr() / User Management rows.
+// cells  — array of HTML strings (plain text, badges, chips, avatars…)
+// opts.onclick — adds cursor:pointer + var(--subtle) row hover
+// opts.style   — extra inline style on &lt;tr&gt;
+
+UI.table(cols,
+  rows.map(function(r) {
+    return UI.trReadOnly([
+      UI.avatarCell(r.name, r.email),
+      UI.deptChip(r.department),
+      '&lt;span style="font-size:12px;color:var(--muted)"&gt;' + r.jobTitle + '&lt;/span&gt;',
+      UI.badge(r.status, statusColor, statusBg),
+      UI.cellReadOnly(null)   // empty cell → —
+    ], { onclick: 'openDetail(' + r.id + ')' });
+  }).join(''),
+'my-tbody')</pre>
+      </div>
+
+      <!-- ── Table View — Product Roadmap (frozen columns) ─────────────── -->
+      <div class="kb-card">
+        <div class="kb-card-label">Table View — Product Roadmap (frozen columns)  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">first 2 cols sticky · ghost cell inputs · custom selects</span></div>
+        <div class="kb-card-preview table" id="roadmap-table-preview"></div>
+        <pre class="kb-code">UI.tableScroll(cols, rows.map(function(r) {
+  return '&lt;tr&gt;'
+    + '&lt;td&gt;' + UI.cellCustomSelect('q-'+r.id, quarterOpts, r.quarter) + '&lt;/td&gt;'
+    + '&lt;td&gt;' + UI.cellInput('ttl-'+r.id, r.title, 'Initiative name', 'save('+r.id+')') + '&lt;/td&gt;'
+    + '&lt;td&gt;' + UI.progressCell(r.pct, r.epics) + '&lt;/td&gt;'
+    + '&lt;td&gt;' + UI.cellCustomSelect('drv-'+r.id, driverOpts, r.driver) + '&lt;/td&gt;'
+    + '&lt;td&gt;' + UI.cellCustomSelect('tm-'+r.id, teamOpts, r.team) + '&lt;/td&gt;'
+    + '&lt;td&gt;' + UI.cellCustomSelect('po-'+r.id, ownerOpts, r.owner) + '&lt;/td&gt;'
+    + '&lt;td&gt;' + UI.cellCustomSelect('th-'+r.id, themeOpts, r.theme) + '&lt;/td&gt;'
+    + '&lt;td&gt;' + UI.cellCustomSelect('ds-'+r.id, statusOpts, r.status) + '&lt;/td&gt;'
+    + '&lt;td&gt;' + UI.btnIcon('del('+r.id+')', 'Delete', trashSvg, …) + '&lt;/td&gt;'
+    + '&lt;/tr&gt;';
+}).join(''), 'rnx-table-body', 2)</pre>
+      </div>
+
+      <!-- ── Table View — Team Capacity ─────────────────────────────────── -->
+      <div class="kb-card">
+        <div class="kb-card-label">Table View — Team Capacity  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">outlined cell inputs with FTE helper · read-only computed rows · quarterly columns</span></div>
+        <div class="kb-card-preview table" id="capacity-table-preview"></div>
+        <pre class="kb-code">// FTE editable row — one cellOutlinedInput per quarter (white bg)
+function fteRow(label, disc) {
+  return '&lt;tr onmouseenter="this.style.background=\'#FAFAF8\'" …&gt;'
+    + '&lt;td style="…TDL"&gt;' + label + '&lt;/td&gt;'
+    + quarters.map(function(q) {
+        return '&lt;td style="…TD"&gt;' + UI.cellOutlinedInput(disc+'-'+q, val, '0', 'save()', 'FTE') + '&lt;/td&gt;';
+      }).join('') + '&lt;/tr&gt;';
+}
+
+// Run of Business row — % helper, orange bg (#FFF7ED / #9A3412)
+function robPctRow(label, disc) {
+  return '&lt;tr&gt;'
+    + '&lt;td style="…TDPl"&gt;' + label + '&lt;/td&gt;'
+    + quarters.map(function(q) {
+        return '&lt;td style="…TDP"&gt;' + UI.cellOutlinedInput(disc+'-'+q, val, '0', 'save()', '%') + '&lt;/td&gt;';
+      }).join('') + '&lt;/tr&gt;';
+}
+
+// Computed read-only row — green bg (#F0FDF4 / #166534) + tooltip ⓘ
+function calcRow(label, disc, formula) {
+  return '&lt;tr&gt;'
+    + '&lt;td style="…TDCl"&gt;' + label + tip(formula) + '&lt;/td&gt;'
+    + quarters.map(function(q) {
+        return '&lt;td style="…TDC"&gt;' + computedDays + 'd&lt;/td&gt;';
+      }).join('') + '&lt;/tr&gt;';
+}</pre>
+      </div>
+
+      <!-- ── Settings Table + Add Row ──────────────────────────────────────── -->
+      <div class="kb-card">
+        <div class="kb-card-label">Settings Table + Add Row  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">filterable category header · ghost inputs on existing rows · solid inputs on add row · sticky tfoot</span></div>
+        <div class="kb-card-preview table" id="settings-table-preview"></div>
+        <pre class="kb-code">// Existing rows — UI ghost + outlined components
+UI.cellSelect('id', CATS, row.cat)                    // ghost custom-dropdown (category)
+UI.cellInput('id', row.name, 'Assumption name', '')   // ghost text input     (name)
+UI.cellOutlinedInput('id', String(row.val), '0', '')  // outlined input       (value)
+UI.cellSelect('id', UNIT_OPTS, row.unit)              // ghost custom-dropdown (unit)
+UI.btnIcon('', 'Delete', SVG_TRASH, …)               // icon button          (delete)
+
+// Add row — solid inputs (always-visible border, background:var(--bg))
+'&lt;select style="SELs"&gt;' + catOpts + '&lt;/select&gt;'         // solid native select  (category)
+'&lt;input style="INPs" /&gt;'                                // solid text input     (name)
+UI.cellOutlinedInput('id', '', '0', '')               // outlined input       (value)
+'&lt;select style="SELs"&gt;' + unitOpts + '&lt;/select&gt;'        // solid native select  (unit)
+UI.btnPrimary('Add', 'kbAsmAdd()')                    // primary button       (save)</pre>
+      </div>
+
+    </section>
+
+    <!-- ── ROI Calculator Table ──────────────────────────────────────────── -->
+    <section class="kb-section" id="roi-table">
+      <div class="kb-section-title">ROI Calculator Table</div>
+      <div class="kb-section-desc">Compact two-block table (Benefits + Costs) with a summary ROI row. Section headers use <code>var(--bg)</code>. All editable cells use <code>UI.cellOutlinedInput</code> or the new <code>UI.cellOutlinedSelect</code>. Computed outputs are read-only spans. The "+ Add" row action uses <code>UI.btnText</code>.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Full table — Benefits · Costs · ROI row</div>
+        <div class="kb-card-preview table" id="roi-table-preview"></div>
+        <pre class="kb-code">// Benefits block
+'&lt;tr&gt;&lt;td colspan="2" style="background:var(--bg);…"&gt;Benefits&lt;/td&gt;&lt;/tr&gt;'
++ '&lt;tr&gt;&lt;td&gt;Additional Revenue&lt;/td&gt;&lt;td&gt;' + UI.cellOutlinedInput('id', '', '0', 'calc()', '$') + '&lt;/td&gt;&lt;/tr&gt;'
+
+// Costs block
+'&lt;tr&gt;&lt;td colspan="4" style="background:var(--bg);…"&gt;Costs&lt;/td&gt;&lt;/tr&gt;'
++ '&lt;tr&gt;&lt;td&gt;Engineering&lt;/td&gt;&lt;td&gt;' + UI.cellOutlinedSelect('id', tshirtOpts, '', 'calc()') + '&lt;/td&gt;…&lt;/tr&gt;'
+
+// "+ Add" in table footer
+UI.btnText('+ Add', 'addRowFn()', '#ea580c')
+
+// ROI row (below table)
+'&lt;div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;…"&gt;ROI …&lt;/div&gt;'</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Outlined cell select  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">UI.cellOutlinedSelect — permanent border, matches cellOutlinedInput</span></div>
+        <div class="kb-card-preview" id="roi-cos-preview"></div>
+        <pre class="kb-code">var tshirtOpts = [
+  {val:'',  label:'—'},
+  {val:'XS',label:'XS'}, {val:'S',label:'S'}, {val:'M',label:'M'},
+  {val:'L', label:'L'},  {val:'XL',label:'XL'}
+];
+UI.cellOutlinedSelect('rnxroi-eng_size', tshirtOpts, '',  'rnxRoiCalc')  // empty
+UI.cellOutlinedSelect('rnxroi-des_size', tshirtOpts, 'M', 'rnxRoiCalc')  // selected
+
+// Read value: document.getElementById('rnxroi-eng_size').value
+// Restore:    UI._cosPick('rnxroi-eng_size', savedVal, savedVal)</pre>
+      </div>
+    </section>
+
+    <!-- ── Accordion ────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="accordion">
+      <div class="kb-section-title">Accordion</div>
+      <div class="kb-section-desc">Stacked expandable rows inside a bordered card. Each row has a chevron, bold title, optional muted meta, and arbitrary right-side HTML (priority dot, status badge, etc.). Expanded body is indented to align past the chevron. State is managed externally — pass <code>open:true</code> on the active item and a <code>toggleFn</code> string.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Accordion list  <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">chevron · title · meta · right slot · expanded body · UI.accordion(items, {toggleFn})</span></div>
+        <div class="kb-card-preview column padded" id="accordion-preview"></div>
+        <pre class="kb-code">var items = [
+  { id: 1, title: 'Request title', meta: 'bruna · May 21, 2026', right: priorityHtml + badgeHtml, body: bodyHtml, open: false },
+  { id: 2, title: 'Expanded item', meta: 'alex · May 20, 2026',  right: priorityHtml + badgeHtml, body: bodyHtml, open: true  },
+];
+UI.accordion(items, { toggleFn: 'myToggleFn' })
+// myToggleFn(id) — manages open state and re-renders</pre>
+      </div>
+    </section>
+
+    <!-- ── Steppers ──────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="steppers">
+      <div class="kb-section-title">Steppers</div>
+      <div class="kb-section-desc">Horizontal for top-of-page progress flows; vertical for timeline-style status.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Horizontal stepper</div>
+        <div class="kb-card-preview column padded" id="stepperh-preview"></div>
+        <pre class="kb-code">UI.stepperH([
+  {label:'Discovery',  sublabel:'Completed',  status:'done'},
+  {label:'Definition', sublabel:'In progress', status:'active'},
+  {label:'Build',      status:'pending'},
+  {label:'Launch',     status:'pending'}
+])</pre>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-card-label">Vertical stepper</div>
+        <div class="kb-card-preview column padded" id="stepperv-preview"></div>
+        <pre class="kb-code">UI.stepperV([
+  {label:'Spec written',     sublabel:'Mar 12',  status:'done'},
+  {label:'Design approved',  sublabel:'Mar 19',  status:'done'},
+  {label:'In development',   sublabel:'Now',     status:'active'},
+  {label:'QA & release',     status:'pending'}
+])</pre>
+      </div>
+    </section>
+
+    <!-- ── How to use ─────────────────────────────────────────────────────── -->
+    <section class="kb-section" id="howto">
+      <div class="kb-section-title">How to use</div>
+      <div class="kb-section-desc">The UI Kit is a single JS file loaded before all other modules.</div>
+
+      <div class="kb-card">
+        <div class="kb-card-preview column padded" style="gap:0">
+          <div style="font-size:13px;color:var(--text);line-height:2">
+            1. <code style="background:var(--subtle);padding:1px 6px;border-radius:4px">js/ui-kit.js</code> is loaded first in <code style="background:var(--subtle);padding:1px 6px;border-radius:4px">index.html</code> — the global <code style="background:var(--subtle);padding:1px 6px;border-radius:4px">UI</code> object is available everywhere.<br>
+            2. Every new drawer, form, table, or navigation component must use <code style="background:var(--subtle);padding:1px 6px;border-radius:4px">UI.*</code> helpers.<br>
+            3. Existing modules will be migrated progressively — one module at a time.<br>
+            4. To add a new component, add it to <code style="background:var(--subtle);padding:1px 6px;border-radius:4px">ui-kit.js</code> <em>and</em> document it here.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="js/ui-kit.js?v=20260521ac"></script>
+<script>
+// ── Rewrap .kb-card shells with UI.card() ──────────────────────────────────
+document.querySelectorAll('.kb-card').forEach(function(el) {
+  var tmp = document.createElement('div');
+  tmp.innerHTML = UI.card({ padding: '0', style: 'margin-bottom:20px', bodyHtml: el.innerHTML });
+  el.parentNode.replaceChild(tmp.firstChild, el);
+});
+
+// ── Render previews ────────────────────────────────────────────────────────
+
+// Tokens colour swatches
+(function() {
+  // Each entry: [displayName, description, colorValue]
+  // colorValue can be a CSS var name (--xxx) or a literal hex (#xxxxxx)
+  var tokens = [
+    ['--bg',          'Page background',                    null],
+    ['--surface',     'Card / panel background',            null],
+    ['--hover',       'Read-only row hover (neutral gray)', null],
+    ['--subtle',      'Editable row hover, badge bg (pink tint)', null],
+    ['--border',      'Dividers, card edges',               null],
+    ['--border-md',   'Input borders, button outlines',     null],
+    ['--text',        'Primary text',                       null],
+    ['--muted',       'Secondary text',                     null],
+    ['--faint',       'Placeholder / disabled text',        null],
+    ['--accent',      'Brand pink — primary action',        null],
+    ['Azzurro Jira',  'Jira brand blue — Jira-linked UI',  '#0052CC'],
+  ];
+  var el = document.getElementById('tokens-preview');
+  el.innerHTML = '<table class="kb-token-table">'
+    + tokens.map(function(t) {
+        var name  = t[0];
+        var desc  = t[1];
+        var hex   = t[2];
+        var swatchBg = hex ? hex : 'var(' + name + ')';
+        var codeStr  = hex ? hex : 'var(' + name + ')';
+        return '<tr>'
+          + '<td>' + name + '</td>'
+          + '<td>'
+          +   '<span class="kb-swatch" style="background:' + swatchBg + '"></span>'
+          +   desc
+          + '</td>'
+          + '<td>' + codeStr + '</td>'
+          + '</tr>';
+      }).join('')
+    + '</table>';
+})();
+
+// Status colors
+(function() {
+  var statuses = [
+    {val:'not-started', label:'Not Started', full:'#8E8E93', light:'#EDEDF0'},
+    {val:'on-track',    label:'On Track',    full:'#0284C7', light:'#E0F2FE'},
+    {val:'at-risk',     label:'At Risk',     full:'#E5A100', light:'#FFF3D0'},
+    {val:'delayed',     label:'Delayed',     full:'#E5243B', light:'#FDEBEE'},
+    {val:'on-hold',     label:'On Hold',     full:'#C2410C', light:'#FFF4E5'},
+    {val:'delivered',   label:'Delivered',   full:'#2EAD4B', light:'#E6F5EA'},
+  ];
+  var el = document.getElementById('status-colors-preview');
+  var SW = 'display:inline-block;width:22px;height:22px;border-radius:5px;border:1px solid rgba(0,0,0,.06);vertical-align:middle;flex-shrink:0';
+  var TD = 'padding:7px 12px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle';
+  el.innerHTML = '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr>'
+    + '<th style="' + TD + ';font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;text-align:left">Status</th>'
+    + '<th style="' + TD + ';font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;text-align:left">Full · text / icon</th>'
+    + '<th style="' + TD + ';font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;text-align:left">Light · chip background</th>'
+    + '<th style="' + TD + ';font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;text-align:left">Chip preview</th>'
+    + '</tr></thead>'
+    + '<tbody>' + statuses.map(function(s, i) {
+        var last = i === statuses.length - 1 ? ';border-bottom:none' : '';
+        return '<tr>'
+          + '<td style="' + TD + last + ';font-weight:500;color:var(--text)">' + s.label + '</td>'
+          + '<td style="' + TD + last + '">'
+          +   '<span style="' + SW + ';background:' + s.full + '"></span>'
+          +   '<code style="margin-left:8px;font-size:11px;color:var(--muted)">' + s.full + '</code>'
+          + '</td>'
+          + '<td style="' + TD + last + '">'
+          +   '<span style="' + SW + ';background:' + s.light + '"></span>'
+          +   '<code style="margin-left:8px;font-size:11px;color:var(--muted)">' + s.light + '</code>'
+          + '</td>'
+          + '<td style="' + TD + last + '">' + UI.statusChip(s.val) + '</td>'
+          + '</tr>';
+      }).join('') + '</tbody>'
+    + '</table>';
+})();
+
+// Driver colors — uses UI.DRIVER_OPTS + UI.driverChip() (the canonical 5 drivers)
+(function() {
+  var el = document.getElementById('driver-colors-preview');
+  var SW = 'display:inline-block;width:22px;height:22px;border-radius:5px;border:1px solid rgba(0,0,0,.06);vertical-align:middle;flex-shrink:0';
+  var TD = 'padding:7px 12px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle';
+  var TH = TD + ';font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;text-align:left';
+  el.innerHTML = '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr>'
+    + '<th style="' + TH + '">Driver</th>'
+    + '<th style="' + TH + '">Full color</th>'
+    + '<th style="' + TH + '">Light bg (color + 18 hex ≈ 9%)</th>'
+    + '<th style="' + TH + '">Chip — <code style="font-weight:400">UI.driverChip(name)</code></th>'
+    + '</tr></thead>'
+    + '<tbody>' + UI.DRIVER_OPTS.map(function(d, i) {
+        var last     = i === UI.DRIVER_OPTS.length - 1 ? ';border-bottom:none' : '';
+        var color    = UI._driverColor(d.val);
+        var lightBg  = color + '18';
+        return '<tr>'
+          + '<td style="' + TD + last + ';font-weight:500;color:var(--text)">' + d.label + '</td>'
+          + '<td style="' + TD + last + '">'
+          +   '<span style="' + SW + ';background:' + color + '"></span>'
+          +   '<code style="margin-left:8px;font-size:11px;color:var(--muted)">' + color + '</code>'
+          + '</td>'
+          + '<td style="' + TD + last + '">'
+          +   '<span style="' + SW + ';background:' + lightBg + '"></span>'
+          +   '<code style="margin-left:8px;font-size:11px;color:var(--muted)">' + color + '18</code>'
+          + '</td>'
+          + '<td style="' + TD + last + '">' + UI.driverChip(d.val) + '</td>'
+          + '</tr>';
+      }).join('') + '</tbody>'
+    + '</table>';
+})();
+
+// Chart color palettes — table format matching Driver / Status colors
+(function() {
+  var NAMES = [
+    'Warm Orange','Amber','Yellow','Yellow-Lime','Lime','Green','Emerald','Seafoam',
+    'Teal','Cyan','Sky','Blue','Cornflower','Indigo','Violet','Purple',
+    'Magenta','Hot Pink','Rose','Red','Coral','Orange-Amber','Yellow-Green','Mint'
+  ];
+  var el  = document.getElementById('chart-palette-preview');
+  if (!el) return;
+  var SW  = 'display:inline-block;width:22px;height:22px;border-radius:5px;border:1px solid rgba(0,0,0,.06);vertical-align:middle;flex-shrink:0';
+  var TD  = 'padding:7px 12px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle';
+  var TH  = TD + ';font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;text-align:left';
+  var full  = UI.CHART_COLORS_FULL;
+  var light = UI.CHART_COLORS_LIGHT;
+  el.innerHTML = '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr>'
+    + '<th style="' + TH + ';width:160px">Color</th>'
+    + '<th style="' + TH + '">Full — <code style="font-weight:400">UI.CHART_COLORS_FULL[i]</code></th>'
+    + '<th style="' + TH + '">Light — <code style="font-weight:400">UI.CHART_COLORS_LIGHT[i]</code></th>'
+    + '</tr></thead>'
+    + '<tbody>' + NAMES.map(function(name, i) {
+        var last = i === NAMES.length - 1 ? ';border-bottom:none' : '';
+        return '<tr>'
+          + '<td style="' + TD + last + ';font-weight:500;color:var(--text)">' + name + '</td>'
+          + '<td style="' + TD + last + '">'
+          +   '<span style="' + SW + ';background:' + full[i] + '"></span>'
+          +   '<code style="margin-left:8px;font-size:11px;color:var(--muted)">' + full[i] + '</code>'
+          + '</td>'
+          + '<td style="' + TD + last + '">'
+          +   '<span style="' + SW + ';background:' + light[i] + '"></span>'
+          +   '<code style="margin-left:8px;font-size:11px;color:var(--muted)">' + light[i] + '</code>'
+          + '</td>'
+          + '</tr>';
+      }).join('') + '</tbody>'
+    + '</table>';
+})();
+
+var SVG_EDIT   = '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+var SVG_TRASH  = '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2.5h4V4M5.5 6.5v4M8.5 6.5v4M3 4l.8 7.5A1 1 0 004.8 12.5h4.4a1 1 0 001-.9L11 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var SVG_LINK   = '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M5.5 8.5l3-3M8 3.5l1-.5a3 3 0 010 4.24L7.76 8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M6 10.5l-1 .5a3 3 0 010-4.24L6.24 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+var SVG_FILTER = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 8h6M7 12h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+var SVG_CHEV   = '<svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var SVG_LINK2  = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M6.5 9.5a3.5 3.5 0 0 0 5 0l2-2a3.5 3.5 0 0 0-5-5l-1 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M9.5 6.5a3.5 3.5 0 0 0-5 0l-2 2a3.5 3.5 0 0 0 5 5l1-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+var SVG_PLUS   = '<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+
+// Buttons
+document.getElementById('btn-preview').innerHTML =
+  UI.btnPrimary('Save', '', 'kb-save-btn') + ' ' +
+  UI.btnCancel('Cancel', '') + ' ' +
+  UI.btnDanger('Delete', '');
+
+document.getElementById('btn-secondary-preview').innerHTML =
+  UI.btnSecondary('Tools ' + SVG_CHEV, '') + ' ' +
+  UI.btnSecondary('Export ' + SVG_CHEV, '') + ' ';
+
+document.getElementById('btn-slim-preview').innerHTML =
+  UI.btnSlim(SVG_LINK2 + ' Copy form link', '') + ' ' +
+  UI.btnSlim(SVG_PLUS  + ' Add Request / Idea', '');
+
+document.getElementById('btn-text-preview').innerHTML =
+  '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:16px 24px">'
+  + UI.btnText('+ Add', '')
+  + UI.btnText('+ Add', '', '#ea580c')
+  + UI.btnText('Clear all', '', 'var(--muted)')
+  + UI.btnText('View all →', '', 'var(--accent)')
+  + '</div>';
+
+document.getElementById('iconbtn-preview').innerHTML =
+  '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
+  + '<span style="font-size:11px;color:var(--faint)">28×28 borderless</span>'
+  + UI.btnIcon('', 'Edit',   SVG_EDIT) + ' '
+  + UI.btnIcon('', 'Delete', SVG_TRASH, 'var(--faint)', '#E5243B', '#FFF0F0') + ' '
+  + UI.btnIcon('', 'Link',   SVG_LINK, 'var(--faint)', '#6366F1', 'rgba(99,102,241,.08)')
+  + '<span style="font-size:11px;color:var(--faint);margin-left:12px">36×36 bordered</span>'
+  + UI.btnIconBordered('', 'Filter', SVG_FILTER)
+  + UI.btnIconBordered('', 'Edit',   SVG_EDIT)
+  + UI.btnIconBordered('', 'Delete', SVG_TRASH, 32)
+  + '</div>';
+
+// Avatar — name only
+document.getElementById('avatar-name-preview').innerHTML =
+  '<div style="display:flex;gap:28px;align-items:center;flex-wrap:wrap">'
+  + UI.avatar('Adam Shukur')
+  + UI.avatar('Bruna Pellegrini', null, { size: 26 })
+  + UI.avatar('Sam Okafor',       null, { size: 38 })
+  + '</div>';
+
+// Avatar — name + subtitle
+document.getElementById('avatar-subtitle-preview').innerHTML =
+  '<div style="display:flex;gap:28px;align-items:center;flex-wrap:wrap">'
+  + UI.avatar('Adam Shukur',       'Engineering Lead')
+  + UI.avatar('Bruna Pellegrini',  'Product Manager',  { size: 38 })
+  + '</div>';
+
+// Avatar — size variants
+document.getElementById('avatar-sizes-preview').innerHTML =
+  UI.avatar('Sam Okafor', 'Designer', { size: 26 })
+  + UI.avatar('Sam Okafor', 'Designer', { size: 34 })
+  + UI.avatar('Sam Okafor', 'Designer', { size: 42 });
+
+// User Tile
+document.getElementById('avatar-chip-preview').innerHTML =
+  UI.avatarChip('Aron Schatz',     UI.deptChipSm('Product'), 'Principal Product Manager', { size: 26 })
+  + UI.avatarChip('Bruna Coppolino', UI.deptChipSm('Design'),  'Head of Design',            { size: 26 })
+  + UI.avatarChip('Rich Kentopp',    UI.deptChipSm('Tech'),    'Engineering Lead',          { size: 26 });
+
+document.getElementById('user-tile-preview').innerHTML =
+  UI.userTile('Aron Schatz',     'Product',  'Principal Product Manager, Ad Tags')
+  + UI.userTile('Bruna Coppolino', 'Design',   'Head of Design')
+  + UI.userTile('Rich Kentopp',    'Tech',     'Engineering Lead');
+
+// AI Insights
+document.getElementById('ai-insights-preview').innerHTML =
+  UI.aiInsights([
+    { icon: '⚠️', html: 'Delivery at <strong>6%</strong> — 33 initiatives still to land this quarter.' },
+    { icon: '🗂️', html: '<strong>1 initiative at risk</strong> — needs immediate attention.' },
+    { icon: '👥', html: '<strong>Content / APIs</strong> is the most active team this quarter with 17 initiatives.' },
+    { icon: '💡', html: '<strong>Design</strong> has capacity headroom — consider pulling in more work.' }
+  ], { quarter: 'Q2 2026' });
+
+document.getElementById('ai-insights-2-preview').innerHTML =
+  UI.aiInsights([
+    { icon: '✅', text: 'All OKRs on track this quarter.' },
+    { icon: '📈', text: 'Revenue up 12% month-over-month.' }
+  ], { minColWidth: 280 });
+
+// Status chips
+document.getElementById('status-preview').innerHTML =
+  ['not-started','on-track','at-risk','delayed','on-hold','delivered']
+    .map(function(v) { return UI.statusChip(v); }).join(' ');
+
+// Department chips
+document.getElementById('dept-chip-preview').innerHTML =
+  ['Product','Tech','Design','Marketing','Sales','Strategy','People & Culture','Operations','Finance']
+    .map(function(d) { return UI.deptChip(d); }).join(' ');
+
+document.getElementById('dept-chip-sm-preview').innerHTML =
+  ['Product','Tech','Design','Marketing','Sales','Strategy','People & Culture','Operations','Finance']
+    .map(function(d) { return UI.deptChipSm(d); }).join(' ');
+
+// Badges
+document.getElementById('badge-preview').innerHTML =
+  UI.badge('Draft') + ' ' +
+  UI.badge('In Progress', '#6366F1', 'rgba(99,102,241,.1)') + ' ' +
+  UI.badge('Done',        '#2EAD4B', 'rgba(46,173,75,.1)')  + ' ' +
+  UI.badge('Blocked',     '#E5243B', 'rgba(229,36,59,.08)') + ' ' +
+  UI.badge('Q2',          '#0EA5E9', 'rgba(14,165,233,.1)') + ' ' +
+  UI.badge('Admin',       'var(--accent)', 'rgba(237,0,94,.1)');
+
+// Counter badges
+document.getElementById('counter-badge-preview').innerHTML =
+  '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 24px">'
+  + '<div style="display:flex;flex-direction:column;align-items:center;gap:8px">'
+  +   '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Default</div>'
+  +   '<div style="display:flex;align-items:center;gap:6px">'
+  +     UI.counterBadge(2) + UI.counterBadge(12) + UI.counterBadge(99)
+  +   '</div>'
+  + '</div>'
+  + '<div style="display:flex;flex-direction:column;align-items:center;gap:8px">'
+  +   '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Colori custom</div>'
+  +   '<div style="display:flex;align-items:center;gap:6px">'
+  +     UI.counterBadge(3, 'rgba(99,102,241,.12)', '#6366F1')
+  +     UI.counterBadge(5, 'rgba(237,0,94,.10)', 'var(--accent)')
+  +     UI.counterBadge(8, 'rgba(46,173,75,.12)', '#2EAD4B')
+  +   '</div>'
+  + '</div>'
+  + '<div style="display:flex;flex-direction:column;align-items:center;gap:8px">'
+  +   '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">In Pills</div>'
+  +   UI.pills([{id:"a",label:"Open",count:2},{id:"b",label:"Closed",count:12},{id:"c",label:"Draft"}],"a","_kbNoop")
+  + '</div>'
+  + '</div>';
+
+// Progress Bars
+function _pbRow(barHtml, label) {
+  return '<div style="display:grid;grid-template-columns:100px 1fr;align-items:center;gap:16px;padding:5px 0;width:100%">'
+    + '<span style="font-size:11px;color:var(--muted)">' + label + '</span>'
+    + '<div>' + barHtml + '</div>'
+    + '</div>';
+}
+var _pbStatus = document.getElementById('pb-status-preview');
+var _pbFlat   = document.getElementById('pb-flat-preview');
+var _pbCap    = document.getElementById('pb-capacity-preview');
+if (_pbStatus) {
+  _pbStatus.innerHTML =
+    _pbRow(UI.progressBarStatus(0),                   '0% — no label')
+    + _pbRow(UI.progressBarStatus(20),                '20% — no label')
+    + _pbRow(UI.progressBarStatus(60),                '60% — no label')
+    + _pbRow(UI.progressBarStatus(95),                '95% — no label')
+    + '<div style="height:1px;background:var(--border);margin:8px 0"></div>'
+    + _pbRow(UI.progressBarStatus(0,  'Not Started'), '0% — with label')
+    + _pbRow(UI.progressBarStatus(20, 'At Risk'),     '20% — with label')
+    + _pbRow(UI.progressBarStatus(60, 'In Progress'), '60% — with label')
+    + _pbRow(UI.progressBarStatus(95, 'Q2 Delivery'), '95% — with label');
+}
+if (_pbFlat) {
+  _pbFlat.innerHTML =
+    _pbRow(UI.progressBarFlat(40, 'var(--accent)'),              'accent — no label')
+    + _pbRow(UI.progressBarFlat(65, '#6366F1'),                  'indigo — no label')
+    + _pbRow(UI.progressBarFlat(80, '#2EAD4B'),                  'green — no label')
+    + '<div style="height:1px;background:var(--border);margin:8px 0"></div>'
+    + _pbRow(UI.progressBarFlat(40, 'var(--accent)', 'Roadmap'), 'accent — with label')
+    + _pbRow(UI.progressBarFlat(65, '#6366F1',       'OKRs'),    'indigo — with label')
+    + _pbRow(UI.progressBarFlat(80, '#2EAD4B',       'Budget spent'), 'green — with label');
+}
+if (_pbCap) {
+  _pbCap.innerHTML =
+    _pbRow(UI.progressBarCapacity(50),                  '50% — no label')
+    + _pbRow(UI.progressBarCapacity(85),                '85% — no label')
+    + _pbRow(UI.progressBarCapacity(110),               '110% — no label')
+    + '<div style="height:1px;background:var(--border);margin:8px 0"></div>'
+    + _pbRow(UI.progressBarCapacity(50,  'Design'),     '50% — with label')
+    + _pbRow(UI.progressBarCapacity(85,  'Engineering'),'85% — with label')
+    + _pbRow(UI.progressBarCapacity(110, 'Team load'),  '110% — with label');
+}
+
+// Form: input
+document.getElementById('input-preview').innerHTML =
+  '<div style="width:360px">'
+  + UI.field('Title', UI.input('kb-title','text','e.g. Drive sustainable growth',''), true)
+  + UI.field('Notes', UI.textarea('kb-notes','Optional context…','',3))
+  + '</div>';
+
+// Form: custom select
+document.getElementById('custom-select-preview').innerHTML =
+  '<div style="width:280px">'
+  + UI.field('Theme', UI.customSelect('kb-cs', [
+      {val:'',          label:'—'},
+      {val:'ad-fmt',    label:'Ad Formats'},
+      {val:'ad-svc',    label:'Ad Serving & Management'},
+      {val:'analytics', label:'Analytics & Reporting'},
+      {val:'compliance',label:'Compliance'},
+      {val:'content',   label:'Content API'},
+      {val:'data',      label:'Data Infrastructure'},
+      {val:'int',       label:'Integrations'}
+    ], 'ad-fmt'))
+  + '</div>';
+
+// Form: native select
+document.getElementById('select-preview').innerHTML =
+  '<div style="width:220px">'
+  + UI.field('Quarter', UI.select('kb-q', [
+      {val:'Q1',label:'Q1'},{val:'Q2',label:'Q2'},
+      {val:'Q3',label:'Q3'},{val:'Q4',label:'Q4'},
+      {val:'Backlog',label:'Backlog'}
+    ], 'Q2'))
+  + '</div>';
+
+// Section label
+document.getElementById('section-label-preview').innerHTML =
+  '<div style="width:100%;max-width:420px">'
+  + UI.sectionLabel('Description')
+  + '<div style="font-size:13px;color:var(--muted);margin-bottom:16px">This is the content that follows the label. The label acts as a minimal section heading without any border or divider.</div>'
+  + UI.sectionLabel('Team', '10px')
+  + '<div style="font-size:13px;color:var(--muted)">Another content area below a different label.</div>'
+  + '</div>';
+
+// Section divider
+document.getElementById('section-preview').innerHTML =
+  '<div style="width:100%;max-width:420px">'
+  + '<div style="font-size:13px;color:var(--muted);margin-bottom:4px">...form fields above...</div>'
+  + UI.section('Departments', '<span style="font-size:12px;color:var(--accent);cursor:pointer">Select all</span>')
+  + '<div style="font-size:13px;color:var(--muted)">...form fields below...</div>'
+  + '</div>';
+
+// ── Permission Table preview ──────────────────────────────────────────────
+document.getElementById('permission-table-preview').innerHTML =
+  UI.permissionTable(
+    [
+      {
+        label: 'Product & Tech',
+        rows: [
+          {
+            id: 'kb-pt-roadmap', label: 'Product Roadmap', checked: true, radioValue: '2',
+            sub: [
+              { id: 'kb-pt-asmp', label: 'Assumptions', checked: false, radioValue: '' }
+            ]
+          },
+          { id: 'kb-pt-capacity', label: 'Team Capacity',       checked: false, radioValue: '' },
+          { id: 'kb-pt-sprint',   label: 'XTS Team (Sprint)',   checked: false, radioValue: '' },
+          { id: 'kb-pt-ideas',    label: 'Product Req / Ideas', checked: false, radioValue: '' }
+        ]
+      },
+      {
+        label: 'Finance & Ops',
+        rows: [
+          { id: 'kb-pt-okrs',   label: 'Company OKRs', checked: true,  radioValue: '1' },
+          { id: 'kb-pt-budget', label: 'Budget',        checked: false, radioValue: '' }
+        ]
+      }
+    ],
+    ['View', 'Edit']
+  );
+
+// ── Checkbox previews ────────────────────────────────────────────────────
+document.getElementById('checkbox-preview').innerHTML =
+  '<div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px">'
+  + UI.checkbox('kb-chk-1',  'Unchecked (default)',  false)
+  + UI.checkbox('kb-chk-2',  'Checked',              true)
+  + UI.checkbox('kb-chk-3',  'Disabled unchecked',   false, null, true)
+  + UI.checkbox('kb-chk-4',  'Disabled checked',     true,  null, true)
+  + '</div>';
+
+// ── Radio previews ────────────────────────────────────────────────────────
+document.getElementById('radio-preview').innerHTML =
+  '<div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px">'
+  + UI.radio('kb-r-1', 'kb-period', 'Monthly (selected)', 'monthly',  true)
+  + UI.radio('kb-r-2', 'kb-period', 'Quarterly',          'quarterly', false)
+  + UI.radio('kb-r-3', 'kb-period', 'Annual',             'annual',    false)
+  + UI.radio('kb-r-4', 'kb-period', 'Disabled option',   'disabled',  false, null, true)
+  + '</div>';
+
+// ── Search Bar previews ───────────────────────────────────────────────────
+document.getElementById('searchbar-preview').innerHTML =
+  '<div style="display:flex;flex-direction:column;gap:16px;width:100%;max-width:360px">'
+  + '<div>'
+  + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px">Default (empty)</div>'
+  + UI.searchBar('kb-search-1', 'Search items…')
+  + '</div>'
+  + '<div>'
+  + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px">Pre-filled value</div>'
+  + UI.searchBar('kb-search-2', 'Search users…', null, 'acme corp')
+  + '</div>'
+  + '</div>';
+
+// ── Filters Bar previews ───────────────────────────────────────────────────
+(function() {
+  var driverOpts = [
+    {val:'performance', label:'Performance'},
+    {val:'growth',      label:'Growth'},
+    {val:'retention',   label:'Retention'},
+    {val:'efficiency',  label:'Efficiency'}
+  ];
+  var teamOpts = [
+    {val:'engineering', label:'Engineering'},
+    {val:'design',      label:'Design'},
+    {val:'product',     label:'Product'},
+    {val:'data',        label:'Data'}
+  ];
+  var themeOpts = [
+    {val:'monetisation',label:'Monetisation'},
+    {val:'platform',    label:'Platform'},
+    {val:'analytics',   label:'Analytics'}
+  ];
+
+  document.getElementById('filters-bar-preview').innerHTML =
+    UI.filtersBar({
+      searchId:          'kb-fb-search',
+      searchPlaceholder: 'Search initiatives…',
+      searchWidth:       200,
+      filters: [
+        {id:'kb-fb-driver', placeholder:'All Drivers', options:driverOpts},
+        {id:'kb-fb-team',   placeholder:'All Teams',   options:teamOpts},
+        {id:'kb-fb-theme',  placeholder:'All Themes',  options:themeOpts}
+      ],
+      resetFn: ''
+    });
+
+  document.getElementById('filter-dd-preview').innerHTML =
+    '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+    + '<div>'
+    + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px">Default</div>'
+    + UI.filterDd('kb-fdd-1', 'All Statuses', [
+        {val:'not-started',label:'Not Started'},
+        {val:'on-track',   label:'On Track'},
+        {val:'at-risk',    label:'At Risk'},
+        {val:'delivered',  label:'Delivered'}
+      ])
+    + '</div>'
+    + '<div>'
+    + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px">Active (value selected)</div>'
+    + (function() {
+        var html = UI.filterDd('kb-fdd-2', 'All Drivers', driverOpts);
+        return html;
+      })()
+    + '</div>'
+    + '</div>';
+
+  // Pre-select a value in the "Active" preview after render
+  setTimeout(function() {
+    UI._fdPick('kb-fdd-2', 'growth', 'Growth');
+  }, 0);
+})();
+
+// ── ROI Calculator Table previews ─────────────────────────────────────────
+(function() {
+  var SEC = 'font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);padding:8px 12px;background:var(--bg);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap';
+  var TH  = 'font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);padding:6px 12px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;background:transparent';
+  var TD  = 'padding:4px 12px;height:34px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text)';
+  var LBL = 'font-size:12px;color:var(--muted)';
+  var VAL = 'font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums';
+  var WRAP = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px';
+
+  var tshirtOpts = [
+    {val:'',label:'—'},{val:'XS',label:'XS'},{val:'S',label:'S'},
+    {val:'M',label:'M'},{val:'L',label:'L'},{val:'XL',label:'XL'}
+  ];
+
+  // ── Benefits block ────────────────────────────────────────────────────
+  var benefitsHtml =
+    '<div style="' + WRAP + '">'
+    + '<table style="width:100%;border-collapse:collapse" cellspacing="0">'
+    + '<colgroup><col><col style="width:180px"></colgroup>'
+    + '<tr><td colspan="2" style="' + SEC + '">Benefits</td></tr>'
+    + '<tr>'
+    +   '<td style="' + TD + '"><span style="' + LBL + '">Additional Revenue (12m forecast)</span></td>'
+    +   '<td style="' + TD + ';padding-left:0;padding-right:8px">' + UI.cellOutlinedInput('kb-roi-rev', '', '0', '', '$') + '</td>'
+    + '</tr>'
+    + '<tr>'
+    +   '<td style="' + TD + '"><span style="' + LBL + '">Custom Benefit</span></td>'
+    +   '<td style="' + TD + ';padding-left:0;padding-right:8px">' + UI.cellOutlinedInput('kb-roi-custom', '', '0', '', '$') + '</td>'
+    + '</tr>'
+    + '<tr>'
+    +   '<td style="background:rgba(99,102,241,.07);' + TD + ';border-bottom:none"><span style="color:#4f46e5;font-weight:600;font-size:12px">Added Value</span></td>'
+    +   '<td style="background:rgba(99,102,241,.07);' + TD + ';border-bottom:none;text-align:right;padding-right:12px"><span style="color:#4f46e5;font-size:13px;font-weight:700">—</span></td>'
+    + '</tr>'
+    + '</table>'
+    + '</div>';
+
+  // ── Costs block ───────────────────────────────────────────────────────
+  var costsHtml =
+    '<div style="' + WRAP + '">'
+    + '<table style="width:100%;border-collapse:collapse" cellspacing="0">'
+    + '<colgroup><col><col style="width:76px"><col style="width:60px"><col style="width:160px"></colgroup>'
+    + '<tr><td colspan="4" style="' + SEC + '">Costs</td></tr>'
+    + '<tr>'
+    +   '<th style="' + TH + '">Development Costs</th>'
+    +   '<th style="' + TH + ';text-align:center;padding-left:0;padding-right:4px">Size</th>'
+    +   '<th style="' + TH + ';text-align:right">Days</th>'
+    +   '<th style="' + TH + ';text-align:right">Cost</th>'
+    + '</tr>'
+    + '<tr>'
+    +   '<td style="' + TD + '"><span style="' + LBL + '">Engineering</span></td>'
+    +   '<td style="' + TD + ';padding-left:0;padding-right:4px">' + UI.cellOutlinedSelect('kb-roi-eng', tshirtOpts, '') + '</td>'
+    +   '<td style="' + TD + ';text-align:right"><span style="' + VAL + '">—</span></td>'
+    +   '<td style="' + TD + ';text-align:right"><span style="' + VAL + '">—</span></td>'
+    + '</tr>'
+    + '<tr>'
+    +   '<td style="' + TD + '"><span style="' + LBL + '">Design</span></td>'
+    +   '<td style="' + TD + ';padding-left:0;padding-right:4px">' + UI.cellOutlinedSelect('kb-roi-des', tshirtOpts, 'M') + '</td>'
+    +   '<td style="' + TD + ';text-align:right"><span style="' + VAL + '">12</span></td>'
+    +   '<td style="' + TD + ';text-align:right"><span style="' + VAL + '">$4,800</span></td>'
+    + '</tr>'
+    + '<tr>'
+    +   '<td style="' + TD + '"><span style="' + LBL + '">Product</span></td>'
+    +   '<td style="' + TD + '"></td>'
+    +   '<td style="' + TD + ';text-align:right"><span style="' + VAL + '">—</span></td>'
+    +   '<td style="' + TD + ';text-align:right"><span style="' + VAL + '">—</span></td>'
+    + '</tr>'
+    + '<tr>'
+    +   '<th style="' + TH + '" colspan="3">Other Costs</th>'
+    +   '<th style="' + TH + ';text-align:right">' + UI.btnText('+ Add', '', '#ea580c') + '</th>'
+    + '</tr>'
+    + '<tr>'
+    +   '<td style="background:rgba(249,115,22,.07);' + TD + ';border-bottom:none" colspan="3"><span style="color:#ea580c;font-weight:600;font-size:12px">Total Cost</span></td>'
+    +   '<td style="background:rgba(249,115,22,.07);' + TD + ';border-bottom:none;text-align:right;padding-right:12px"><span style="color:#ea580c;font-size:13px;font-weight:700">—</span></td>'
+    + '</tr>'
+    + '</table>'
+    + '</div>';
+
+  // ── ROI row ───────────────────────────────────────────────────────────
+  var roiRow =
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 12px;height:34px;'
+    + 'background:var(--bg);border:1px solid var(--border);border-radius:12px;box-sizing:border-box">'
+    + '<span style="font-size:12px;font-weight:600;color:var(--muted)">ROI</span>'
+    + '<span style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--faint)">—</span>'
+    + '</div>';
+
+  document.getElementById('roi-table-preview').innerHTML =
+    '<div style="padding:24px;max-width:580px">'
+    + benefitsHtml + costsHtml + roiRow
+    + '</div>';
+
+  // ── cellOutlinedSelect component preview ──────────────────────────────
+  document.getElementById('roi-cos-preview').innerHTML =
+    '<div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">'
+    + '<div style="width:90px">'
+    +   '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px">Empty</div>'
+    +   UI.cellOutlinedSelect('kb-roi-cos-1', tshirtOpts, '')
+    + '</div>'
+    + '<div style="width:90px">'
+    +   '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px">Selected</div>'
+    +   UI.cellOutlinedSelect('kb-roi-cos-2', tshirtOpts, 'M')
+    + '</div>'
+    + '</div>';
+})();
+
+// ── Chips Nav previews ─────────────────────────────────────────────────────
+document.getElementById('chips-lg-preview').innerHTML =
+  UI.chipsNavLg([
+    {id:'ads',      label:'Ads / Radius'},
+    {id:'content',  label:'Content / APIs'},
+    {id:'data',     label:'Data'},
+    {id:'kerv-one', label:'KERV One'},
+    {id:'sales',    label:'Sales Demo Tool'},
+    {id:'security', label:'Security / DevOps'}
+  ], 'ads', '_kbNoop', '_kbNoop', '+ Add team');
+
+document.getElementById('chips-sm-preview').innerHTML =
+  UI.chipsNavSm([
+    {id:'team',   label:'Team'},
+    {id:'theme',  label:'Theme'},
+    {id:'driver', label:'Driver'}
+  ], 'driver', '_kbNoop');
+
+// ── Breadcrumb previews ────────────────────────────────────────────────────
+document.getElementById('breadcrumb-preview').innerHTML =
+  '<div style="display:flex;flex-direction:column;gap:12px">'
+  + UI.breadcrumb([{label:'Home', href:'#'},{label:'Product Roadmap', href:'#'},{label:'Q2 2026'}])
+  + UI.breadcrumb([{label:'Settings', onclick:''},{label:'Team Members'}])
+  + '</div>';
+
+document.getElementById('pageheader-preview').innerHTML =
+  '<div style="width:100%">'
+  + UI.pageHeader({
+      breadcrumb: [{label:'Product'},{label:'Product Roadmap'}],
+      title:      'Product Roadmap',
+      titleRight: UI.yearNav(2026, [2024,2025,2026,2027], '_kbNoop'),
+      subtitle:   'Quarterly initiatives and progress status'
+    })
+  + '<div style="height:1px;background:var(--border);margin:16px 0"></div>'
+  + UI.pageHeader({title:'Team Members', mb:'0'})
+  + '</div>';
+
+document.getElementById('pageheader-inline-preview').innerHTML =
+  '<div style="width:100%">'
+  + UI.pageHeaderEditable({
+      id:         'kb-phe',
+      breadcrumb: [{label:'Settings'}, {label:'Team Capacity'}],
+      title:      'Ads / Radius',
+      subtitle:   'Sprint velocity and capacity planning',
+      titleRight: UI.yearNav(2026, [2025,2026,2027], '_kbNoop'),
+      onSaveFn:   '_kbNoop'
+    })
+  + '</div>';
+
+document.getElementById('pageheader-modal-preview').innerHTML =
+  '<div style="width:100%">'
+  + UI.pageHeaderModal({
+      breadcrumb: [{label:'Product'}, {label:'Product Roadmap'}],
+      title:      'Analytics dashboard 2.0',
+      subtitle:   'Q2 2026 · At Risk',
+      titleRight: UI.yearNav(2026, [2025,2026,2027], '_kbNoop'),
+      onEditFn:   'kbOpenHeaderModalDrawer()'
+    })
+  + '</div>';
+
+// ── Cards previews ─────────────────────────────────────────────────────────
+document.getElementById('card-normal-preview').innerHTML =
+  '<div style="width:100%;max-width:400px">'
+  + UI.card({
+      bodyHtml: UI.sectionLabel('Description', '6px')
+        + '<p style="font-size:13px;color:var(--muted);margin:0;line-height:1.5">Any content can go inside a card — text, tables, charts, forms.</p>'
+    })
+  + '</div>';
+
+document.getElementById('card-stat-preview').innerHTML =
+  '<div style="width:100%;max-width:320px">'
+  + UI.cardStat({
+      value:  35,
+      label:  'Total initiatives · Q2 2026',
+      badge:  UI.badge('Q2 2026', '#6366F1', 'rgba(99,102,241,.1)'),
+      bar: [
+        {color:'#2EAD4B', pct:11, label:'Delivered'},
+        {color:'#0EA5E9', pct:14, label:'On Track'},
+        {color:'#E5A100', pct:5,  label:'At Risk'},
+        {color:'#E5243B', pct:3,  label:'Delayed'},
+        {color:'#F97316', pct:2,  label:'On Hold'}
+      ],
+      stats: [
+        {color:'#2EAD4B', label:'Delivered', value:11},
+        {color:'#0EA5E9', label:'On Track',  value:14},
+        {color:'#E5A100', label:'At Risk',   value: 5},
+        {color:'#E5243B', label:'Delayed',   value: 3},
+        {color:'#F97316', label:'On Hold',   value: 2},
+        {color:'#94A3B8', label:'Not Started',value:0}
+      ]
+    })
+  + '</div>'
+  + '<div style="width:100%;max-width:200px">'
+  + UI.cardStat({
+      value:  '82%',
+      label:  'On-time delivery rate',
+      badge:  UI.badge('↑ 7%', '#2EAD4B', 'rgba(46,173,75,.1)')
+    })
+  + '</div>';
+
+document.getElementById('card-header-preview').innerHTML =
+  '<div style="width:100%;max-width:460px">'
+  + UI.cardHeader({
+      title:       'Team Members',
+      subtitle:    '· 5 people',
+      headerRight: UI.btnSlim(SVG_PLUS + ' Add member', ''),
+      bodyHtml:
+        '<table style="width:100%;border-collapse:collapse">'
+        + ['Bruna Coppolino','Rich Kentopp','Alice Martin'].map(function(n) {
+            return '<tr style="border-bottom:1px solid var(--border)">'
+              + '<td style="padding:8px 0;font-size:12px;color:var(--text)">' + UI.avatarCell(n) + '</td>'
+              + '</tr>';
+          }).join('')
+        + '</table>',
+      padding: '12px 20px 16px'
+    })
+  + '</div>';
+
+document.getElementById('card-collapse-preview').innerHTML =
+  UI.cardCollapsable({
+    id:          'kb-collapse-1',
+    title:       'Analysis Q2 2026',
+    subtitle:    '· 35 initiatives',
+    defaultOpen: true,
+    bodyHtml: '<p style="font-size:13px;color:var(--muted);margin:0 0 10px;line-height:1.5">'
+      + 'This card is open by default. Click the header to collapse it.</p>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      + UI.statusChip('delivered') + UI.statusChip('on-track') + UI.statusChip('at-risk')
+      + '</div>'
+  })
+  + UI.cardCollapsable({
+      id:          'kb-collapse-2',
+      title:       'Notes',
+      subtitle:    '',
+      defaultOpen: false,
+      bodyHtml: '<p style="font-size:13px;color:var(--muted);margin:0;line-height:1.5">This card starts collapsed. Click the header to expand it.</p>'
+    });
+
+// Pills
+document.getElementById('pills-preview').innerHTML =
+  UI.pills([
+    {id:'all',    label:'All'},
+    {id:'product',label:'Product', count:4},
+    {id:'tech',   label:'Tech', count:2},
+    {id:'design', label:'Design'},
+    {id:'ops',    label:'Operations'}
+  ], 'product', '_kbNoop');
+
+document.getElementById('qpills-preview').innerHTML =
+  UI.quarterPills(['Q1','Q2','Q3','Q4','Backlog'], 'Q2', '_kbNoop');
+
+// Drawer Nav
+document.getElementById('drawernav-preview').innerHTML = UI.drawerNav([
+  { id: 'teams',   label: 'Teams & Capacity' },
+  { id: 'members', label: 'Team Members'     },
+  { id: 'drivers', label: 'Drivers'          },
+  { id: 'themes',  label: 'Themes'           },
+  { id: 'assumptions',   label: 'Assumptions'   },
+  { id: 'jira-projects', label: 'Jira Projects' }
+], 'members', '_kbNoop');
+
+// Tooltip — round info icon, thicker strokes, no button outline
+var INFO_ICO_TT = '<span style="display:inline-flex;align-items:center;justify-content:center;'
+  + 'width:22px;height:22px;color:var(--muted);cursor:default;flex-shrink:0">'
+  + '<svg width="15" height="15" viewBox="0 0 16 16" fill="none">'
+  + '<circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="2"/>'
+  + '<path d="M8 7v4.5M8 5v.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
+  + '</svg></span>';
+
+document.getElementById('tooltip-pos-preview').innerHTML =
+  '<div style="display:flex;gap:40px;align-items:center;flex-wrap:wrap">'
+  + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px">'
+  +   '<div style="font-size:10px;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Top</div>'
+  +   UI.tooltip(INFO_ICO_TT, 'Saved automatically')
+  + '</div>'
+  + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px">'
+  +   '<div style="font-size:10px;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Bottom</div>'
+  +   UI.tooltip(INFO_ICO_TT, 'Saved automatically', {pos:'bottom'})
+  + '</div>'
+  + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px">'
+  +   '<div style="font-size:10px;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Right</div>'
+  +   UI.tooltip(INFO_ICO_TT, 'Saved automatically', {pos:'right'})
+  + '</div>'
+  + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px">'
+  +   '<div style="font-size:10px;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Left</div>'
+  +   UI.tooltip(INFO_ICO_TT, 'Saved automatically', {pos:'left'})
+  + '</div>'
+  + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px">'
+  +   '<div style="font-size:10px;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Max-width</div>'
+  +   UI.tooltip(INFO_ICO_TT, 'Multi-line tooltip that wraps at a fixed width', {pos:'top', maxWidth:'140px'})
+  + '</div>'
+  + '</div>';
+
+// Tooltip — custom triggers (no badges)
+document.getElementById('tooltip-text-preview').innerHTML =
+  UI.tooltip(INFO_ICO_TT, 'Formula explained below', {pos:'right'})
+  + '&nbsp;&nbsp;&nbsp;'
+  + UI.tooltip(
+      '<span style="font-size:12px;color:var(--muted);border-bottom:1px dashed var(--border-md);cursor:default">Weighted Score</span>',
+      'Value × Impact × Confidence / Effort',
+      {pos:'top'}
+    )
+  + '&nbsp;&nbsp;&nbsp;'
+  + UI.tooltip(
+      '<span style="font-size:12px;color:var(--muted);border-bottom:1px dashed var(--border-md);cursor:default">Capacity %</span>',
+      'Planned hours / Available hours × 100',
+      {pos:'bottom', maxWidth:'160px'}
+    );
+
+// Year nav
+document.getElementById('yearnav-preview').innerHTML =
+  UI.yearNav(2026, [2024,2025,2026,2027], '_kbNoop');
+
+// Action dropdown
+document.getElementById('dd-preview').innerHTML =
+  '<div style="position:relative">'
+  + UI.btnSecondary('Add New ' + SVG_CHEV, "UI.ddToggle('kb-dd','kb-dd-btn')", 'kb-dd-btn')
+  + UI.ddPanel('kb-dd', [
+      {label:'Add Objective', onclick:'', svgHtml:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'},
+      {label:'Add Key Result', onclick:'', svgHtml:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'}
+    ])
+  + '</div>';
+
+// Search+checkbox dropdown
+document.getElementById('sc-dd-preview').innerHTML =
+  '<div style="position:relative;width:280px">'
+  + '<button type="button" id="kb-sc-btn" onclick="UI.ddToggle(\'kb-sc-dd\',\'kb-sc-btn\')" '
+  + 'style="width:100%;height:36px;padding:0 36px 0 11px;font-size:13px;font-family:inherit;'
+  + 'border:1px solid var(--border-md);border-radius:7px;background:var(--surface);'
+  + 'color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:flex-start;'
+  + 'position:relative;outline:none;transition:border-color .15s" '
+  + 'onfocus="this.style.borderColor=\'var(--accent)\'" onblur="this.style.borderColor=\'var(--border-md)\'">'
+  + '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;color:var(--muted)">Filter by owner</span>'
+  + '<svg width="10" height="6" viewBox="0 0 10 6" fill="none" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4 4 4-4" stroke="#A8A8A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  + '</button>'
+  + UI.searchCheckboxPanel({
+      id: 'kb-sc-dd',
+      placeholder: 'Search people…',
+      items: [
+        {val:'1', label:'Bruna Coppolino', checked:true},
+        {val:'2', label:'Rich Kentopp',    checked:false},
+        {val:'3', label:'Alice Martin',    checked:true},
+        {val:'4', label:'Marco Rossi',     checked:false},
+        {val:'5', label:'Sara Chen',       checked:false}
+      ],
+      onChangeFn: '_kbNoop2'
+    })
+  + '</div>';
+
+// ── Jira Epic Select ───────────────────────────────────────────────────────
+document.getElementById('jira-dd-preview').innerHTML =
+  '<div style="position:relative;width:100%;max-width:520px">'
+  + '<button type="button" id="kb-jira-btn" onclick="UI.ddToggle(\'kb-jira-dd\',\'kb-jira-btn\')" '
+  + 'style="width:100%;height:36px;padding:0 36px 0 11px;font-size:13px;font-family:inherit;'
+  + 'border:1px solid var(--border-md);border-radius:7px;background:var(--surface);'
+  + 'color:var(--text);cursor:pointer;display:flex;align-items:center;position:relative;outline:none;transition:border-color .15s" '
+  + 'onfocus="this.style.borderColor=\'var(--accent)\'" onblur="this.style.borderColor=\'var(--border-md)\'">'
+  + '<span style="flex:1;text-align:left;color:var(--faint)">Select epics…</span>'
+  + '<svg width="10" height="6" viewBox="0 0 10 6" fill="none" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none"><path d="M1 1l4 4 4-4" stroke="#A8A8A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  + '</button>'
+  + UI.jiraSelectPanel({
+      id: 'kb-jira-dd',
+      placeholder: 'Filter epics…',
+      items: [
+        {val:'sdt-8',   key:'SDT-8',   title:'Content Library',                        status:'In corso',      statusColor:'#E5A100', checked:false},
+        {val:'sdt-62',  key:'SDT-62',  title:'Player and JSON Visualization',           status:'In corso',      statusColor:'#E5A100', checked:false},
+        {val:'sdt-63',  key:'SDT-63',  title:'Serving Ads',                            status:'Da completare', statusColor:'var(--faint)', checked:false},
+        {val:'sdt-71',  key:'SDT-71',  title:'Bug Fixing / Polishing',                 status:'Da completare', statusColor:'var(--faint)', checked:false},
+        {val:'sdt-218', key:'SDT-218', title:'MPT v1 – Asset Ingestion & Backend',     status:'Da completare', statusColor:'var(--faint)', checked:false},
+        {val:'sdt-219', key:'SDT-219', title:'Self-serve Upload form / Real time analysis', status:'Da completare', statusColor:'var(--faint)', checked:false},
+        {val:'sdt-233', key:'SDT-233', title:'MPT v1 – Moments Match',                 status:'Da completare', statusColor:'var(--faint)', checked:false}
+      ],
+      onChangeFn: '_kbNoop2'
+    })
+  + '</div>';
+
+// ── Outlined Cell Input demo ───────────────────────────────────────────────
+document.getElementById('outlined-cells-preview').innerHTML = (function() {
+  var TDl = 'padding:10px 16px;font-size:10px;font-weight:600;color:var(--faint);'
+    + 'text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;'
+    + 'border-bottom:1px solid var(--border);width:210px';
+  var TDc = 'padding:8px 12px;border-bottom:1px solid var(--border);width:200px';
+  var TDn = 'padding:8px 12px;border-bottom:1px solid var(--border);color:var(--faint);font-size:11px';
+
+  var tshirtOpts = [
+    {val:'',label:'—'},{val:'XS',label:'XS'},{val:'S',label:'S'},
+    {val:'M',label:'M'},{val:'L',label:'L'},{val:'XL',label:'XL'}
+  ];
+  var quarterOpts = ['Q1','Q2','Q3','Q4','Backlog'].map(function(q){return{val:q,label:q};});
+
+  var rows = [
+    // ── Inputs ──
+    {group:'Input',    name:'No helper',                cell: UI.cellOutlinedInput('oc-plain','','Value',''),           note:'← click to focus'},
+    {group:'',         name:'Helper · FTE',             cell: UI.cellOutlinedInput('oc-fte','6','0','','FTE'),          note:''},
+    {group:'',         name:'Helper · $',               cell: UI.cellOutlinedInput('oc-usd','','0.00','','$'),          note:''},
+    {group:'',         name:'Helper · %',               cell: UI.cellOutlinedInput('oc-pct','85','0','','%'),           note:''},
+    {group:'',         name:'Helper · hrs',             cell: UI.cellOutlinedInput('oc-hrs','','0','','hrs'),           note:''},
+    // ── Select ──
+    {group:'Select',   name:'Empty',                    cell: UI.cellOutlinedSelect('oc-sel-empty', tshirtOpts, ''),    note:'← click to open'},
+    {group:'',         name:'Pre-selected',             cell: UI.cellOutlinedSelect('oc-sel-sel',   tshirtOpts, 'M'),   note:''},
+    {group:'',         name:'List options',             cell: UI.cellOutlinedSelect('oc-sel-q',     quarterOpts, 'Q2'), note:''}
+  ];
+
+  var last = rows.length - 1;
+  var prevGroup = null;
+  return '<table style="width:100%;border-collapse:collapse">'
+    + rows.map(function(r, i) {
+        var isLast = i === last;
+        var b = isLast ? ';border-bottom:none' : '';
+        // group divider
+        var groupSep = '';
+        if (r.group && r.group !== prevGroup && prevGroup !== null) {
+          groupSep = '<tr><td colspan="3" style="height:1px;background:var(--border);padding:0"></td></tr>';
+        }
+        if (r.group) prevGroup = r.group;
+        return groupSep
+          + '<tr onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'\'">'
+          + '<td style="' + TDl + b + '">' + r.name + '</td>'
+          + '<td style="' + TDc + b + '">' + r.cell + '</td>'
+          + '<td style="' + TDn + b + '">' + r.note + '</td>'
+          + '</tr>';
+      }).join('')
+    + '</table>';
+})();
+
+// ── Table data shared across table demos ──────────────────────────────────
+var _statusOpts = UI.STATUS_OPTS.map(function(o) {
+  return { val: o.val, label: o.label, html: UI.statusChip(o.val) };
+});
+var _quarterOpts = ['Q1','Q2','Q3','Q4','Backlog'].map(function(q) {
+  return { val: q, label: q, html: '<span style="font-size:11px">' + q + '</span>' };
+});
+var _driverOpts = UI.DRIVER_OPTS; // canonical 5 drivers with driverChip html
+var _themeOpts = ['Ad Formats','Ad Serving & Management','Analytics & Reporting','Compliance','Content API','Data Infrastructure','Integrations'].map(function(t) {
+  return { val: t, label: t, html: '<span style="font-size:11px">' + t + '</span>' };
+});
+var _teamOpts = ['Compliance & International','Overlay','VR','Live Stream','KERV One','Data & Analytics'].map(function(t) {
+  return { val: t, label: t, html: '<span style="font-size:11px">' + t + '</span>' };
+});
+var _ownerOpts = ['Bruna Coppolino','Rich Kentopp','Alice Martin','Marco Rossi','Sara Chen'].map(function(n) {
+  var ini = n.split(' ').map(function(w){return w[0];}).join('');
+  var bg  = UI._avatarColor(n);
+  return { val: n, label: n,
+    html: '<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px">'
+      + '<span style="width:18px;height:18px;border-radius:50%;background:' + bg + ';display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:#fff;flex-shrink:0">' + ini + '</span>'
+      + n + '</span>'
+  };
+});
+
+var _TD = 'padding:6px 10px;font-size:11px;color:var(--text);border-bottom:1px solid var(--border)';
+var _rnxData = [
+  {id:1, q:'Q1', title:'Launch Ad Format v2',       pct:100,epics:3, driver:'Revenue Generating',       team:'Overlay',                   owner:'Bruna Coppolino', theme:'Ad Formats',              status:'delivered'},
+  {id:2, q:'Q1', title:'VAST 4.2 compliance',        pct:88, epics:2, driver:'Operational Efficiency',   team:'Compliance & International', owner:'Rich Kentopp',    theme:'Compliance',              status:'on-track'},
+  {id:3, q:'Q2', title:'Analytics dashboard 2.0',    pct:52, epics:5, driver:'Strategic',                team:'Data & Analytics',           owner:'Alice Martin',    theme:'Analytics & Reporting',   status:'at-risk'},
+  {id:4, q:'Q2', title:'Unified SSP integration',    pct:0,  epics:0, driver:'Revenue Generating',       team:'KERV One',                   owner:'Marco Rossi',     theme:'Integrations',            status:'not-started'},
+  {id:5, q:'Q3', title:'AI contextual targeting',    pct:30, epics:4, driver:'Tech Scaling',             team:'Live Stream',                owner:'Sara Chen',       theme:'Ad Serving & Management', status:'on-hold'},
+  {id:6, q:'Q3', title:'Publisher self-serve portal',pct:18, epics:3, driver:'Retention and Expansion',  team:'Overlay',                   owner:'Bruna Coppolino', theme:'Content API',             status:'delayed'}
+];
+
+// ── Table View — Generic ──────────────────────────────────────────────────
+(function() {
+  var _roleOpts = ['Product Manager','Product Designer','Software Engineer','Data Analyst','QA Engineer','Scrum Master'].map(function(r) {
+    return { val: r, label: r, html: '<span style="font-size:11px">' + r + '</span>' };
+  });
+  var _gtBadgeOpts = [
+    {val:'product', label:'Product',    color:'#B45309', bg:'#FFFBEB'},
+    {val:'tech',    label:'Tech',       color:'#1D4ED8', bg:'#EFF6FF'},
+    {val:'design',  label:'Design',     color:'#7C3AED', bg:'#F5F3FF'},
+    {val:'ops',     label:'Operations', color:'#065F46', bg:'#ECFDF5'},
+    {val:'data',    label:'Data',       color:'#0E7490', bg:'#ECFEFF'}
+  ].map(function(t) {
+    return { val: t.val, label: t.label, html: UI.badge(t.label, t.color, t.bg) };
+  });
+  var COLS = [
+    {label:'Name',   width:'190px'},
+    {label:'Title',  width:'220px'},
+    {label:'Role',   width:'200px'},
+    {label:'Team',   width:'160px'},
+    {label:'Status', width:'140px'},
+    {label:'',       width:'44px'}
+  ];
+  var _gtData = [
+    {id:1, name:'Bruna Coppolino', title:'Analytics dashboard 2.0',  role:'Product Manager',    team:'product', status:'on-track'},
+    {id:2, name:'Rich Kentopp',    title:'VAST 4.2 compliance',       role:'Software Engineer',  team:'tech',    status:'at-risk'},
+    {id:3, name:'Alice Martin',    title:'Unified SSP integration',   role:'Product Designer',   team:'design',  status:'not-started'},
+    {id:4, name:'Marco Rossi',     title:'AI contextual targeting',   role:'Software Engineer',  team:'tech',    status:'on-hold'},
+    {id:5, name:'Sara Chen',       title:'Publisher self-serve portal',role:'Data Analyst',      team:'data',    status:'delayed'}
+  ];
+  var rows = _gtData.map(function(r) {
+    return '<tr onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'\'">'
+      + '<td style="' + _TD + ';min-width:190px">' + UI.cellCustomSelect('gt-own-'+r.id, _ownerOpts, r.name)                    + '</td>'
+      + '<td style="' + _TD + ';min-width:220px">' + UI.cellInput('gt-ttl-'+r.id, r.title, 'Initiative name', '')               + '</td>'
+      + '<td style="' + _TD + ';min-width:200px">' + UI.cellSelect('gt-rol-'+r.id, _roleOpts, r.role)                           + '</td>'
+      + '<td style="' + _TD + ';min-width:160px">' + UI.cellCustomSelect('gt-tm-'+r.id, _gtBadgeOpts, r.team)                   + '</td>'
+      + '<td style="' + _TD + ';min-width:140px">' + UI.cellCustomSelect('gt-st-'+r.id, _statusOpts, r.status)                  + '</td>'
+      + '<td style="' + _TD + ';text-align:center">' + UI.btnIcon('', 'Delete', SVG_TRASH, 'var(--faint)', '#E5243B', '#FFF0F0') + '</td>'
+      + '</tr>';
+  }).join('');
+  document.getElementById('generic-table-preview').innerHTML = UI.tableScroll(COLS, rows, 'kb-gt-tbody');
+  var _gw = document.getElementById('kb-gt-tbody-wrap');
+  if (_gw) { _gw.style.border = 'none'; _gw.style.borderRadius = '0'; _gw.style.width = '100%'; }
+})();
+
+// ── Table View — Read Only ────────────────────────────────────────────────
+(function() {
+  var COLS = [
+    { label: 'Name',        width: '200px' },
+    { label: 'Department',  width: '150px' },
+    { label: 'Job Title',   width: '180px' },
+    { label: 'Status',      width: '130px' },
+    { label: 'Driver',      width: '180px' },
+    { label: 'Updated',     width: '110px' }
+  ];
+  var DATA = [
+    { name: 'Bruna Coppolino', dept: 'Product',    title: 'Product Manager',    status: 'on-track',    driver: 'New Revenue',              date: '21 May 2026' },
+    { name: 'Rich Kentopp',    dept: 'Tech',        title: 'Software Engineer',  status: 'at-risk',     driver: 'Retention & Expansion',    date: '19 May 2026' },
+    { name: 'Alice Martin',    dept: 'Design',      title: 'Product Designer',   status: 'on-hold',     driver: 'New Revenue',              date: '17 May 2026' },
+    { name: 'Marco Rossi',     dept: 'Tech',        title: 'Software Engineer',  status: 'delivered',   driver: 'Efficiency & Scalability', date: '14 May 2026' },
+    { name: 'Sara Chen',       dept: 'Data',        title: 'Data Analyst',       status: 'not-started', driver: 'Ecosystem & Partnerships', date: '10 May 2026' }
+  ];
+  var rows = DATA.map(function(r) {
+    return UI.trReadOnly([
+      UI.avatarCell(r.name, r.title),
+      UI.deptChip(r.dept),
+      UI.cellReadOnly('<span style="font-size:12px;color:var(--muted)">' + r.title + '</span>'),
+      UI.cellReadOnly(UI.statusChip(r.status)),
+      UI.cellReadOnly(UI.driverChip(r.driver)),
+      UI.cellReadOnly('<span style="color:var(--faint);font-size:12px">' + r.date + '</span>')
+    ]);
+  }).join('');
+  document.getElementById('readonly-table-preview').innerHTML = UI.table(COLS, rows, 'kb-ro-tbody');
+  var _w = document.getElementById('kb-ro-tbody-wrap');
+  if (_w) { _w.style.border = 'none'; _w.style.borderRadius = '0'; _w.style.width = '100%'; }
+})();
+
+// ── Table View — Team Capacity ────────────────────────────────────────────
+document.getElementById('capacity-table-preview').innerHTML = (function() {
+  var QS = ['Q1','Q2','Q3','Q4'];
+
+  // Cell styles (td only — thead is handled by UI.tableScroll)
+  var TDL  = 'padding:7px 12px;font-size:11px;color:var(--text);border-bottom:1px solid var(--border);text-align:left';
+  var TD   = 'padding:7px 12px;font-size:11px;color:var(--text);border-bottom:1px solid var(--border);text-align:right';
+  var TDC  = 'padding:7px 12px;font-size:11px;font-weight:500;color:#166534;border-bottom:1px solid var(--border);text-align:right;background:#F0FDF4';
+  var TDCl = 'padding:7px 12px;font-size:11px;color:#166534;border-bottom:1px solid var(--border);text-align:left;background:#F0FDF4';
+  var TDP  = 'padding:4px 12px;font-size:11px;font-weight:500;color:#9A3412;border-bottom:1px solid var(--border);text-align:right;background:#FFF7ED';
+  var TDPl = 'padding:4px 12px;font-size:11px;color:#9A3412;border-bottom:1px solid var(--border);text-align:left;background:#FFF7ED';
+
+  // Tooltip info icon (hover popover)
+  function tip(formula) {
+    return '<span style="position:relative;display:inline-flex;align-items:center;margin-left:5px;vertical-align:middle;cursor:help"'
+      + ' onmouseenter="this.lastElementChild.style.display=\'block\'"'
+      + ' onmouseleave="this.lastElementChild.style.display=\'none\'">'
+      + '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="color:var(--faint)">'
+      +   '<circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/>'
+      +   '<path d="M8 7v5M8 5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
+      + '</svg>'
+      + '<span style="display:none;position:absolute;left:16px;top:-6px;white-space:nowrap;background:#0D1E36;color:#fff;font-size:11px;padding:5px 9px;border-radius:6px;z-index:20;line-height:1.4;pointer-events:none">'
+      + formula + '</span>'
+      + '</span>';
+  }
+
+  // FTE editable row
+  function fteRow(label, vals) {
+    return '<tr onmouseenter="this.style.background=\'#FAFAF8\'" onmouseleave="this.style.background=\'\'">'
+      + '<td style="' + TDL + '">' + label + '</td>'
+      + QS.map(function(q, i) {
+          return '<td style="' + TD + '">'
+            + UI.cellOutlinedInput('cap-fte-'+label.replace(/\s+/g,'')+'-'+q, vals[i], '0', '', 'FTE')
+            + '</td>';
+        }).join('')
+      + '</tr>';
+  }
+
+  // ROB % editable row
+  function robRow(label, vals) {
+    return '<tr>'
+      + '<td style="' + TDPl + '">' + label + '</td>'
+      + QS.map(function(q, i) {
+          return '<td style="' + TDP + '">'
+            + UI.cellOutlinedInput('cap-rob-'+q, vals[i], '0', '', '%')
+            + '</td>';
+        }).join('')
+      + '</tr>';
+  }
+
+  // Computed read-only row
+  function calcRow(label, vals, formula) {
+    return '<tr>'
+      + '<td style="' + TDCl + '">' + label + tip(formula) + '</td>'
+      + vals.map(function(v) {
+          return '<td style="' + TDC + '">' + v + 'd</td>';
+        }).join('')
+      + '</tr>';
+  }
+
+  var capsCols = [
+    { label: '', width: '320px' },
+    { label: 'Q1', align: 'right' },
+    { label: 'Q2', align: 'right' },
+    { label: 'Q3', align: 'right' },
+    { label: 'Q4', align: 'right' }
+  ];
+
+  var capsRows = fteRow('Engineering FTE', ['6','6','6','6'])
+    + robRow('Run of Business per Engineer (Operational support and meetings)', ['40','40','40','20'])
+    + fteRow('Product FTE',     ['1','2','2','2'])
+    + fteRow('Design FTE',      ['0,3','0,3','0,3','0,3'])
+    + calcRow('Engineering — Budget x Quarter', ['216','216','216','288'], 'FTE × Working Days × (1 − RoB%)')
+    + calcRow('Product — Budget x Quarter',     ['48','96','96','96'],    'FTE × Working Days × (1 − PM RoB%)')
+    + calcRow('Design — Budget x Quarter',      ['16','16','16','16'],    'FTE × Working Days × (1 − Design RoB%)');
+
+  return UI.tableScroll(capsCols, capsRows, 'cap-tbody-demo', 0, null, { tableLayout: 'fixed', inCard: true });
+})();
+
+// ── Table View — Product Roadmap (frozen columns) ─────────────────────────
+(function() {
+  var COLS = [
+    {label:'Q',         width:'70px'},
+    {label:'Initiative',width:'220px'},
+    {label:'Jira',      width:'130px'},
+    {label:'Driver',    width:'190px'},
+    {label:'Team',      width:'200px'},
+    {label:'PO',        width:'170px'},
+    {label:'Theme',     width:'190px'},
+    {label:'Status',    width:'150px'},
+    {label:'',          width:'44px'}
+  ];
+  var rows = _rnxData.map(function(r) {
+    return '<tr onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'\'">'
+      + '<td style="' + _TD + ';width:70px;min-width:70px">'   + UI.cellCustomSelect('kb-q-'  +r.id, _quarterOpts, r.q)      + '</td>'
+      + '<td style="' + _TD + ';min-width:220px">'              + UI.cellInput('kb-ttl-'+r.id, r.title, 'Initiative name', '') + '</td>'
+      + '<td style="' + _TD + ';min-width:130px">'              + UI.progressCell(r.pct, r.epics)                              + '</td>'
+      + '<td style="' + _TD + ';min-width:190px">'              + UI.cellCustomSelect('kb-drv-'+r.id, _driverOpts, r.driver)  + '</td>'
+      + '<td style="' + _TD + ';min-width:200px">'              + UI.cellCustomSelect('kb-tm-' +r.id, _teamOpts,   r.team)    + '</td>'
+      + '<td style="' + _TD + ';min-width:170px">'              + UI.cellCustomSelect('kb-po-' +r.id, _ownerOpts,  r.owner)   + '</td>'
+      + '<td style="' + _TD + ';min-width:190px">'              + UI.cellCustomSelect('kb-th-' +r.id, _themeOpts,  r.theme)   + '</td>'
+      + '<td style="' + _TD + ';min-width:150px">'              + UI.cellCustomSelect('kb-ds-' +r.id, _statusOpts, r.status)  + '</td>'
+      + '<td style="' + _TD + ';text-align:center">'            + UI.btnIcon('', 'Delete', SVG_TRASH, 'var(--faint)', '#E5243B', '#FFF0F0') + '</td>'
+      + '</tr>';
+  }).join('');
+  document.getElementById('roadmap-table-preview').innerHTML = UI.tableScroll(COLS, rows, 'kb-rnx-tbody', 2);
+  var _rw = document.getElementById('kb-rnx-tbody-wrap');
+  if (_rw) { _rw.style.border = 'none'; _rw.style.borderRadius = '0'; _rw.style.width = '100%'; }
+})();
+
+// ── Settings Table + Add Row ──────────────────────────────────────────────
+(function() {
+  var TH  = 'font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);padding:7px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg)';
+  var TD  = 'padding:7px 12px;font-size:11px;color:var(--text);border-bottom:1px solid var(--border)';
+  // Add-row solid inputs (no UI.* equivalent — these always show their border)
+  var INPs = 'width:100%;box-sizing:border-box;padding:5px 8px;font-size:11px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);outline:none;font-family:inherit';
+  var SELs = 'width:100%;box-sizing:border-box;padding:5px 8px;font-size:11px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);outline:none;font-family:inherit;cursor:pointer';
+  var SOL_F = 'onfocus="this.style.borderColor=\'var(--accent)\';this.style.boxShadow=\'0 0 0 3px rgba(237,0,94,.08)\'"';
+  var SOL_B = 'onblur="this.style.borderColor=\'var(--border-md)\';this.style.boxShadow=\'none\'"';
+
+  var CATS      = ['Costs','Added Value','Financial','Resources','Others'];
+  var UNIT_OPTS = [{val:'dollar',label:'$ Dollar'},{val:'percent',label:'% Percent'},{val:'days',label:'d Days'},{val:'number',label:'# Number'}];
+
+  var _kbAsmData = [
+    {id:1, cat:'Added Value', name:'Revenue uplift from recommendations', val:100,   unit:'percent'},
+    {id:2, cat:'Added Value', name:'Conversion rate improvement',         val:12,    unit:'percent'},
+    {id:3, cat:'Costs',       name:'Monthly cloud infra cost',            val:4800,  unit:'dollar'},
+    {id:4, cat:'Costs',       name:'Dev team cost per sprint',            val:22000, unit:'dollar'},
+    {id:5, cat:'Financial',   name:'Avg revenue per customer',            val:480,   unit:'dollar'},
+    {id:6, cat:'Financial',   name:'Target gross margin',                 val:72,    unit:'percent'}
+  ];
+  var _kbAsmFilter = '';
+
+  function _buildRows(filter) {
+    var visible = filter ? _kbAsmData.filter(function(a){ return a.cat === filter; }) : _kbAsmData;
+    if (!visible.length) {
+      return '<tr><td colspan="5" style="padding:32px;text-align:center;font-size:12px;color:var(--faint)">No assumptions match the current filter.</td></tr>';
+    }
+    return visible.map(function(a) {
+      // ── existing rows use UI ghost + outlined components ──────────────────
+      var catCell  = UI.cellSelect('kb-asm-cat-'  + a.id, CATS,       a.cat);
+      var nameCell = UI.cellInput( 'kb-asm-name-' + a.id, a.name,     'Assumption name', '');
+      var valCell  = UI.cellOutlinedInput('kb-asm-val-' + a.id, String(a.val), '0', '');
+      var unitCell = UI.cellSelect('kb-asm-unit-' + a.id, UNIT_OPTS,  a.unit);
+      var delBtn   = UI.btnIcon('', 'Delete', SVG_TRASH, 'var(--faint)', '#E5243B', '#FFF0F0');
+      return '<tr onmouseenter="this.style.background=\'#FAFAF8\'" onmouseleave="this.style.background=\'\'">'
+        + '<td style="'+TD+';width:150px">'  + catCell  + '</td>'
+        + '<td style="'+TD+'">'              + nameCell + '</td>'
+        + '<td style="'+TD+';width:110px">'  + valCell  + '</td>'
+        + '<td style="'+TD+';width:130px">'  + unitCell + '</td>'
+        + '<td style="'+TD+';text-align:center;width:44px">' + delBtn + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  // Expose filter function globally so native <select> onchange can call it
+  window.kbAsmFilter = function(val) {
+    _kbAsmFilter = val;
+    var tbody = document.getElementById('kb-asm-tbody');
+    if (tbody) tbody.innerHTML = _buildRows(val);
+    var dot = document.getElementById('kb-asm-cat-dot');
+    if (dot) dot.style.display = val ? 'inline-block' : 'none';
+    var sel = document.getElementById('kb-asm-cat-sel');
+    if (sel) sel.style.color = val ? 'var(--accent)' : 'var(--faint)';
+  };
+
+  // ── Filter TH — native <select> intentional (filter ≠ data entry) ─────────
+  var catSelStyle = 'font-size:10px;font-weight:600;letter-spacing:.4px;border:none;outline:none;cursor:pointer;font-family:inherit;background:transparent;padding:0;max-width:100px;color:var(--faint)';
+  var catAllOpts  = '<option value="">All</option>' + CATS.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+  var filterTH    = '<th style="'+TH+'">'
+    + '<div style="display:flex;align-items:center;gap:5px">'
+    + '<span>Category</span>'
+    + '<select id="kb-asm-cat-sel" style="'+catSelStyle+'" onchange="kbAsmFilter(this.value)">'+catAllOpts+'</select>'
+    + '<span id="kb-asm-cat-dot" style="display:none;width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0"></span>'
+    + '</div>'
+    + '</th>';
+
+  // ── Add row — solid inputs (always-visible border, background:var(--bg)) ──
+  var newCatOpts  = CATS.map(function(c){ return '<option value="'+c+'"'+(c==='Others'?' selected':'')+'>'+c+'</option>'; }).join('');
+  var newUnitOpts = UNIT_OPTS.map(function(u){ return '<option value="'+u.val+'"'+(u.val==='dollar'?' selected':'')+'>'+u.label+'</option>'; }).join('');
+  var addBtn      = UI.btnPrimary('Add', '');
+  var newRow = '<tr style="background:var(--bg)">'
+    + '<td style="'+TD+';width:150px"><select style="'+SELs+'" '+SOL_F+' '+SOL_B+'>'+newCatOpts+'</select></td>'
+    + '<td style="'+TD+'"><input type="text" placeholder="Assumption name" style="'+INPs+'" '+SOL_F+' '+SOL_B+' /></td>'
+    + '<td style="'+TD+';width:110px">'  + UI.cellOutlinedInput('kb-asm-new-val', '', '0', '') + '</td>'
+    + '<td style="'+TD+';width:130px"><select style="'+SELs+'" '+SOL_F+' '+SOL_B+'>'+newUnitOpts+'</select></td>'
+    + '<td style="'+TD+';text-align:right">' + addBtn + '</td>'
+    + '</tr>';
+
+  var thead = '<thead style="position:sticky;top:0;z-index:3">'
+    + '<tr>'
+    + filterTH
+    + '<th style="'+TH+'">Name</th>'
+    + '<th style="'+TH+'">Value</th>'
+    + '<th style="'+TH+'">Unit</th>'
+    + '<th style="'+TH+'"></th>'
+    + '</tr>'
+    + '</thead>';
+
+  document.getElementById('settings-table-preview').innerHTML =
+    '<div style="overflow-y:auto;overflow-x:auto;max-height:340px">'
+    + '<table style="border-collapse:collapse;width:100%">'
+    + thead
+    + '<tbody id="kb-asm-tbody">' + _buildRows('') + '</tbody>'
+    + '<tfoot style="position:sticky;bottom:0;z-index:2;box-shadow:0 -1px 0 var(--border)">' + newRow + '</tfoot>'
+    + '</table>'
+    + '</div>';
+})();
+
+// ── Ghost Cell Components demo ─────────────────────────────────────────────
+var _gcBadgeOpts = [
+  {val:'product', label:'Product',    color:'#B45309', bg:'#FFFBEB'},
+  {val:'tech',    label:'Tech',       color:'#1D4ED8', bg:'#EFF6FF'},
+  {val:'design',  label:'Design',     color:'#7C3AED', bg:'#F5F3FF'},
+  {val:'ops',     label:'Operations', color:'#065F46', bg:'#ECFDF5'},
+  {val:'data',    label:'Data',       color:'#0E7490', bg:'#ECFEFF'}
+].map(function(t) {
+  return { val: t.val, label: t.label, html: UI.badge(t.label, t.color, t.bg) };
+});
+
+document.getElementById('ghost-cells-preview').innerHTML = (function() {
+  var TDl = 'padding:10px 16px;font-size:10px;font-weight:600;color:var(--faint);'
+    + 'text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;'
+    + 'border-bottom:1px solid var(--border);width:210px';
+  var TDc = 'padding:8px 12px;border-bottom:1px solid var(--border);width:280px';
+  var rows = [
+    {name:'Ghost Input',            cell: UI.cellInput('gc-ci', 'Launch Ad Format v2', 'Initiative name', '')},
+    {name:'Ghost Select',           cell: UI.cellSelect('gc-cs', [{val:'Q1',label:'Q1'},{val:'Q2',label:'Q2'},{val:'Q3',label:'Q3'},{val:'Q4',label:'Q4'},{val:'Backlog',label:'Backlog'}], 'Q2')},
+    {name:'Custom · Avatar + Name', cell: UI.cellCustomSelect('gc-owner', _ownerOpts, 'Bruna Coppolino')},
+    {name:'Custom · Status Chip',   cell: UI.cellCustomSelect('gc-status', _statusOpts, 'on-track')},
+    {name:'Custom · Badge',         cell: UI.cellCustomSelect('gc-badge', _gcBadgeOpts, 'product')},
+    {name:'ROI Button · empty',     cell: UI.cellRoi(null, '')},
+    {name:'ROI Button · calculated',cell: UI.cellRoi('-100%', '') + '&nbsp;&nbsp;' + UI.cellRoi('+45%', '')}
+  ];
+  var last = rows.length - 1;
+  return '<table style="width:100%;border-collapse:collapse">'
+    + rows.map(function(r, i) {
+        var b = i === last ? ';border-bottom:none' : '';
+        return '<tr onmouseenter="this.style.background=\'var(--subtle)\'" onmouseleave="this.style.background=\'\'">'
+          + '<td style="' + TDl + b + '">' + r.name + '</td>'
+          + '<td style="' + TDc + b + '">' + r.cell + '</td>'
+          + '<td style="' + TDc + b + ';color:var(--faint);font-size:11px">← hover the row · click to open</td>'
+          + '</tr>';
+      }).join('')
+    + '</table>';
+})();
+
+// ── Accordion ────────────────────────────────────────────────────────────
+(function() {
+  var openId = 2;
+
+  function dot(color) {
+    return '<span style="width:7px;height:7px;border-radius:50%;background:' + color + ';display:inline-block"></span>';
+  }
+  function badge(label, bg, color) {
+    return '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:500;background:' + bg + ';color:' + color + '">' + label + '</span>';
+  }
+
+  var PENDING_RIGHT = dot('#F59E0B') + '<span style="font-size:11px;font-weight:500;color:#F59E0B">Medium</span>'
+    + badge('Pending', 'rgba(245,158,11,.1)', '#B45309');
+  var HIGH_RIGHT = dot('#E5243B') + '<span style="font-size:11px;font-weight:500;color:#E5243B">High</span>'
+    + badge('Pending', 'rgba(245,158,11,.1)', '#B45309');
+
+  var expandedBody =
+    '<div style="margin-bottom:12px">'
+    + '<div style="font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Description</div>'
+    + '<div style="font-size:12px;color:var(--text);line-height:1.6">This is the expanded content area. Place description, notes, or any detail HTML here.</div>'
+    + '</div>'
+    + '<div style="height:1px;background:var(--border);margin-bottom:10px"></div>'
+    + '<div style="margin-bottom:10px"><span style="font-size:11px;color:var(--faint)">Submitted by <strong style="color:var(--muted);font-weight:500">bruna</strong> &mdash; May 21, 2026</span></div>'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">'
+    + '<button style="padding:5px 13px;font-size:11px;font-weight:500;font-family:inherit;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;cursor:pointer">Convert to Initiative</button>'
+    + '<button style="padding:5px 13px;font-size:11px;font-weight:500;font-family:inherit;border:none;border-radius:6px;background:#006BE4;color:#fff;cursor:pointer">Convert to Jira Story</button>'
+    + '<button style="padding:5px 13px;font-size:11px;font-weight:500;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Park</button>'
+    + '</div>';
+
+  var items = [
+    { id: 1, title: 'test 3',              meta: 'bruna<span style="margin:0 5px;opacity:.4">·</span>May 21, 2026', right: PENDING_RIGHT, open: false },
+    { id: 2, title: 'this is a test story', meta: 'test<span style="margin:0 5px;opacity:.4">·</span>May 19, 2026<span style="margin:0 5px;opacity:.4">·</span>Sales Demo Tool · KERV One', right: HIGH_RIGHT, body: expandedBody, open: true },
+    { id: 3, title: 'test 2',              meta: 'bruna<span style="margin:0 5px;opacity:.4">·</span>May 21, 2026', right: PENDING_RIGHT, open: false },
+  ];
+
+  document.getElementById('accordion-preview').innerHTML = UI.accordion(items, {});
+})();
+
+// Steppers
+document.getElementById('stepperh-preview').innerHTML =
+  UI.stepperH([
+    {label:'Discovery',  sublabel:'Completed',   status:'done'},
+    {label:'Definition', sublabel:'In progress',  status:'active'},
+    {label:'Build',      status:'pending'},
+    {label:'Launch',     status:'pending'}
+  ]);
+
+document.getElementById('stepperv-preview').innerHTML =
+  '<div style="max-width:260px">'
+  + UI.stepperV([
+      {label:'Spec written',    sublabel:'Mar 12',  status:'done'},
+      {label:'Design approved', sublabel:'Mar 19',  status:'done'},
+      {label:'In development',  sublabel:'Now',     status:'active'},
+      {label:'QA & release',    status:'pending'}
+    ])
+  + '</div>';
+
+// ── Example drawer ─────────────────────────────────────────────────────────
+function kbOpenExampleDrawer() {
+  UI.openDrawer({
+    id: 'kb-example-drawer',
+    width: '520px',
+    title: 'Edit Objective',
+    subtitle: 'Set title, description and departments',
+    closeFn: 'kbCloseExampleDrawer',
+    bodyHtml:
+      UI.field('Title',       UI.input('kb-obj-title','text','e.g. Drive sustainable growth',''), true) +
+      UI.field('Description', UI.textarea('kb-obj-desc','Optional context for this objective','', 3)) +
+      UI.section('Departments', '<span style="font-size:12px;color:var(--accent);cursor:pointer">Select all</span>') +
+      '<table style="width:100%;border-collapse:collapse">'
+      + '<tbody>'
+      + ['All departments','Product','Tech','Design','Operations','Sales','Strategy','People & Culture','Marketing','Finance'].map(function(d, i) {
+          return '<tr style="border-bottom:1px solid var(--border)">'
+            + '<td style="padding:7px 0">'
+            + '<label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none'
+            + (i > 0 ? ';padding-left:16px' : '') + '">'
+            + '<input type="checkbox"' + (i === 0 ? ' checked' : '') + ' style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">'
+            + '<span style="font-size:' + (i === 0 ? '12px;color:var(--text)' : '11px;color:var(--muted)') + '">' + d + '</span>'
+            + '</label>'
+            + '</td></tr>';
+        }).join('')
+      + '</tbody></table>',
+    footerLeft:  UI.btnDanger('Delete', 'kbCloseExampleDrawer()'),
+    footerRight: UI.btnCancel('Cancel','kbCloseExampleDrawer()') + UI.btnPrimary('Save Changes','kbCloseExampleDrawer()','kb-save')
+  });
+}
+function kbCloseExampleDrawer() { UI.closeDrawer('kb-example-drawer'); }
+
+function kbOpenHeaderModalDrawer() {
+  UI.openModal({
+    id:       'kb-ph-modal',
+    width:    '480px',
+    title:    'Edit Initiative',
+    subtitle: 'Update title, status, owner and quarter',
+    closeFn:  'kbCloseHeaderModalDrawer',
+    bodyHtml:
+      UI.field('Title',   UI.input('kb-phm-title','text','Initiative name','Analytics dashboard 2.0'), true) +
+      UI.field('Status',  UI.customSelect('kb-phm-status', UI.STATUS_OPTS, 'at-risk')) +
+      UI.field('Owner',   UI.customSelect('kb-phm-owner', [
+        {val:'bruna', label:'Bruna Coppolino'},
+        {val:'rich',  label:'Rich Kentopp'},
+        {val:'alice', label:'Alice Martin'}
+      ], 'alice')) +
+      UI.field('Quarter', UI.customSelect('kb-phm-q', [
+        {val:'Q1',label:'Q1'},{val:'Q2',label:'Q2'},{val:'Q3',label:'Q3'},{val:'Q4',label:'Q4'}
+      ], 'Q2')),
+    footerLeft:  UI.btnDanger('Delete', 'kbCloseHeaderModalDrawer()'),
+    footerRight: UI.btnCancel('Cancel','kbCloseHeaderModalDrawer()') + UI.btnPrimary('Save','kbCloseHeaderModalDrawer()','kb-phm-save')
+  });
+}
+function kbCloseHeaderModalDrawer() { UI.closeModal('kb-ph-modal'); }
+
+function kbOpenExampleModal() {
+  UI.openModal({
+    id:       'kb-example-modal',
+    width:    '480px',
+    title:    'Edit Initiative',
+    subtitle: 'Update status, owner and quarter',
+    closeFn:  'kbCloseExampleModal',
+    bodyHtml:
+      UI.field('Title',   UI.input('kb-m-title','text','Initiative name','Analytics dashboard 2.0'), true) +
+      UI.field('Status',  UI.customSelect('kb-m-status', UI.STATUS_OPTS, 'at-risk')) +
+      UI.field('Owner',   UI.customSelect('kb-m-owner', [
+        {val:'bruna', label:'Bruna Coppolino'},
+        {val:'rich',  label:'Rich Kentopp'},
+        {val:'alice', label:'Alice Martin'}
+      ], 'alice')) +
+      UI.field('Quarter', UI.customSelect('kb-m-q', [
+        {val:'Q1',label:'Q1'},{val:'Q2',label:'Q2'},{val:'Q3',label:'Q3'},{val:'Q4',label:'Q4'}
+      ], 'Q2')),
+    footerLeft:  UI.btnDanger('Delete', 'kbCloseExampleModal()'),
+    footerRight: UI.btnCancel('Cancel','kbCloseExampleModal()') + UI.btnPrimary('Save','kbCloseExampleModal()','kb-m-save')
+  });
+}
+function kbCloseExampleModal() { UI.closeModal('kb-example-modal'); }
+
+// ── Multi-step modal (Add Initiative) ─────────────────────────────────────
+var _kbMsStep = 0;
+var _kbMsSteps = [
+  { label: 'Product Info',           sublabel: '' },
+  { label: 'Estimate ROI and Effort', sublabel: '' },
+  { label: 'Create Jira Epics',       sublabel: '' }
+];
+
+function _kbMsBody(step) {
+  // Build steps array for UI.stepperV() with correct statuses
+  var stepsForV = _kbMsSteps.map(function(s, i) {
+    return { label: s.label, status: i < step ? 'done' : i === step ? 'active' : 'pending' };
+  });
+
+  var quarterOpts = [
+    {val:'Q1',label:'Q1'},{val:'Q2',label:'Q2'},
+    {val:'Q3',label:'Q3'},{val:'Q4',label:'Q4'},{val:'backlog',label:'Backlog'}
+  ];
+  var emptyOpts = [{val:'',label:'—'}];
+  var statusList = ['not-started','on-track','at-risk','delayed','on-hold','delivered'];
+
+  var formStep1 =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px">'
+    + UI.field('Quarter',          UI.customSelect('ai-q',    quarterOpts, 'Q2'))
+    + UI.field('Initiative Name',  UI.input('ai-title','text','',''), true)
+    + UI.field('Team',             UI.customSelect('ai-team',  emptyOpts, ''))
+    + UI.field('Theme',            UI.customSelect('ai-theme', emptyOpts, ''))
+    + UI.field('Product Lead',     UI.customSelect('ai-pl',    emptyOpts, ''))
+    + UI.field('Engineering Lead', UI.customSelect('ai-el',    emptyOpts, ''))
+    + '</div>'
+    + UI.field('Link PRD for this Initiative', UI.input('ai-prd','url','https://…',''), false, '14px')
+    + '<div style="margin-bottom:6px"><label style="' + UI.LB + '">Status</label>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">'
+    + statusList.map(function(s, i) {
+        return '<button onclick="kbMsPickStatus(this,\'' + s + '\')" data-s="' + s + '"'
+          + ' style="padding:0;border:' + (i === 0 ? '1.5px solid var(--border-md)' : '1.5px solid transparent') + ';'
+          + 'border-radius:20px;background:none;cursor:pointer;transition:border-color .12s">'
+          + UI.statusChip(s) + '</button>';
+      }).join('')
+    + '</div></div>';
+
+  var formStep2 =
+    '<div style="display:flex;flex-direction:column;gap:14px">'
+    + UI.field('Estimated ROI',    UI.input('ai-roi',   'text',  'e.g. +40%',''))
+    + UI.field('Effort (sprints)', UI.input('ai-effort','number','e.g. 3',   ''))
+    + UI.field('Confidence', UI.customSelect('ai-conf',
+        [{val:'high',label:'High'},{val:'medium',label:'Medium'},{val:'low',label:'Low'}], 'medium'))
+    + '</div>';
+
+  var formStep3 =
+    '<div style="font-size:13px;color:var(--muted);padding:12px 0">'
+    + 'Configure Jira epics for this initiative after creation.'
+    + '</div>';
+
+  return '<div style="display:flex;margin:-20px -24px;min-height:460px">'
+    + '<div style="width:230px;flex-shrink:0;padding:28px 20px 28px 24px;background:var(--bg);border-right:1px solid var(--border)">'
+    +   UI.stepperV(stepsForV)
+    + '</div>'
+    + '<div style="flex:1;padding:28px 24px;overflow-y:auto">'
+    +   [formStep1, formStep2, formStep3][step]
+    + '</div>'
+    + '</div>';
+}
+
+function kbMsPickStatus(btn, val) {
+  document.querySelectorAll('[data-s]').forEach(function(b) {
+    b.style.border = '1.5px solid transparent';
+  });
+  if (btn) btn.style.border = '1.5px solid var(--border-md)';
+}
+
+function kbOpenMultiStepModal() {
+  _kbMsStep = 0;
+  UI.openModal({
+    id:         'kb-ms-modal',
+    width:      '860px',
+    title:      'Add Initiative',
+    closeFn:    'kbCloseMultiStepModal',
+    bodyHtml:   _kbMsBody(0),
+    footerRight: UI.btnCancel('Cancel','kbCloseMultiStepModal()')
+      + UI.btnPrimary('Next &rarr;', 'kbMsNext()', 'kb-ms-next')
+  });
+}
+function kbCloseMultiStepModal() { UI.closeModal('kb-ms-modal'); }
+function kbMsNext() {
+  if (_kbMsStep >= _kbMsSteps.length - 1) { kbCloseMultiStepModal(); return; }
+  _kbMsStep++;
+  var modal = document.getElementById('kb-ms-modal');
+  if (!modal) return;
+  // Update body
+  var body = modal.querySelector('[style*="overflow-y:auto;padding:20px 24px"]');
+  if (body) body.innerHTML = _kbMsBody(_kbMsStep);
+  // Update button label on last step
+  var btn = document.getElementById('kb-ms-next');
+  if (btn) btn.innerHTML = _kbMsStep === _kbMsSteps.length - 1 ? 'Create' : 'Next &rarr;';
+}
+
+// ── Alerts ──────────────────────────────────────────────────────────────────
+var _AT = ['error','success','info','warning'];
+var _AT_FULL = [
+  ['error',   'Something went wrong',  'The request failed. Check your input and try again.'],
+  ['success', 'Changes saved',         'Your initiative has been updated successfully.'],
+  ['info',    'Heads up',              'This action will affect all team members in the selected quarter.'],
+  ['warning', 'Unsaved changes',       'You have unsaved edits. Review before leaving this page.']
+];
+var _AT_SHORT = [
+  ['error',   'Something went wrong — check your input and try again.'],
+  ['success', 'Changes saved successfully.'],
+  ['info',    'This action will affect all team members.'],
+  ['warning', 'You have unsaved changes.']
+];
+document.getElementById('alerts-full-preview').innerHTML =
+  _AT_FULL.map(function(r){ return UI.alertBanner(r[0], r[1], r[2]); }).join('<div style="height:2px"></div>');
+document.getElementById('alerts-icon-preview').innerHTML =
+  _AT_SHORT.map(function(r){ return UI.alertBanner(r[0], '', r[1]); }).join('<div style="height:2px"></div>');
+document.getElementById('alerts-text-preview').innerHTML =
+  _AT_SHORT.map(function(r){ return UI.alertBanner(r[0], '', r[1], null, true); }).join('<div style="height:2px"></div>');
+
+// ── Formula Card ────────────────────────────────────────────────────────────
+(function() {
+  var INFO_SVG = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none">'
+    + '<circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/>'
+    + '<path d="M8 7v5M8 5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
+    + '</svg>';
+
+  // Trigger row: Driver select + "ⓘ How it works" link
+  var triggerRow =
+    '<div style="display:flex;align-items:center;gap:20px;margin-bottom:12px">'
+    + '<div style="display:flex;align-items:center;gap:12px">'
+    +   '<span style="font-size:10px;font-weight:600;letter-spacing:.5px;color:var(--faint)">DRIVER</span>'
+    +   UI.customSelect('fc-driver', UI.DRIVER_OPTS.map(function(d){ return {val:d.val,label:d.label,html:UI.driverChip(d.val)}; }), 'Retention and Expansion')
+    + '</div>'
+    + '<button onclick="var p=document.getElementById(\'kb-fc-panel\');p.style.display=p.style.display===\'none\'?\'block\':\'none\'"'
+    +   ' style="display:inline-flex;align-items:center;gap:5px;border:none;background:none;'
+    +   'cursor:pointer;color:var(--accent);font-size:13px;font-weight:500;font-family:inherit;'
+    +   'padding:0;flex-shrink:0;transition:opacity .12s"'
+    +   ' onmouseenter="this.style.opacity=\'.7\'" onmouseleave="this.style.opacity=\'1\'">'
+    +   INFO_SVG + ' How it works</button>'
+    + '</div>';
+
+  var panel =
+    '<div id="kb-fc-panel">'
+    + UI.formulaCard(
+        'Enhancement Attribution Model',
+        'Attributes a share of existing product revenue to this initiative based on its estimated contribution to growth.',
+        [
+          'Added Value = Product Revenue (last year) × Contribution to Growth%',
+          'ROI = (Added Value − Project Cost) / Project Cost'
+        ],
+        'document.getElementById(\'kb-fc-panel\').style.display=\'none\''
+      )
+    + '</div>';
+
+  document.getElementById('formula-card-preview').innerHTML = triggerRow + panel;
+})();
+
+// ── Sidebar active state on scroll ─────────────────────────────────────────
+function _kbNoop()  {}
+function _kbNoop2() {}
+
+var sections = document.querySelectorAll('.kb-section');
+var links = document.querySelectorAll('.kb-sidebar-item');
+window.addEventListener('scroll', function() {
+  var scrollY = window.scrollY + 80;
+  sections.forEach(function(s) {
+    if (s.offsetTop <= scrollY && s.offsetTop + s.offsetHeight > scrollY) {
+      links.forEach(function(l) { l.classList.toggle('act', l.getAttribute('href') === '#' + s.id); });
+    }
+  });
+}, {passive:true});
+</script>
+</body>
+</html>

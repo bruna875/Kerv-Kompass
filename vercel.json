@@ -2,6 +2,10 @@
   "rewrites": [
     { "source": "/taxonomy-v1/standalone", "destination": "/taxonomy-standalone.html" },
     { "source": "/product-spec", "destination": "/product-spec.html" },
+    { "source": "/submit-product-request", "destination": "/submit-product-request.html" },
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/api/cron/cap-report", "schedule": "0 8 5 * *" }
   ]
 }

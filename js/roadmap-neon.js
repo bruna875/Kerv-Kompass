@@ -28,6 +28,7 @@ var rnxInitiatives  = [];
 var rnxLoading      = false;
 var rnxGanttGroup   = 'driver';
 var rnxGroupKey     = 'driver'; // active tab in grouped analysis card
+var rnxActiveMainTab = 'table'; // remembers active main-tab across year changes
 var _rnxJiraProjects = [];
 var rnxEditId       = null;  // null = new, number = editing
 var rnxModalStep2Data = {};  // persists step-2 ROI fields between steps and across edits
@@ -37,11 +38,11 @@ var rnxRefData = { teams: [], members: [], drivers: [], themes: [], assumptions:
 
 var rnxDeliveryOpts = [
   { val: 'not-started', label: 'Not Started', cls: 'ds-gray'   },
-  { val: 'on-track',    label: 'On Track',    cls: 'ds-green'  },
+  { val: 'on-track',    label: 'On Track',    cls: 'ds-blue'   },
   { val: 'at-risk',     label: 'At Risk',     cls: 'ds-yellow' },
   { val: 'delayed',     label: 'Delayed',     cls: 'ds-red'    },
   { val: 'on-hold',     label: 'On Hold',     cls: 'ds-orange' },
-  { val: 'delivered',   label: 'Delivered',   cls: 'ds-blue'   }
+  { val: 'delivered',   label: 'Delivered',   cls: 'ds-green'  }
 ];
 
 var rnxConfidenceOpts = ['low', 'medium', 'high'];
@@ -187,14 +188,16 @@ function rnxScInitiativesFor(subset, label) {
   var on = subset.filter(function(i) { return i.deliveryStatus === 'on-track';    }).length;
   var ar = subset.filter(function(i) { return i.deliveryStatus === 'at-risk';     }).length;
   var dl = subset.filter(function(i) { return i.deliveryStatus === 'delayed';     }).length;
+  var dv = subset.filter(function(i) { return i.deliveryStatus === 'delivered';   }).length;
   return '<div class="mcard" id="rnx-sc-init">'
     + '<div class="mlabel">Initiatives <span class="mlabel-sub">' + label + '</span></div>'
     + '<div class="mval">' + subset.length + '</div>'
     + '<div class="sc-badges">'
-    + '<span class="sc-badge ds-gray">'   + ns + ' Not Started</span>'
-    + '<span class="sc-badge ds-green">'  + on + ' On Track</span>'
-    + '<span class="sc-badge ds-yellow">' + ar + ' At Risk</span>'
-    + '<span class="sc-badge ds-red">'    + dl + ' Delayed</span>'
+    + (dv>0?'<span class="sc-badge ds-green">'  + dv + ' Delivered</span>':'')
+    + (on>0?'<span class="sc-badge ds-blue">'   + on + ' On Track</span>':'')
+    + (ar>0?'<span class="sc-badge ds-yellow">' + ar + ' At Risk</span>':'')
+    + (dl>0?'<span class="sc-badge ds-red">'    + dl + ' Delayed</span>':'')
+    + (ns>0?'<span class="sc-badge ds-gray">'   + ns + ' Not Started</span>':'')
     + '</div></div>';
 }
 
@@ -202,7 +205,7 @@ function rnxScGroupedFor(id, label, key, subset, qlabel) {
   var groups = {};
   subset.forEach(function(i) {
     var k = i[key];
-    if (!groups[k]) groups[k] = { 'not-started': 0, 'on-track': 0, 'at-risk': 0, 'delayed': 0, count: 0 };
+    if (!groups[k]) groups[k] = { 'not-started': 0, 'on-track': 0, 'at-risk': 0, 'delayed': 0, 'delivered': 0, count: 0 };
     groups[k][i.deliveryStatus]++;
     groups[k].count++;
   });
@@ -218,10 +221,11 @@ function rnxScGroupedFor(id, label, key, subset, qlabel) {
   var donutSlices = keys.map(function(k, ki) { return { v: groups[k].count, c: getC(k, ki) }; });
   var rows = keys.map(function(k, ki) {
     var g = groups[k], pills = '';
-    if (g['not-started'] > 0) pills += '<span class="mini-pill ds-gray">'   + g['not-started'] + '</span>';
-    if (g['on-track']    > 0) pills += '<span class="mini-pill ds-green">'  + g['on-track']    + '</span>';
+    if (g['delivered']   > 0) pills += '<span class="mini-pill ds-green">'  + g['delivered']   + '</span>';
+    if (g['on-track']    > 0) pills += '<span class="mini-pill ds-blue">'   + g['on-track']    + '</span>';
     if (g['at-risk']     > 0) pills += '<span class="mini-pill ds-yellow">' + g['at-risk']     + '</span>';
     if (g['delayed']     > 0) pills += '<span class="mini-pill ds-red">'    + g['delayed']     + '</span>';
+    if (g['not-started'] > 0) pills += '<span class="mini-pill ds-gray">'   + g['not-started'] + '</span>';
     return '<div class="sc-legend-item">'
       + '<div class="sc-legend-left"><span class="sc-legend-dot" style="background:' + getC(k, ki) + '"></span><span class="sc-legend-name">' + k + '</span></div>'
       + '<div class="sc-legend-pills">' + pills + '</div></div>';
@@ -270,6 +274,8 @@ function rnxRefreshCards(subset, label) {
   if (sc) sc.outerHTML = rnxScInitiativesFor(subset, label);
   var gc = document.getElementById('rnx-grouped-card');
   if (gc) gc.outerHTML = rnxGroupedChartCard(subset);
+  var sub = document.querySelector('.rnx-analysis-hd-sub');
+  if (sub) sub.textContent = label + ' · ' + subset.length + ' initiatives';
   setTimeout(function() { rnxRenderGroupChart(rnxGroupKey, subset); rnxWireGroupTabs(subset); }, 0);
 }
 
@@ -280,27 +286,38 @@ function rnxGroupedChartCard(subset) {
     { key: 'driver', label: 'By Driver' },
     { key: 'theme',  label: 'By Theme'  },
     { key: 'team',   label: 'By Team'   },
+    { key: 'roi',    label: 'By ROI'    },
   ];
+  // Pre-compute shared delivery status counts (same for all tabs)
+  var _ns=0, _on=0, _ar=0, _dl=0, _dv=0;
+  subset.forEach(function(i) {
+    if      (i.deliveryStatus === 'not-started') _ns++;
+    else if (i.deliveryStatus === 'on-track')    _on++;
+    else if (i.deliveryStatus === 'at-risk')     _ar++;
+    else if (i.deliveryStatus === 'delayed')     _dl++;
+    else if (i.deliveryStatus === 'delivered')   _dv++;
+  });
+  var sharedBadges = '';
+  if (_ns>0) sharedBadges += '<span class="mini-pill ds-gray">'   + _ns + '</span>';
+  if (_dv>0) sharedBadges += '<span class="mini-pill ds-green">'  + _dv + '</span>';
+  if (_on>0) sharedBadges += '<span class="mini-pill ds-blue">'   + _on + '</span>';
+  if (_ar>0) sharedBadges += '<span class="mini-pill ds-yellow">' + _ar + '</span>';
+  if (_dl>0) sharedBadges += '<span class="mini-pill ds-red">'    + _dl + '</span>';
+
   var tabsHtml = tabs.map(function(t) {
-    var ns=0, on=0, ar=0, dl=0;
-    subset.forEach(function(i) {
-      if      (i.deliveryStatus === 'not-started') ns++;
-      else if (i.deliveryStatus === 'on-track')    on++;
-      else if (i.deliveryStatus === 'at-risk')     ar++;
-      else if (i.deliveryStatus === 'delayed')     dl++;
-    });
     var total = subset.length;
-    // per-tab total: count distinct entries with at least 1 item
-    var keys = []; subset.forEach(function(i) { var k=(i[t.key]||'').trim(); if(k && keys.indexOf(k)===-1) keys.push(k); });
-    var badges = '';
-    if (ns>0) badges += '<span class="mini-pill ds-gray">'   + ns + '</span>';
-    if (on>0) badges += '<span class="mini-pill ds-green">'  + on + '</span>';
-    if (ar>0) badges += '<span class="mini-pill ds-yellow">' + ar + '</span>';
-    if (dl>0) badges += '<span class="mini-pill ds-red">'    + dl + '</span>';
+    var countLine;
+    if (t.key === 'roi') {
+      var roiCount = subset.filter(function(i) { return !isNaN(parseFloat(i.roi)); }).length;
+      countLine = roiCount + ' <span style="font-size:10px;font-weight:400;color:var(--muted)">with ROI · ' + total + ' items</span>';
+    } else {
+      var keys = []; subset.forEach(function(i) { var k=(i[t.key]||'').trim(); if(k && keys.indexOf(k)===-1) keys.push(k); });
+      countLine = keys.length + ' <span style="font-size:10px;font-weight:400;color:var(--muted)">groups · ' + total + ' items</span>';
+    }
     return '<button class="rnx-gtab' + (t.key === rnxGroupKey ? ' act' : '') + '" data-rnxgtab="' + t.key + '">'
       + '<div class="rnx-gtab-label">' + t.label + '</div>'
-      + '<div class="rnx-gtab-count">' + keys.length + ' <span style="font-size:10px;font-weight:400;color:var(--muted)">groups · ' + total + ' items</span></div>'
-      + '<div class="rnx-gtab-badges">' + badges + '</div>'
+      + '<div class="rnx-gtab-count">' + countLine + '</div>'
+      + '<div class="rnx-gtab-badges">' + sharedBadges + '</div>'
       + '</button>';
   }).join('');
   return '<div class="rnx-grouped-card" id="rnx-grouped-card">'
@@ -312,20 +329,62 @@ function rnxGroupedChartCard(subset) {
 function rnxRenderGroupChart(key, subset) {
   var canvas = document.getElementById('rnx-group-chart');
   if (!canvas || typeof Chart === 'undefined') return;
+  if (window._rnxGroupChart) { window._rnxGroupChart.destroy(); window._rnxGroupChart = null; }
+
+  // ── ROI scatter ─────────────────────────────────────────────────────────────
+  if (key === 'roi') {
+    var drivers = [];
+    subset.forEach(function(i) { if (i.driver && drivers.indexOf(i.driver) === -1) drivers.push(i.driver); });
+    drivers.sort();
+    var datasets = drivers.map(function(d) {
+      var color = kervDriverColor(d);
+      var pts = subset.filter(function(i) { return i.driver === d; }).map(function(i) {
+        var av = parseFloat(i.addedValue), roi = parseFloat(i.roi);
+        if (isNaN(av) || isNaN(roi)) return null;
+        return { x: Math.round(roi * 100), y: av, label: i.title, quarter: i.quarter };
+      }).filter(Boolean);
+      return { label: d, data: pts, backgroundColor: color + '99', borderColor: color, pointRadius: 7, pointHoverRadius: 10 };
+    });
+    window._rnxGroupChart = new Chart(canvas, {
+      type: 'scatter',
+      data: { datasets: datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 6, boxHeight: 6, padding: 12, font: { size: 10, family: 'inherit' } } },
+          tooltip: {
+            callbacks: {
+              title: function(items) { return items[0].raw.label; },
+              label: function(c) { return 'ROI: ' + c.raw.x + '%  ·  Added Value: $' + c.raw.y + 'K'; },
+              afterLabel: function(c) { return c.raw.quarter || ''; }
+            }
+          }
+        },
+        scales: {
+          x: { title: { display: true, text: 'ROI %', font: { size: 10, family: 'inherit' } }, ticks: { font: { size: 10, family: 'inherit' }, callback: function(v) { return v + '%'; } }, grid: { color: 'rgba(0,0,0,.05)' } },
+          y: { title: { display: true, text: 'Added Value ($K)', font: { size: 10, family: 'inherit' } }, ticks: { font: { size: 10, family: 'inherit' }, callback: function(v) { return '$' + v + 'K'; } }, grid: { color: 'rgba(0,0,0,.05)' }, border: { display: false } }
+        },
+        layout: { padding: 8 }
+      }
+    });
+    return;
+  }
+
+  // ── Stacked bar (Driver / Theme / Team) ──────────────────────────────────────
   var groups = {};
   subset.forEach(function(i) {
     var k = (i[key] || '—').trim() || '—';
-    if (!groups[k]) groups[k] = { 'not-started':0, 'on-track':0, 'at-risk':0, 'delayed':0 };
+    if (!groups[k]) groups[k] = { 'not-started':0, 'on-track':0, 'at-risk':0, 'delayed':0, 'delivered':0 };
     groups[k][i.deliveryStatus || 'not-started']++;
   });
   var labels = Object.keys(groups).sort();
-  if (window._rnxGroupChart) { window._rnxGroupChart.destroy(); window._rnxGroupChart = null; }
   window._rnxGroupChart = new Chart(canvas, {
     type: 'bar',
     data: {
       labels: labels,
       datasets: [
-        { label: 'On Track',    data: labels.map(function(k){return groups[k]['on-track'];   }), backgroundColor: '#2EAD4B', borderRadius: 0 },
+        { label: 'Delivered',   data: labels.map(function(k){return groups[k]['delivered'];  }), backgroundColor: '#2EAD4B', borderRadius: 0 },
+        { label: 'On Track',    data: labels.map(function(k){return groups[k]['on-track'];   }), backgroundColor: '#0EA5E9', borderRadius: 0 },
         { label: 'At Risk',     data: labels.map(function(k){return groups[k]['at-risk'];    }), backgroundColor: '#E5A100', borderRadius: 0 },
         { label: 'Delayed',     data: labels.map(function(k){return groups[k]['delayed'];    }), backgroundColor: '#E5243B', borderRadius: 0 },
         { label: 'Not Started', data: labels.map(function(k){return groups[k]['not-started'];}), backgroundColor: '#C8C8C8', borderRadius: 0 },
@@ -484,6 +543,21 @@ function rnxApplyFilters(sfx, selector) {
 
 // Thin wrappers — keep all existing call-sites working unchanged
 function rnxApplyTableFilters()   { rnxApplyFilters('',   '#rnx-table-body tr'); }
+
+function rnxToggleAnalysis() {
+  var body = document.getElementById('rnx-analysis-body');
+  var chev = document.getElementById('rnx-analysis-chev');
+  if (!body) return;
+  var collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  if (chev) chev.style.transform = collapsed ? 'rotate(0deg)' : 'rotate(180deg)';
+  try { localStorage.setItem('rnx-analysis-collapsed', collapsed ? '0' : '1'); } catch(e) {}
+  if (collapsed) {
+    var cq = rnxCurrentQ();
+    var sub = cq === 'all' ? rnxInitiatives : rnxInitiatives.filter(function(i) { return i.quarter === cq; });
+    setTimeout(function() { rnxRenderGroupChart(rnxGroupKey, sub); }, 50);
+  }
+}
 function rnxApplyKanbanFilters()  { rnxApplyFilters('q',  '#rnx-kanban .kancard'); }
 function rnxApplyBacklogFilters() { rnxApplyFilters('bl', '#rnx-backlog-body tr'); }
 
@@ -523,20 +597,21 @@ function rnxWireFilterBar(sfx, selector) {
 // ── Quarter filter pill row ────────────────────────────────────────────────
 
 function rnxQFilter(prefix, fn) {
-  var cq = rnxCurrentQ();
-  var opts = RNX_QUARTERS.concat(['all']);
-  return '<div class="qfilter">' + opts.map(function(q) {
-    var lbl = q === 'all' ? 'All' : q;
-    return '<button id="' + prefix + '-btn-' + q + '" class="qfilter-btn' + (q === cq ? ' act' : '') + '"'
-      + ' data-rnxqfn="' + fn + '" data-q="' + q + '">' + lbl + '</button>';
-  }).join('') + '</div>';
+  var cq   = rnxCurrentQ();
+  var chips = RNX_QUARTERS.concat(['all']).map(function(q) {
+    return { id: q, label: q === 'all' ? 'All' : q };
+  });
+  return '<div id="' + prefix + '-qwrap" style="margin-bottom:16px">'
+    + UI.chipsNavSm(chips, cq, fn)
+    + '</div>';
 }
 
 function rnxSetQAct(prefix, q) {
-  var opts = RNX_QUARTERS.concat(['all']);
-  opts.forEach(function(b) {
-    var el = document.getElementById(prefix + '-btn-' + b);
-    if (el) el.classList.toggle('act', b === q);
+  var wrap = document.getElementById(prefix + '-qwrap');
+  if (!wrap) return;
+  var target = q === 'all' ? 'All' : q;
+  wrap.querySelectorAll('.chip-sm').forEach(function(btn) {
+    btn.classList.toggle('act', btn.textContent.trim() === target);
   });
 }
 
@@ -578,6 +653,11 @@ function rnxSetQAct(prefix, q) {
     // Tighter table cells (scoped to roadmap table only)
     '.rnx-table td{padding:7px 10px;font-size:11px}' +
     '.rnx-table th{padding:7px 10px;font-size:10px}' +
+    // Sticky first two columns
+    '.rnx-table th:nth-child(1),.rnx-table td:nth-child(1){position:sticky;left:0;z-index:3;background:var(--surface);width:90px;min-width:90px;max-width:90px}' +
+    '.rnx-table th:nth-child(2),.rnx-table td:nth-child(2){position:sticky;left:90px;z-index:3;background:var(--surface)}' +
+    '.rnx-table.rnx-tbl-scrolled th:nth-child(2),.rnx-table.rnx-tbl-scrolled td:nth-child(2){border-right:1px solid rgba(0,0,0,.20);box-shadow:3px 0 8px rgba(0,0,0,.08)}' +
+    '.rnx-table thead th:nth-child(1),.rnx-table thead th:nth-child(2){z-index:4}' +
     // Modal form fields
     '.rnx-modal-sel{width:100%;box-sizing:border-box;padding:7px 36px 7px 10px;font-size:13px;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);outline:none;font-family:inherit;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg width=\'10\' height=\'6\' viewBox=\'0 0 10 6\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1l4 4 4-4\' stroke=\'%23A8A8A0\' stroke-width=\'1.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;cursor:pointer}' +
     '.rnx-modal-sel:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(237,0,94,.08)}' +
@@ -975,11 +1055,10 @@ function rnxOpenModalOnStep3(id) {
 
 // Interpolates from a light accent tint (0%) to full accent #ED005E (100%)
 function rnxEpicBarColor(pct) {
-  var t = Math.max(0, Math.min(100, pct)) / 100;
-  var r = Math.round(252 + (237 - 252) * t);  // 252 → 237
-  var g = Math.round(210 + (0   - 210) * t);  // 210 → 0
-  var b = Math.round(228 + (94  - 228) * t);  // 228 → 94
-  return 'rgb(' + r + ',' + g + ',' + b + ')';
+  if (pct === 0)   return '#8E8E93';  // gray — not started
+  if (pct === 100) return '#2EAD4B';  // green — delivered
+  if (pct >= 80)   return '#86EFAC';  // light green — almost done
+  return '#0EA5E9';                   // azure — in progress
 }
 
 function rnxFetchJiraProgress() {
@@ -1029,14 +1108,9 @@ function rnxFetchJiraProgress() {
 }
 
 function rnxUpdateBacklogBadge() {
-  var btn = document.querySelector('[data-rnxtab="backlog"]');
-  if (!btn) return;
-  var count = rnxInitiatives.filter(function(x) { return (x.quarter||'').toLowerCase() === 'backlog'; }).length;
-  var badge = btn.querySelector('span');
-  if (badge) {
-    badge.textContent = count;
-    badge.style.display = count > 0 ? '' : 'none';
-  }
+  // Re-render pills to reflect updated backlog count badge
+  var pWrap = document.getElementById('rnx-main-pills');
+  if (pWrap) pWrap.innerHTML = UI.pills(_rnxMainTabItems(), rnxActiveMainTab, 'rnxSwitchMainTab');
 }
 
 function rnxSaveInline(id) {
@@ -1332,11 +1406,13 @@ function rnxQuarterlyBars() {
     var on = items.filter(function(i) { return i.deliveryStatus === 'on-track';    }).length;
     var ar = items.filter(function(i) { return i.deliveryStatus === 'at-risk';     }).length;
     var dl = items.filter(function(i) { return i.deliveryStatus === 'delayed';     }).length;
+    var dv = items.filter(function(i) { return i.deliveryStatus === 'delivered';   }).length;
     var avSum = 0;
     items.forEach(function(i) { var n = parseFloat(i.addedValue); if (!isNaN(n)) avSum += n; });
     var avLbl = avSum >= 1000000 ? '$' + (avSum/1000000).toFixed(1)+'M' : avSum >= 1000 ? '$'+(avSum/1000).toFixed(0)+'K' : avSum > 0 ? '$'+avSum.toFixed(0) : '—';
-    var nsW = Math.round(ns/total*100), onW = Math.round(on/total*100), arW = Math.round(ar/total*100), dlW = Math.round(dl/total*100);
-    var meta = (ns>0?ns+' not started · ':'')+(on>0?on+' on track · ':'')+(ar>0?ar+' at risk · ':'')+(dl>0?dl+' delayed':'');
+    var nsW = Math.round(ns/total*100), onW = Math.round(on/total*100), arW = Math.round(ar/total*100), dlW = Math.round(dl/total*100), dvW = Math.round(dv/total*100);
+    var meta = (dv>0?dv+' delivered · ':'')+(on>0?on+' on track · ':'')+(ar>0?ar+' at risk · ':'')+(dl>0?dl+' delayed · ':'')+(ns>0?ns+' not started':'');
+    meta = meta.replace(/ · $/, '');
     if (items.length===0) meta = 'No initiatives';
     var roiSum=0, roiCount=0;
     items.forEach(function(i) { var r=parseFloat(i.roi); if(!isNaN(r)){roiSum+=r;roiCount++;} });
@@ -1344,10 +1420,11 @@ function rnxQuarterlyBars() {
     return '<div class="qp-card">'
       + '<div class="qp-card-head"><span class="qp-card-q">' + q + '</span><span class="qp-card-count">' + items.length + '</span></div>'
       + '<div class="qp-card-bars"><div class="qp-bar-track">'
-      + (nsW>0?'<div class="qp-bar-seg-gray"   style="flex:'+nsW+'"></div>':'')
-      + (onW>0?'<div class="qp-bar-seg-green"  style="flex:'+onW+'"></div>':'')
+      + (dvW>0?'<div class="qp-bar-seg-green"  style="flex:'+dvW+'"></div>':'')
+      + (onW>0?'<div class="qp-bar-seg-blue"   style="flex:'+onW+'"></div>':'')
       + (arW>0?'<div class="qp-bar-seg-yellow" style="flex:'+arW+'"></div>':'')
       + (dlW>0?'<div class="qp-bar-seg-red"    style="flex:'+dlW+'"></div>':'')
+      + (nsW>0?'<div class="qp-bar-seg-gray"   style="flex:'+nsW+'"></div>':'')
       + (items.length===0?'<div class="qp-bar-seg-empty" style="flex:1"></div>':'')
       + '</div><div class="qp-card-meta">'+meta+'</div></div>'
       + '<div class="qp-card-roi"><div class="qp-card-roi-label">Avg ROI</div><div class="qp-card-roi-val">'+roiPct+' <span class="qp-card-roi-sub">('+avLbl+')</span></div></div>'
@@ -1360,7 +1437,7 @@ function rnxQuarterlyBars() {
 function rnxBuildGantt() {
   var cq = rnxCurrentQ();
   var gk = rnxGanttGroup;
-  var statusColors = { 'on-track':'#2EAD4B','at-risk':'#E5A100','delayed':'#E5243B','not-started':'#8E8E93' };
+  var statusColors = { 'on-track':'#0EA5E9','at-risk':'#E5A100','delayed':'#E5243B','not-started':'#8E8E93','delivered':'#2EAD4B' };
   var statusLabels = { 'on-track':'On Track','at-risk':'At Risk','delayed':'Delayed','not-started':'Not Started' };
 
   var groups = {};
@@ -1391,7 +1468,8 @@ function rnxBuildGantt() {
     + '</div>';
 
   var legend = '<div class="gantt-legend">'
-    + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#2EAD4B"></span>On Track</span>'
+    + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#0EA5E9"></span>On Track</span>'
+    + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#2EAD4B"></span>Delivered</span>'
     + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#E5A100"></span>At Risk</span>'
     + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#8E8E93"></span>Not Started</span>'
     + '<span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#E5243B"></span>Delayed</span>'
@@ -2209,6 +2287,11 @@ function rnxSaveInitiative(afterSave) {
   .then(function(res) {
     console.error('[rnxSaveInitiative] server response:', JSON.stringify(res));
     if (!res.ok) throw new Error(res.error || 'Save failed');
+    // If this save was triggered from a product-ideas promote flow, mark it promoted
+    if (window._piPromoteReqId && res.id && typeof piMarkPromoted === 'function') {
+      piMarkPromoted(window._piPromoteReqId, res.id);
+      window._piPromoteReqId = null;
+    }
     if (typeof afterSave === 'function') {
       afterSave(res);
       return;
@@ -2287,13 +2370,13 @@ function rnxStep3SetMode(mode) {
     if (tabLink)     tabLink.style.cssText     = TAB_IDLE;
     if (panelCreate) panelCreate.style.display = 'block';
     if (panelLink)   panelLink.style.display   = 'none';
-    if (saveBtn)     saveBtn.textContent = 'Create Epics & Save';
+    if (saveBtn)     saveBtn.textContent = 'Save Initiative';
   } else {
     if (tabCreate)   tabCreate.style.cssText   = TAB_IDLE;
     if (tabLink)     tabLink.style.cssText     = TAB_ACT;
     if (panelCreate) panelCreate.style.display = 'none';
     if (panelLink)   panelLink.style.display   = 'block';
-    if (saveBtn)     saveBtn.textContent = 'Link Epics & Save';
+    if (saveBtn)     saveBtn.textContent = 'Save Initiative';
     // Epics load when the user opens the dropdown (rnxToggleEpicPickerDd)
   }
 }
@@ -2362,6 +2445,7 @@ function rnxRenderEpicPicker() {
 
   var q = ((document.getElementById('rnx-epic-search') || {}).value || '').toLowerCase();
   var filtered = _rnxProjectEpics.filter(function(e) {
+    if (e.statusCategory === 'done') return false;
     return !q || e.summary.toLowerCase().indexOf(q) !== -1 || e.key.toLowerCase().indexOf(q) !== -1;
   });
 
@@ -2592,7 +2676,7 @@ function rnxUpdateStatus(id, val) {
 // ── Jira Projects — load from settings ────────────────────────────────────
 
 function rnxLoadJiraProjects() {
-  fetch('/api/neon/lookup?t=jira-projects').then(function(r) { return r.json(); }).then(function(rows) {
+  fetch('/api/neon/jira-projects').then(function(r) { return r.json(); }).then(function(rows) {
     if (Array.isArray(rows)) {
       _rnxJiraProjects = rows;
       // Re-render picker if the modal panel is currently in the DOM
@@ -2623,14 +2707,56 @@ function rnxBuildProjectOptions() {
 
 // ── API — load ─────────────────────────────────────────────────────────────
 
+// ── Modal-on-body helpers (used by product-ideas "Convert to Initiative") ──────
+
+// Ensures #rnx-modal-overlay is a direct child of document.body (position:fixed, persists across page nav).
+// If it exists inside the content div, moves it. If it doesn't exist, builds it from rnxRefData.
+function rnxEnsureBodyModal() {
+  var existing = document.getElementById('rnx-modal-overlay');
+  if (existing) {
+    if (existing.parentNode !== document.body) document.body.appendChild(existing);
+    return;
+  }
+  if (!rnxRefData.teams.length && !rnxRefData.themes.length) return; // no data yet
+  var tmp = document.createElement('div');
+  tmp.innerHTML = rnxModalHtml();
+  document.body.appendChild(tmp.firstChild);
+}
+
+// Loads only the ref data needed for the modal (teams, themes, members, drivers).
+// If ref data is already populated, calls cb() immediately after ensuring modal.
+// Used by product-ideas to open the modal without navigating to the roadmap page.
+function rnxLoadRefDataForModal(cb) {
+  if (rnxRefData.teams.length || rnxRefData.themes.length) {
+    rnxEnsureBodyModal();
+    cb();
+    return;
+  }
+  Promise.all([
+    fetch('/api/neon/lookup?t=teams').then(function(r) { return r.json(); }),
+    fetch('/api/neon/lookup?t=themes').then(function(r) { return r.json(); }),
+    fetch('/api/neon/team-members').then(function(r) { return r.json(); }),
+    fetch('/api/neon/lookup?t=drivers').then(function(r) { return r.json(); })
+  ]).then(function(results) {
+    rnxRefData.teams   = Array.isArray(results[0]) ? results[0] : [];
+    rnxRefData.themes  = Array.isArray(results[1]) ? results[1] : [];
+    rnxRefData.members = Array.isArray(results[2]) ? results[2] : [];
+    rnxRefData.drivers = Array.isArray(results[3]) ? results[3] : [];
+    rnxBuildColorMaps();
+    rnxEnsureBodyModal();
+    rnxLoadJiraProjects(); // for step 3 epics
+    cb();
+  }).catch(function() { cb(); });
+}
+
 function rnxLoadAndRender() {
   var container = document.getElementById('rnx-content');
   if (!container) return;
 
-  // Preserve active tab across reload
-  var activeTab = 'gantt';
-  var tabBtns = document.querySelectorAll('.rnx-tabitem.act');
-  if (tabBtns.length > 0) activeTab = tabBtns[0].dataset.rnxtab || 'gantt';
+  // Preserve active tab across reload (default: table)
+  // window._rnxInitTab can be set by callers to force a specific tab on first load
+  var activeTab = window._rnxInitTab || rnxActiveMainTab || 'table';
+  window._rnxInitTab = null;
 
   container.innerHTML = _RNX_LOADER_HTML;
 
@@ -2663,6 +2789,7 @@ function rnxLoadAndRender() {
     rnxRefData.members        = Array.isArray(results[4]) ? results[4] : [];
     rnxRefData.assumptions    = Array.isArray(results[5]) ? results[5] : [];
     rnxBuildColorMaps();
+    rnxEnsureBodyModal();
     container.innerHTML = rnxBuildInner(activeTab);
     var rnxYnEl = document.getElementById('rnx-year-nav');
     if (rnxYnEl) rnxYnEl.innerHTML = rnxBuildYearNav('rnx', rnxAllInitiatives, rnxSelYear);
@@ -2732,13 +2859,8 @@ function rnxAssignFromBacklog(id, quarter) {
     // Re-render the backlog panel with the item removed
     var panel = document.getElementById('rnx-rt-backlog');
     if (panel) panel.innerHTML = rnxBacklogContent();
-    // Update badge count in the backlog button
-    var backlogBtn = document.querySelector('[data-rnxtab="backlog"]');
-    if (backlogBtn) {
-      var remaining = rnxInitiatives.filter(function(x) { return (x.quarter||'').toLowerCase() === 'backlog'; }).length;
-      var badge = backlogBtn.querySelector('span');
-      if (badge) badge.textContent = remaining;
-    }
+    // Update badge count in the backlog pill
+    rnxUpdateBacklogBadge();
   })
   .catch(function(e) { alert('Save failed: ' + e.message); });
 }
@@ -2749,31 +2871,9 @@ function rnxBuildInner(activeTab) {
   var cq     = rnxCurrentQ();
   var subset = rnxInitiatives.filter(function(i) { return i.quarter === cq; });
 
-  function tab(id, label) {
-    return '<button class="tabitem rnx-tabitem' + (id === activeTab ? ' act' : '') + '" data-rnxtab="' + id + '">' + label + '</button>';
-  }
-
   var tableRows = rnxTableRows(subset);
 
-  var backlogCount = rnxInitiatives.filter(function(i) { return (i.quarter||'').toLowerCase() === 'backlog'; }).length;
-  var backlogBadge = backlogCount > 0
-    ? '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font-size:10px;font-weight:600;background:var(--border-md);color:var(--muted);margin-left:5px;line-height:1">' + backlogCount + '</span>'
-    : '';
-
-  return '<div style="display:flex;align-items:center;gap:0;margin-bottom:20px">'
-    + '<div class="tabnav" style="margin-bottom:0">'
-    +   tab('table',     'Table View')
-    +   tab('gantt',     'Gantt')
-    +   tab('quarterly', 'Quarterly Kanban')
-    +   tab('roi',       'By ROI')
-    + '</div>'
-    + '<div style="width:1px;height:24px;background:var(--border);margin:0 10px;flex-shrink:0"></div>'
-    + '<div class="tabnav" style="margin-bottom:0">'
-    +   '<button class="tabitem rnx-tabitem' + (activeTab==='backlog'?' act':'') + '" data-rnxtab="backlog">'
-    +     'Backlog' + backlogBadge
-    +   '</button>'
-    + '</div>'
-    + '</div>'
+  return '<div id="rnx-main-pills" style="margin-bottom:20px">' + UI.pills(_rnxMainTabItems(), activeTab, 'rnxSwitchMainTab') + '</div>'
 
     // ── Gantt ──
     + '<div id="rnx-rt-gantt" class="tabpanel' + (activeTab==='gantt'?' act':'') + '">'
@@ -2783,16 +2883,32 @@ function rnxBuildInner(activeTab) {
     // ── Table ──
     + '<div id="rnx-rt-table" class="tabpanel' + (activeTab==='table'?' act':'') + '">'
     +   rnxQFilter('rnx-tbl', 'rnxSwitchTableQuarter')
-    +   '<div class="rnx-analysis-row">'
-    +     '<div class="rnx-analysis-total">' + rnxScInitiativesFor(subset, rnxCurrentQLabel()) + '</div>'
-    +     rnxGroupedChartCard(subset)
-    +   '</div>'
+    +   (function() {
+          var collapsed = (function(){ try { return localStorage.getItem('rnx-analysis-collapsed') === '1'; } catch(e){ return false; } })();
+          return '<div class="rnx-analysis-wrap">'
+            + '<div class="rnx-analysis-hd" onclick="rnxToggleAnalysis()">'
+            +   '<div class="rnx-analysis-hd-left">'
+            +     '<span class="rnx-analysis-hd-title">Analysis</span>'
+            +     '<span class="rnx-analysis-hd-sub">' + rnxCurrentQLabel() + ' · ' + subset.length + ' initiatives</span>'
+            +   '</div>'
+            +   '<button class="rnx-analysis-chev" id="rnx-analysis-chev" style="transform:rotate(' + (collapsed ? '180' : '0') + 'deg)">'
+            +     '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+            +   '</button>'
+            + '</div>'
+            + '<div class="rnx-analysis-body" id="rnx-analysis-body" style="' + (collapsed ? 'display:none' : '') + '">'
+            +   '<div class="rnx-analysis-row">'
+            +     '<div class="rnx-analysis-total">' + rnxScInitiativesFor(subset, rnxCurrentQLabel()) + '</div>'
+            +     rnxGroupedChartCard(subset)
+            +   '</div>'
+            + '</div>'
+            + '</div>';
+        })()
     +   '<div class="twrap">'
     +     '<div class="thead-row">Initiatives</div>'
     +     '<div style="padding:12px 18px 4px">' + rnxFilterBar() + '</div>'
-    +     '<div style="overflow-x:auto">'
-    +     '<table class="rnx-table" style="min-width:1100px"><thead><tr>'
-    +       '<th>Quarter</th><th>Initiative</th><th>Progress</th><th>Driver</th><th>Team</th>'
+    +     '<div id="rnx-tbl-scroll" style="overflow-x:auto">'
+    +     '<table id="rnx-tbl-inner" class="rnx-table" style="min-width:1100px"><thead><tr>'
+    +       '<th style="width:90px">Quarter</th><th>Initiative</th><th>Progress</th><th>Driver</th><th>Team</th>'
     +       '<th>Product Owner</th><th>Tech Lead</th><th>Theme</th>'
     +       '<th>ROI</th><th>Status</th><th></th>'
     +     '</tr></thead>'
@@ -2820,8 +2936,8 @@ function rnxBuildInner(activeTab) {
     +   rnxBacklogContent()
     + '</div>'
 
-    // ── Modal (rendered here so rnxRefData is already populated) ──
-    + rnxModalHtml();
+    // ── Modal lives on document.body (rnxEnsureBodyModal) — not injected here ──
+    ;
 }
 
 // ── Gantt group-by wiring (called on init and after every gantt rebuild) ──────
@@ -2853,48 +2969,63 @@ function rnxWireBacklogEvents() {
   });
 }
 
+// ── Main-tab switch (called by UI.pills onclick) ───────────────────────────
+
+function _rnxMainTabItems() {
+  var backlogCount = rnxInitiatives.filter(function(i) { return (i.quarter||'').toLowerCase() === 'backlog'; }).length;
+  return [
+    { id: 'table',     label: 'Table View'       },
+    { id: 'gantt',     label: 'Gantt'            },
+    { id: 'quarterly', label: 'Quarterly Kanban' },
+    { id: 'roi',       label: 'By ROI'           },
+    { id: 'backlog',   label: 'Backlog', dividerBefore: true, count: backlogCount || null }
+  ];
+}
+
+function rnxSwitchMainTab(id) {
+  rnxActiveMainTab = id;
+  // Re-render pills with new active state
+  var pWrap = document.getElementById('rnx-main-pills');
+  if (pWrap) pWrap.innerHTML = UI.pills(_rnxMainTabItems(), id, 'rnxSwitchMainTab');
+  // Show/hide tab panels
+  ['gantt','table','quarterly','roi','backlog'].forEach(function(t) {
+    var el = document.getElementById('rnx-rt-' + t);
+    if (el) el.classList.toggle('act', t === id);
+  });
+  if (id === 'gantt')     { setTimeout(rnxGanttTooltipInit, 50); setTimeout(rnxFetchJiraProgress, 80); }
+  if (id === 'roi')       setTimeout(function() { rnxRenderScatter(rnxCurrentQ()); }, 50);
+  if (id === 'table')     setTimeout(rnxFetchJiraProgress, 0);
+  if (id === 'quarterly') setTimeout(rnxFetchJiraProgress, 0);
+  if (id === 'backlog') {
+    var bp = document.getElementById('rnx-rt-backlog');
+    if (bp) { bp.innerHTML = rnxBacklogContent(); rnxWireBacklogEvents(); }
+    setTimeout(rnxFetchJiraProgress, 0);
+  }
+}
+
 // ── Event wiring (delegated, scoped to #content) ───────────────────────────
 
 function rnxInitEvents() {
-  // Tab switching
-  document.querySelectorAll('.rnx-tabitem').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var id = btn.dataset.rnxtab;
-      document.querySelectorAll('.rnx-tabitem').forEach(function(b) { b.classList.remove('act'); });
-      btn.classList.add('act');
-      ['gantt','table','quarterly','roi','backlog'].forEach(function(t) {
-        var el = document.getElementById('rnx-rt-' + t);
-        if (el) el.classList.toggle('act', t === id);
-      });
-      if (id === 'gantt')   { setTimeout(rnxGanttTooltipInit, 50); setTimeout(rnxFetchJiraProgress, 80); }
-      if (id === 'roi')     setTimeout(function() { rnxRenderScatter(rnxCurrentQ()); }, 50);
-      if (id === 'table')   setTimeout(rnxFetchJiraProgress, 0);
-      if (id === 'quarterly') setTimeout(rnxFetchJiraProgress, 0);
-      if (id === 'backlog') {
-        var bp = document.getElementById('rnx-rt-backlog');
-        if (bp) { bp.innerHTML = rnxBacklogContent(); rnxWireBacklogEvents(); }
-        setTimeout(rnxFetchJiraProgress, 0);
-      }
-    });
-  });
+  // Tab switching is handled by UI.pills onclick → rnxSwitchMainTab
 
   // Gantt group toggle
   rnxWireGanttGroup();
-
-  // Q filter buttons
-  document.querySelectorAll('[data-rnxqfn]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var fn = btn.dataset.rnxqfn, q = btn.dataset.q;
-      if (fn === 'rnxSwitchTableQuarter')   rnxSwitchTableQuarter(q);
-      else if (fn === 'rnxSwitchKanbanQuarter') rnxSwitchKanbanQuarter(q);
-      else if (fn === 'rnxSwitchROIQuarter')    rnxSwitchROIQuarter(q);
-    });
-  });
 
   // Filter bars — one call per view (suffix, selector)
   rnxWireFilterBar('',  '#rnx-table-body tr');
   rnxWireFilterBar('q', '#rnx-kanban .kancard');
   rnxDdInit();
+
+  // Sticky column scroll border
+  (function() {
+    var wrap = document.getElementById('rnx-tbl-scroll');
+    var tbl  = document.getElementById('rnx-tbl-inner');
+    if (!wrap || !tbl) return;
+    wrap.addEventListener('scroll', function() {
+      if (wrap.scrollLeft > 0) tbl.classList.add('rnx-tbl-scrolled');
+      else tbl.classList.remove('rnx-tbl-scrolled');
+    });
+  })();
 
   // Edit buttons
   document.querySelectorAll('[data-rnxedit]').forEach(function(btn) {
@@ -2968,12 +3099,7 @@ function rnxToolsMenuHtml() {
     + '</svg>';
 
   return '<div style="position:relative" id="rnx-tools-wrap">'
-    + '<button id="rnx-tools-btn" onclick="rnxToggleToolsMenu(event)"'
-    +   ' style="display:flex;align-items:center;gap:6px;padding:7px 12px;font-size:13px;font-weight:500;font-family:inherit;border:1px solid var(--border-md);border-radius:7px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,background .15s"'
-    +   ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
-    +   ' onmouseleave="if(!document.getElementById(\'rnx-tools-menu\'))return;if(document.getElementById(\'rnx-tools-menu\').style.display===\'none\'){this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'}">'
-    +   'Tools' + CHEV
-    + '</button>'
+    + UI.btnSecondary('Tools' + CHEV, 'rnxToggleToolsMenu(event)', 'rnx-tools-btn')
     + '<div id="rnx-tools-menu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--border-md);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);min-width:180px;z-index:500;overflow:hidden;padding:4px 0">'
     +   (typeof _kervCan === 'function' && _kervCan('roadmap-neon', 'editor')
     ?     '<div onclick="rnxCloseToolsMenu();rnxTriggerCsvUpload()"'
@@ -2990,8 +3116,7 @@ function rnxToolsMenuHtml() {
     +     'ROI Calculator'
     +   '</div>'
     + '</div>'
-    + '</div>'
-    + '<div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>';
+    + '</div>';
 }
 
 function rnxToggleToolsMenu(e) {
@@ -3101,9 +3226,7 @@ function rnxSetYear(y) {
   rnxInitiatives = rnxAllInitiatives.filter(function(i) {
     return (parseInt(i.year) || new Date().getFullYear()) === rnxSelYear;
   });
-  var activeTab = 'gantt';
-  var tb = document.querySelector('.rnx-tabitem.act');
-  if (tb) activeTab = tb.dataset.rnxtab || 'gantt';
+  var activeTab = rnxActiveMainTab || 'table';
   var container = document.getElementById('rnx-content');
   if (container) {
     container.innerHTML = rnxBuildInner(activeTab);
@@ -3118,32 +3241,23 @@ function rnxSetYear(y) {
 }
 
 function renderRoadmapNeon() {
-  var html = '<div class="page-header">'
-    + '<div>'
-    +   '<div style="display:flex;align-items:center;gap:12px">'
-    +     '<div class="ptitle">Product Roadmap</div>'
-    +     '<div id="rnx-year-nav" style="display:inline-block"></div>'
-    +   '</div>'
-    +   '<div class="psub">Quarterly initiatives and progress status</div>'
-    + '</div>'
-    + '<div style="display:flex;align-items:center;gap:8px">'
-    + (typeof _kervCan === 'function' && _kervCan('roadmap-neon', 'editor')
-        ? '<button onclick="rnxOpenModal(null)" style="padding:7px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;transition:opacity .15s" onmouseenter="this.style.opacity=\'.85\'" onmouseleave="this.style.opacity=\'1\'">'
-        +   '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
-        +   'Add Initiative'
-        + '</button>'
-        : '')
-    +   rnxToolsMenuHtml()
-    + (typeof _kervCan === 'function' && _kervCan('roadmap-neon', 'editor')
-        ? '<button onclick="rnxOpenSettings()" title="Settings"'
-        +   ' style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s"'
-        +   ' onmouseenter="this.style.borderColor=\'var(--accent)\';this.style.color=\'var(--accent)\'"'
-        +   ' onmouseleave="this.style.borderColor=\'var(--border-md)\';this.style.color=\'var(--muted)\'">'
-        +   '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><circle cx="12" cy="4" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="14" cy="20" r="2"/></svg>'
-        + '</button>'
-        : '')
-    + '</div>'
-    + '</div>'
+  var PLUS_ICO = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  var SETTINGS_ICO = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><circle cx="12" cy="4" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="14" cy="20" r="2"/></svg>';
+
+  var canEdit = typeof _kervCan === 'function' && _kervCan('roadmap-neon', 'editor');
+
+  var titleRight = '<div style="display:flex;align-items:center;gap:8px">'
+    + (canEdit ? UI.btnPrimary(PLUS_ICO + ' Add Initiative', 'rnxOpenModal(null)') : '')
+    + rnxToolsMenuHtml()
+    + (canEdit ? '<div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>' + UI.btnIconBordered('rnxOpenSettings()', 'Settings', SETTINGS_ICO) : '')
+    + '</div>';
+
+  var html = UI.pageHeaderWithYear({
+    title:       'Product Roadmap',
+    yearNavHtml: '<div id="rnx-year-nav" style="display:inline-flex"></div>',
+    subtitle:    'Quarterly initiatives and progress status',
+    titleRight:  titleRight
+  })
     + '<div id="rnx-content"></div>';
 
   setTimeout(function() { rnxLoadJiraProjects(); rnxLoadAndRender(); }, 0);

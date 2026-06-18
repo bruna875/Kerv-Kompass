@@ -51,7 +51,7 @@ function capGetBudget(budgets, teamName, quarter, disc) {
 function capBudgetDays(fte, workDays, rob) {
   if (!fte || !workDays) return null;
   var days = fte * workDays * (1 - (rob || 0));
-  return Math.round(days * 10) / 10; // 1 decimal precision
+  return Math.ceil(days);
 }
 
 // ── Convenience: compute all disciplines for one team / quarter ────────────
@@ -66,7 +66,8 @@ function capTeamQuarter(assumptions, budgets, teamName, quarter) {
   var prdFTE = capGetBudget(budgets, teamName, quarter, 'product');
   var desFTE = capGetBudget(budgets, teamName, quarter, 'design');
 
-  var engRoB = capRoBFrac(capGetAsm(assumptions, 'engineers run'));
+  var engRoBPct = capGetBudget(budgets, teamName, quarter, 'eng_rob_pct');
+  var engRoB = engRoBPct ? engRoBPct / 100 : 0;
   var prdRoB = capRoBFrac(capGetAsm(assumptions, 'pms run'));
   var desRoB = capRoBFrac(capGetAsm(assumptions, 'designers run'));
 

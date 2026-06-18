@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Submit a Product Request · Kerv</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23ED005E'/><path d='M16 7a5.5 5.5 0 0 1 2.5 10.4V19h-5v-1.6A5.5 5.5 0 0 1 16 7z' fill='white'/><path d='M13 20.5h6M14.5 22h3' stroke='white' stroke-width='1.5' stroke-linecap='round'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #F6F6F4;
+      --surface:   #fff;
+      --text:      #1A1A18;
+      --muted:     #6B6B63;
+      --faint:     #A8A8A0;
+      --accent:    #ED005E;
+      --border:    rgba(0,0,0,0.08);
+      --border-md: rgba(0,0,0,0.13);
+      --subtle:    #FDF0F4;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 16px 80px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 4px 28px rgba(0,0,0,0.07);
+      overflow: visible;
+    }
+
+    /* ── Header ── */
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 22px 28px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-logo-mark {
+      width: 28px; height: 28px; flex-shrink: 0;
+    }
+    .card-header-text { flex: 1; }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .card-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 3px;
+      line-height: 1.5;
+    }
+
+    /* ── Body ── */
+    .card-body {
+      padding: 22px 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── Labels & inputs ── */
+    .flabel {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .flabel-opt {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--faint);
+    }
+    .finput {
+      width: 100%;
+      padding: 7px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border-md);
+      border-radius: 6px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+      line-height: 1.5;
+    }
+    .finput:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(237,0,94,.1);
+    }
+    .finput::placeholder { color: var(--faint); }
+    textarea.finput { resize: vertical; }
+
+    /* ── Grid rows ── */
+    .frow3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .frow2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 480px) {
+      .frow3 { grid-template-columns: 1fr; }
+      .frow2 { grid-template-columns: 1fr; }
+    }
+
+    /* ── Custom dropdown ── */
+    .dd-wrap { position: relative; }
+    .dd-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      border: 1px solid var(--border-md);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .dd-btn.open {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(237,0,94,.1);
+    }
+    .dd-label {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .dd-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+      z-index: 100;
+      padding: 4px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .dd-panel.open { display: block; }
+    .dd-opt {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 12px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 12px;
+      color: var(--text);
+      transition: background .1s;
+    }
+    .dd-opt:hover { background: var(--subtle); }
+    .dd-opt-label { display: flex; align-items: center; gap: 7px; }
+    .dd-check { flex-shrink: 0; }
+    .pri-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); }
+
+    /* ── Section label ── */
+    .section-lbl {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: -4px;
+    }
+
+    /* ── Submit button ── */
+    .abtn {
+      width: 100%;
+      padding: 9px 0;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .abtn:hover { opacity: .88; }
+    .abtn:disabled { opacity: .6; cursor: default; }
+
+    /* ── Error ── */
+    .err-msg {
+      font-size: 12px;
+      color: #EF4444;
+      padding: 6px 10px;
+      background: rgba(239,68,68,.08);
+      border-radius: 6px;
+      display: none;
+    }
+
+    /* ── Success ── */
+    .success-wrap {
+      padding: 40px 28px;
+      text-align: center;
+    }
+    .success-icon {
+      width: 52px; height: 52px;
+      background: rgba(16,185,129,.1);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .success-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .success-sub { font-size: 12px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+    .abtn-outline {
+      display: inline-block;
+      padding: 8px 20px;
+      border: 1px solid var(--border-md);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .12s, border-color .12s;
+    }
+    .abtn-outline:hover { background: var(--bg); border-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- ── Header ── -->
+  <div class="card-header">
+    <svg class="card-logo-mark" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="8" fill="#ED005E"/>
+      <path d="M16 7a5.5 5.5 0 0 1 2.5 10.4V19h-5v-1.6A5.5 5.5 0 0 1 16 7z" fill="white"/>
+      <path d="M13 20.5h6M14.5 22h3" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="card-header-text">
+      <div class="card-title">Submit a Request / Idea</div>
+      <div class="card-sub">Got an idea or request? Share it with the product team.</div>
+    </div>
+  </div>
+
+  <!-- ── Form ── -->
+  <div id="form-section">
+    <div class="card-body">
+
+      <div id="err-msg" class="err-msg"></div>
+
+      <!-- Title -->
+      <div>
+        <label class="flabel" for="pr-title">Title <span style="color:#EF4444">*</span></label>
+        <input class="finput" id="pr-title" type="text" placeholder="Describe the request or idea...">
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label class="flabel" for="pr-desc">Description <span class="flabel-opt">(optional)</span></label>
+        <textarea class="finput" id="pr-desc" rows="3" placeholder="More context, user problem, expected outcome..."></textarea>
+      </div>
+
+      <!-- Priority / Team / Theme -->
+      <div class="frow3">
+
+        <!-- Priority -->
+        <div class="dd-wrap">
+          <label class="flabel">Priority</label>
+          <button type="button" class="dd-btn" id="dd-pri-btn" onclick="ddToggle('pri')">
+            <span class="dd-label" id="dd-pri-label">
+              <span class="dd-opt-label">
+                <span class="pri-dot" style="background:#EAB308"></span>Medium
+              </span>
+            </span>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink:0;opacity:.5"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="dd-panel" id="dd-pri-panel">
+            <div class="dd-opt" onclick="ddSelectPri('critical','Critical','#EF4444')">
+              <span class="dd-opt-label"><span class="pri-dot" style="background:#EF4444"></span>Critical</span>
+            </div>
+            <div class="dd-opt" onclick="ddSelectPri('high','High','#F97316')">
+              <span class="dd-opt-label"><span class="pri-dot" style="background:#F97316"></span>High</span>
+            </div>
+            <div class="dd-opt" onclick="ddSelectPri('medium','Medium','#EAB308')">
+              <span class="dd-opt-label"><span class="pri-dot" style="background:#EAB308"></span>Medium</span>
+              <svg class="dd-check" width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5l3.5 3.5 5.5-6" stroke="#ED005E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="dd-opt" onclick="ddSelectPri('low','Low','#3B82F6')">
+              <span class="dd-opt-label"><span class="pri-dot" style="background:#3B82F6"></span>Low</span>
+            </div>
+            <div class="dd-opt" onclick="ddSelectPri('nice-to-have','Nice to have','#9CA3AF')">
+              <span class="dd-opt-label"><span class="pri-dot" style="background:#9CA3AF"></span>Nice to have</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Team -->
+        <div class="dd-wrap">
+          <label class="flabel">Team</label>
+          <button type="button" class="dd-btn" id="dd-team-btn" onclick="ddToggle('team')">
+            <span class="dd-label" id="dd-team-label" style="color:var(--faint)">Select team...</span>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink:0;opacity:.5"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="dd-panel" id="dd-team-panel">
+            <div class="dd-opt" onclick="ddSelectList('team','','None')">
+              <span style="color:var(--muted)">None</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Theme -->
+        <div class="dd-wrap">
+          <label class="flabel">Theme</label>
+          <button type="button" class="dd-btn" id="dd-theme-btn" onclick="ddToggle('theme')">
+            <span class="dd-label" id="dd-theme-label" style="color:var(--faint)">Select theme...</span>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink:0;opacity:.5"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="dd-panel" id="dd-theme-panel">
+            <div class="dd-opt" onclick="ddSelectList('theme','','None')">
+              <span style="color:var(--muted)">None</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Notes -->
+      <div>
+        <label class="flabel" for="pr-notes">Notes <span class="flabel-opt">(internal)</span></label>
+        <textarea class="finput" id="pr-notes" rows="2" placeholder="Internal notes, links, references..."></textarea>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Submitted by -->
+      <div class="section-lbl">Submitted by</div>
+      <div class="frow2">
+        <div>
+          <label class="flabel" for="pr-name">Name <span style="color:#EF4444">*</span></label>
+          <input class="finput" id="pr-name" type="text" placeholder="Full name" autocomplete="name">
+        </div>
+        <div>
+          <label class="flabel" for="pr-email">Email <span class="flabel-opt">(optional)</span></label>
+          <input class="finput" id="pr-email" type="email" placeholder="email@company.com" autocomplete="email">
+        </div>
+      </div>
+
+      <button type="button" class="abtn" id="submit-btn" onclick="handleSubmit()">Submit Request</button>
+
+    </div>
+  </div>
+
+  <!-- ── Success ── -->
+  <div id="success-section" style="display:none">
+    <div class="success-wrap">
+      <div class="success-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M5 12l5 5L19 7" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="success-title" id="success-title">Request submitted!</div>
+      <div class="success-sub" id="success-sub">Your request has been received and the product team will review it shortly.</div>
+      <button class="abtn-outline" onclick="resetForm()">Submit another request</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+var _selPri   = 'medium';
+var _selTeam  = '';
+var _selTheme = '';
+
+// ── Dropdown logic ─────────────────────────────────────────────────────────────
+var _ddFields = ['pri', 'team', 'theme'];
+
+function ddToggle(field) {
+  _ddFields.forEach(function(f) {
+    var panel = document.getElementById('dd-' + f + '-panel');
+    var btn   = document.getElementById('dd-' + f + '-btn');
+    if (f === field) {
+      var isOpen = panel.classList.contains('open');
+      panel.classList.toggle('open', !isOpen);
+      btn.classList.toggle('open', !isOpen);
+    } else {
+      panel.classList.remove('open');
+      btn.classList.remove('open');
+    }
+  });
+}
+
+function ddClose() {
+  _ddFields.forEach(function(f) {
+    document.getElementById('dd-' + f + '-panel').classList.remove('open');
+    document.getElementById('dd-' + f + '-btn').classList.remove('open');
+  });
+}
+
+document.addEventListener('click', function(e) {
+  var inside = _ddFields.some(function(f) {
+    var wrap = document.getElementById('dd-' + f + '-btn');
+    var panel = document.getElementById('dd-' + f + '-panel');
+    return (wrap && wrap.contains(e.target)) || (panel && panel.contains(e.target));
+  });
+  if (!inside) ddClose();
+});
+
+function _check() {
+  return '<svg class="dd-check" width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5l3.5 3.5 5.5-6" stroke="#ED005E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+function ddSelectPri(val, label, color) {
+  _selPri = val;
+  // Update button label
+  document.getElementById('dd-pri-label').innerHTML =
+    '<span class="dd-opt-label"><span class="pri-dot" style="background:' + color + '"></span>' + label + '</span>';
+  // Re-render options with checkmark on selected
+  var opts = [
+    ['critical','Critical','#EF4444'],
+    ['high','High','#F97316'],
+    ['medium','Medium','#EAB308'],
+    ['low','Low','#3B82F6'],
+    ['nice-to-have','Nice to have','#9CA3AF']
+  ];
+  document.getElementById('dd-pri-panel').innerHTML = opts.map(function(o) {
+    return '<div class="dd-opt" onclick="ddSelectPri(\'' + o[0] + '\',\'' + o[1] + '\',\'' + o[2] + '\')">'
+      + '<span class="dd-opt-label"><span class="pri-dot" style="background:' + o[2] + '"></span>' + o[1] + '</span>'
+      + (o[0] === val ? _check() : '')
+      + '</div>';
+  }).join('');
+  ddClose();
+}
+
+function ddSelectList(field, val, label) {
+  if (field === 'team')  _selTeam  = val;
+  if (field === 'theme') _selTheme = val;
+  var labelEl = document.getElementById('dd-' + field + '-label');
+  labelEl.textContent = label || 'None';
+  labelEl.style.color = val ? 'var(--text)' : 'var(--faint)';
+  // Re-render panel options with checkmark
+  _rebuildListPanel(field);
+  ddClose();
+}
+
+function _rebuildListPanel(field) {
+  var items  = field === 'team' ? _teamItems : _themeItems;
+  var selVal = field === 'team' ? _selTeam   : _selTheme;
+  var panel  = document.getElementById('dd-' + field + '-panel');
+  panel.innerHTML =
+    '<div class="dd-opt" onclick="ddSelectList(\'' + field + '\',\'\',\'None\')">'
+    + '<span style="color:var(--muted)">None</span>'
+    + (selVal === '' ? _check() : '')
+    + '</div>'
+    + items.map(function(t) {
+        return '<div class="dd-opt" onclick="ddSelectList(\'' + field + '\',\'' + t.replace(/'/g,"\\'") + '\',\'' + t.replace(/'/g,"\\'") + '\')">'
+          + '<span>' + t + '</span>'
+          + (selVal === t ? _check() : '')
+          + '</div>';
+      }).join('');
+}
+
+// ── Load teams + themes ────────────────────────────────────────────────────────
+var _teamItems  = [];
+var _themeItems = [];
+
+fetch('/api/neon/requests?action=lookup')
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    _teamItems  = (data.teams  || []).map(function(t) { return t.name; });
+    _themeItems = (data.themes || []).map(function(t) { return t.name; });
+    _rebuildListPanel('team');
+    _rebuildListPanel('theme');
+  })
+  .catch(function() {});
+
+// ── Submit ─────────────────────────────────────────────────────────────────────
+function handleSubmit() {
+  var errEl = document.getElementById('err-msg');
+  var btn   = document.getElementById('submit-btn');
+  errEl.style.display = 'none';
+  ddClose();
+
+  var title = (document.getElementById('pr-title').value || '').trim();
+  var desc  = (document.getElementById('pr-desc').value  || '').trim();
+  var notes = (document.getElementById('pr-notes').value || '').trim();
+  var name  = (document.getElementById('pr-name').value  || '').trim();
+  var email = (document.getElementById('pr-email').value || '').trim();
+
+  if (!title) {
+    errEl.textContent = 'Title is required.';
+    errEl.style.display = 'block';
+    document.getElementById('pr-title').focus();
+    return;
+  }
+  if (!name) {
+    errEl.textContent = 'Name is required.';
+    errEl.style.display = 'block';
+    document.getElementById('pr-name').focus();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  fetch('/api/neon/requests', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action:          'pr-submit',
+      title:           title,
+      description:     desc  || null,
+      requester_name:  name,
+      requester_email: email || null,
+      team:            _selTeam  || null,
+      theme:           _selTheme || null,
+      priority:        _selPri,
+      notes:           notes || null
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    btn.disabled = false;
+    btn.textContent = 'Submit Request';
+    if (!res.ok) throw new Error(res.error || 'Submission failed');
+    document.getElementById('success-title').textContent = 'Thanks ' + name + '!';
+    document.getElementById('success-sub').textContent   = 'Your request has been received. The product team will review it shortly.';
+    document.getElementById('form-section').style.display    = 'none';
+    document.getElementById('success-section').style.display = '';
+  })
+  .catch(function(err) {
+    btn.disabled = false;
+    btn.textContent = 'Submit Request';
+    errEl.textContent   = err.message || 'Something went wrong. Please try again.';
+    errEl.style.display = 'block';
+  });
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────────
+function resetForm() {
+  _selPri   = 'medium';
+  _selTeam  = '';
+  _selTheme = '';
+  ['pr-title','pr-desc','pr-notes','pr-name','pr-email'].forEach(function(id) {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('dd-pri-label').innerHTML =
+    '<span class="dd-opt-label"><span class="pri-dot" style="background:#EAB308"></span>Medium</span>';
+  document.getElementById('dd-team-label').textContent  = 'Select team...';
+  document.getElementById('dd-team-label').style.color  = 'var(--faint)';
+  document.getElementById('dd-theme-label').textContent = 'Select theme...';
+  document.getElementById('dd-theme-label').style.color = 'var(--faint)';
+  ddSelectPri('medium','Medium','#EAB308');
+  _rebuildListPanel('team');
+  _rebuildListPanel('theme');
+  document.getElementById('err-msg').style.display         = 'none';
+  document.getElementById('success-section').style.display = 'none';
+  document.getElementById('form-section').style.display    = '';
+}
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 
 import { jiraGet, jiraPost } from './_client.js';
 
-const FIELDS = 'summary,issuetype,status,assignee,customfield_10016,customfield_10028,priority,parent,customfield_10014';
+const FIELDS = 'summary,issuetype,status,assignee,customfield_10016,customfield_10028,priority,parent,customfield_10014,customfield_10285,timespent,resolutiondate';
 
 function pts(fields) {
   return Number(fields.customfield_10016 || fields.customfield_10028 || 0);
@@ -111,16 +111,27 @@ export default async function handler(req, res) {
     // Return only non-epic issues; epics are now represented as inline badges
     const issues = all
       .filter(i => normType(i.fields.issuetype?.name) !== 'Epic')
-      .map(i => ({
-        id:        i.key,
-        title:     i.fields.summary,
-        type:      normType(i.fields.issuetype?.name),
-        pts:       pts(i.fields),
-        assignee:  i.fields.assignee?.displayName || '—',
-        status:    normStatus(i.fields.status?.name, i.fields.status?.statusCategory?.key),
-        statusRaw: i.fields.status?.name || '',
-        epic:      epicName(i)
-      }));
+      .map(i => {
+        // customfield_10285 = "Capitalizable Item" (Yes/No select)
+        const capRaw = i.fields.customfield_10285;
+        const capitalizable = capRaw?.value === 'Yes' ? true
+                            : capRaw?.value === 'No'  ? false
+                            : null;  // null = not set
+        const timespentSec = i.fields.timespent || 0;
+        return {
+          id:             i.key,
+          title:          i.fields.summary,
+          type:           normType(i.fields.issuetype?.name),
+          pts:            pts(i.fields),
+          assignee:       i.fields.assignee?.displayName || '—',
+          status:         normStatus(i.fields.status?.name, i.fields.status?.statusCategory?.key),
+          statusRaw:      i.fields.status?.name || '',
+          epic:           epicName(i),
+          capitalizable,
+          hoursWorked:    timespentSec ? Math.round(timespentSec / 360) / 10 : null,
+          resolutionDate: i.fields.resolutiondate || null
+        };
+      });
 
     res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
     return res.status(200).json({ ok: true, sprintId: Number(sprintId), issues });

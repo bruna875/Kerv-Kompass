@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>KERV Team</title>
+<title>KERV Dashboard</title>
 <link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="css/style.css"/>
+<link rel="stylesheet" href="css/style.css?v=20260521a"/>
 </head>
 <body>
 
@@ -15,7 +15,7 @@
   <div class="acard">
     <div class="alogo">
       <div class="amark"><img src="https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:6px"/></div>
-      <span class="alogo-text">KERV Team</span>
+      <span class="alogo-text">KERV Dashboard</span>
     </div>
     <div class="atitle">Set your password</div>
     <div class="asub" id="invite-sub">Create a password to access your account</div>
@@ -31,7 +31,7 @@
   <div class="acard">
     <div class="alogo">
       <div class="amark"><img src="https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:6px"/></div>
-      <span class="alogo-text">KERV Team</span>
+      <span class="alogo-text">KERV Dashboard</span>
     </div>
     <div class="atitle">Sign in</div>
     <div class="asub">Enter your credentials to continue</div>
@@ -39,6 +39,44 @@
     <div class="fwrap"><div class="flabel">Password</div><input class="finput" id="pw" type="password" placeholder="••••••••"/></div>
     <div class="aerr" id="err"></div>
     <button class="abtn" id="loginBtn">Sign in</button>
+    <div style="text-align:center;margin-top:14px">
+      <button onclick="showResetRequest()" style="background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit;text-decoration:underline;padding:0">Forgot password?</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Reset password request ── -->
+<div id="reset-request-screen" style="display:none;position:fixed;inset:0;background:var(--bg);align-items:center;justify-content:center;z-index:99">
+  <div class="acard">
+    <div class="alogo">
+      <div class="amark"><img src="https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:6px"/></div>
+      <span class="alogo-text">KERV Dashboard</span>
+    </div>
+    <div class="atitle">Reset password</div>
+    <div class="asub">Enter your email and we'll send you a reset link</div>
+    <div class="fwrap"><div class="flabel">Email</div><input class="finput" id="reset-email" type="email" placeholder="you@company.com"/></div>
+    <div class="aerr" id="reset-req-err"></div>
+    <div id="reset-req-ok" style="display:none;font-size:13px;color:#2EAD4B;margin-bottom:12px;line-height:1.5"></div>
+    <button class="abtn" id="reset-req-btn" onclick="submitResetRequest()">Send reset link</button>
+    <div style="text-align:center;margin-top:14px">
+      <button onclick="showLogin()" style="background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit;text-decoration:underline;padding:0">Back to sign in</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Reset password confirm ── -->
+<div id="reset-confirm-screen" style="display:none;position:fixed;inset:0;background:var(--bg);align-items:center;justify-content:center;z-index:99">
+  <div class="acard">
+    <div class="alogo">
+      <div class="amark"><img src="https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:6px"/></div>
+      <span class="alogo-text">KERV Dashboard</span>
+    </div>
+    <div class="atitle">Set new password</div>
+    <div class="asub" id="reset-confirm-sub">Choose a new password for your account</div>
+    <div class="fwrap"><div class="flabel">New Password</div><input class="finput" id="reset-pw1" type="password" placeholder="••••••••"/></div>
+    <div class="fwrap"><div class="flabel">Confirm Password</div><input class="finput" id="reset-pw2" type="password" placeholder="••••••••"/></div>
+    <div class="aerr" id="reset-confirm-err"></div>
+    <button class="abtn" id="reset-confirm-btn" onclick="submitResetConfirm()">Set new password</button>
   </div>
 </div>
 
@@ -48,7 +86,10 @@
     <div class="sb" id="sb">
       <div class="sbhead">
         <div class="lmark"><img src="https://res.cloudinary.com/dhfrgr4qd/image/upload/v1775830255/Kerv-Logo-1-1_bl2xdt.jpg" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:4px"/></div>
-        <span class="lname">KERV Team</span>
+        <div class="lname-wrap">
+          <span class="lname">KERV Dashboard</span>
+          <span class="lsub">the Operating Spine of KERV's Team</span>
+        </div>
       </div>
       <nav class="sbnav" id="nav"></nav>
       <div class="sbfoot" id="userBox">
@@ -91,6 +132,15 @@
             </span>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           </a>
+          <a href="/ui-kit.html" target="_blank" rel="noopener"
+             style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 12px;border-radius:6px;text-decoration:none;color:#6366F1;font-size:13px;font-weight:400;letter-spacing:.01em;transition:background .12s;cursor:pointer"
+             onmouseenter="this.style.background='rgba(99,102,241,.08)'" onmouseleave="this.style.background='none'">
+            <span style="display:flex;align-items:center;gap:7px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              UI Kit
+            </span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
         </div>
       </div>
     </div>
@@ -102,25 +152,34 @@
 
 <!-- Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <!-- App modules -->
-<script src="js/icons.js?v=20260519v"></script>
-<script src="js/overview-product.js?v=20260519v"></script>
-<script src="js/overview.js?v=20260519v"></script>
+<script src="js/ui-kit.js?v=20260521ac"></script>
+<script src="js/icons.js?v=20260521a"></script>
+<script src="js/overview-okrs.js?v=20260523e"></script>
+<script src="js/overview-revenue.js?v=20260521a"></script>
+<script src="js/overview-finance.js?v=20260521a"></script>
+<script src="js/overview-hr.js?v=20260521a"></script>
+<script src="js/overview-product.js?v=20260521a"></script>
+<script src="js/overview.js?v=20260523a"></script>
 <script src="js/loader.js?v=20260519v"></script>
-<script src="js/capacity-calculations.js?v=20260519v"></script>
-<script src="js/roadmap-neon.js?v=20260519v"></script>
-<script src="js/csv-import.js?v=20260519v"></script>
-<script src="js/capacity-neon.js?v=20260519v"></script>
-<script src="js/roi-templates.js?v=20260519v"></script>
-<script src="js/settings-neon.js?v=20260519v"></script>
+<script src="js/capacity-calculations.js?v=20260520d"></script>
+<script src="js/roadmap-neon.js?v=20260521i"></script>
+<script src="js/csv-import.js?v=20260522a"></script>
+<script src="js/capacity-neon.js?v=20260521h"></script>
+<script src="js/roi-templates.js?v=20260521a"></script>
+<script src="js/settings-neon.js?v=20260522a"></script>
 
 <script src="js/ai-insights.js?v=20260519v"></script>
 <script src="js/sprint-pptx.js?v=20260519v"></script>
-<script src="js/kanban-analysis.js?v=20260519v"></script>
-<script src="js/sprint-analysis.js?v=20260519v"></script>
-<script src="js/xts-team.js?v=20260519v"></script>
-<script src="js/admin-users.js?v=20260519v"></script>
-<script src="js/app.js?v=20260519v"></script>
+<script src="js/kanban-analysis.js?v=20260519ac"></script>
+<script src="js/sprint-analysis.js?v=20260602k"></script>
+<script src="js/xts-team.js?v=20260521a"></script>
+<script src="js/admin-users.js?v=20260602c"></script>
+<script src="js/product-ideas.js?v=20260521a"></script>
+<script src="js/company-okrs.js?v=20260523d"></script>
+<script src="js/app.js?v=20260602a"></script>
+<script src="js/ai-assistant.js?v=20260521c"></script>
 
 <script>
 // ── Invite token handler ──────────────────────────────────────────────────────
@@ -158,6 +217,106 @@
 
   window._inviteToken = token;
 })();
+
+// ── Screen helpers ────────────────────────────────────────────────────────────
+function showLogin() {
+  document.getElementById('auth').style.display                 = 'flex';
+  document.getElementById('reset-request-screen').style.display = 'none';
+  document.getElementById('reset-confirm-screen').style.display = 'none';
+}
+function showResetRequest() {
+  document.getElementById('auth').style.display                 = 'none';
+  document.getElementById('reset-request-screen').style.display = 'flex';
+  document.getElementById('reset-confirm-screen').style.display = 'none';
+  document.getElementById('reset-email').focus();
+}
+
+// ── Reset request ─────────────────────────────────────────────────────────────
+function submitResetRequest() {
+  var email  = (document.getElementById('reset-email').value || '').trim();
+  var errEl  = document.getElementById('reset-req-err');
+  var okEl   = document.getElementById('reset-req-ok');
+  var btn    = document.getElementById('reset-req-btn');
+  errEl.textContent = ''; okEl.style.display = 'none';
+  if (!email) { errEl.textContent = 'Please enter your email.'; return; }
+  btn.disabled = true; btn.textContent = 'Sending…';
+  fetch('/api/neon/users', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'reset-request', email: email })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function() {
+    okEl.textContent = 'If an account exists for ' + email + ', you will receive a reset link shortly.';
+    okEl.style.display = 'block';
+    btn.textContent = 'Send reset link'; btn.disabled = false;
+  })
+  .catch(function() {
+    errEl.textContent = 'Something went wrong. Please try again.';
+    btn.textContent = 'Send reset link'; btn.disabled = false;
+  });
+}
+
+// ── Reset confirm (via ?reset=token) ─────────────────────────────────────────
+(function() {
+  var params = new URLSearchParams(location.search);
+  var token  = params.get('reset');
+  if (!token) return;
+
+  document.getElementById('auth').style.display                 = 'none';
+  document.getElementById('app').style.display                  = 'none';
+  var screen = document.getElementById('reset-confirm-screen');
+  screen.style.display = 'flex';
+
+  fetch('/api/neon/users', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'reset-validate', token: token })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (!res.ok) {
+      document.getElementById('reset-confirm-sub').textContent = '';
+      document.getElementById('reset-confirm-err').textContent = res.error || 'Invalid or expired link.';
+      document.getElementById('reset-confirm-btn').disabled = true;
+    } else if (res.user) {
+      document.getElementById('reset-confirm-sub').textContent =
+        'Hi ' + (res.user.first_name || '') + ', choose a new password for ' + res.user.email;
+    }
+  })
+  .catch(function() {
+    document.getElementById('reset-confirm-err').textContent = 'Could not validate link.';
+    document.getElementById('reset-confirm-btn').disabled = true;
+  });
+
+  window._resetToken = token;
+})();
+
+function submitResetConfirm() {
+  var pw1   = document.getElementById('reset-pw1').value;
+  var pw2   = document.getElementById('reset-pw2').value;
+  var errEl = document.getElementById('reset-confirm-err');
+  var btn   = document.getElementById('reset-confirm-btn');
+  errEl.textContent = '';
+  if (!pw1 || pw1.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+  if (pw1 !== pw2)             { errEl.textContent = 'Passwords do not match.'; return; }
+  btn.disabled = true; btn.textContent = 'Saving…';
+  fetch('/api/neon/users', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'reset-set', token: window._resetToken, password: pw1 })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (!res.ok) throw new Error(res.error || 'Failed');
+    history.replaceState({}, '', '/');
+    document.getElementById('reset-confirm-screen').style.display = 'none';
+    document.getElementById('auth').style.display = 'flex';
+    document.getElementById('reset-confirm-sub').textContent = 'Choose a new password for your account';
+    btn.disabled = false; btn.textContent = 'Set new password';
+  })
+  .catch(function(e) {
+    errEl.textContent = e.message;
+    btn.disabled = false; btn.textContent = 'Set new password';
+  });
+}
 
 function inviteSetPassword() {
   var pw1  = document.getElementById('invite-pw1').value;

@@ -694,6 +694,14 @@ function _rnxRoSpan(id) {
 // ── Shared Costs table (identical for all templates) ──────────────────────
 
 function rnxRoiCostsHtml() {
+  var tshirtOpts = [
+    {val:'',   label:'—'},
+    {val:'XS', label:'XS'},
+    {val:'S',  label:'S'},
+    {val:'M',  label:'M'},
+    {val:'L',  label:'L'},
+    {val:'XL', label:'XL'}
+  ];
   return '<div class="rnx-rt-wrap" style="margin-top:16px">'
     + '<table class="rnx-rt" cellspacing="0">'
     + '<colgroup><col><col style="width:70px"><col style="width:64px"><col style="width:180px"></colgroup>'
@@ -706,13 +714,13 @@ function rnxRoiCostsHtml() {
     + '</tr>'
     + '<tr>'
     +   '<td class="rnx-rt-td"><span class="rnx-rt-lbl">Engineering</span></td>'
-    +   '<td class="rnx-rt-td" style="padding-left:0;padding-right:4px">' + _rnxTshirtDD('rnxroi-eng_size') + '</td>'
+    +   '<td class="rnx-rt-td" style="padding-left:0;padding-right:4px">' + UI.cellCustomSelect('rnxroi-eng_size', tshirtOpts, '', 'rnxRoiCalc') + '</td>'
     +   '<td class="rnx-rt-td" style="text-align:right">' + _rnxRoSpan('rnxroi-eng_days') + '</td>'
     +   '<td class="rnx-rt-td" style="text-align:right">' + _rnxRoSpan('rnxroi-eng_cost') + '</td>'
     + '</tr>'
     + '<tr>'
     +   '<td class="rnx-rt-td"><span class="rnx-rt-lbl">Design</span></td>'
-    +   '<td class="rnx-rt-td" style="padding-left:0;padding-right:4px">' + _rnxTshirtDD('rnxroi-des_size') + '</td>'
+    +   '<td class="rnx-rt-td" style="padding-left:0;padding-right:4px">' + UI.cellCustomSelect('rnxroi-des_size', tshirtOpts, '', 'rnxRoiCalc') + '</td>'
     +   '<td class="rnx-rt-td" style="text-align:right">' + _rnxRoSpan('rnxroi-des_days') + '</td>'
     +   '<td class="rnx-rt-td" style="text-align:right">' + _rnxRoSpan('rnxroi-des_cost') + '</td>'
     + '</tr>'
@@ -724,10 +732,7 @@ function rnxRoiCostsHtml() {
     + '</tr>'
     + '<tr>'
     +   '<th class="rnx-rt-th" colspan="3">Other Costs</th>'
-    +   '<th class="rnx-rt-th" style="text-align:right">'
-    +     '<button type="button" onclick="rnxRoiEnhAddOtherCost()"'
-    +       ' style="background:none;border:none;color:#ea580c;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;padding:0;letter-spacing:.1px">+ Add</button>'
-    +   '</th>'
+    +   '<th class="rnx-rt-th" style="text-align:right">' + UI.btnText('+ Add', 'rnxRoiEnhAddOtherCost()', '#ea580c') + '</th>'
     + '</tr>'
     + '<tbody id="rnxroi-other_costs_body"></tbody>'
     + '<tr class="rnx-rt-total">'
@@ -887,8 +892,8 @@ function rnxRoiRevGenRestore(values) {
   if (!values) return;
   var rev = document.getElementById('rnxroi-additional_revenue_12m');
   if (rev && values.additional_revenue_12m) rev.value = values.additional_revenue_12m;
-  if (values.eng_size) rnxMddSet('rnxroi-eng_size', values.eng_size);
-  if (values.des_size) rnxMddSet('rnxroi-des_size', values.des_size);
+  if (values.eng_size) UI._cscPick('rnxroi-eng_size', values.eng_size, values.eng_size);
+  if (values.des_size) UI._cscPick('rnxroi-des_size', values.des_size, values.des_size);
 }
 
 // ── Operational Efficiency — Benefits block ───────────────────────────────
@@ -1063,8 +1068,8 @@ function rnxRoiOpEffRestore(values) {
   var emp = document.getElementById('rnxroi-employees_impacted');
   if (wh  && values.weekly_hours_saved)  wh.value  = values.weekly_hours_saved;
   if (emp && values.employees_impacted)  emp.value = values.employees_impacted;
-  if (values.eng_size) rnxMddSet('rnxroi-eng_size', values.eng_size);
-  if (values.des_size) rnxMddSet('rnxroi-des_size', values.des_size);
+  if (values.eng_size) UI._cscPick('rnxroi-eng_size', values.eng_size, values.eng_size);
+  if (values.des_size) UI._cscPick('rnxroi-des_size', values.des_size, values.des_size);
 }
 
 // ── Tech Scaling — Benefits (identical to OpEff, header = "Engineering time saved") ──
@@ -1503,8 +1508,8 @@ function rnxRoiStrategicRestore(values) {
   var conf = document.getElementById('rnxroi-confidence_score');
   if (conf && values.confidence_score) conf.value = values.confidence_score;
   if (values.saf_tier) rnxMddSet('rnxroi-saf_tier', values.saf_tier);
-  if (values.eng_size) rnxMddSet('rnxroi-eng_size', values.eng_size);
-  if (values.des_size) rnxMddSet('rnxroi-des_size', values.des_size);
+  if (values.eng_size) UI._cscPick('rnxroi-eng_size', values.eng_size, values.eng_size);
+  if (values.des_size) UI._cscPick('rnxroi-des_size', values.des_size, values.des_size);
 }
 
 // ── Enhancements template — HTML builder ───────────────────────────────────
@@ -1717,6 +1722,6 @@ function rnxRoiEnhRestore(values) {
   var grw = document.getElementById('rnxroi-contribution_to_revenue_growth');
   if (rev && values.product_revenue_last_year) rev.value = values.product_revenue_last_year;
   if (grw && values.contribution_to_revenue_growth) grw.value = values.contribution_to_revenue_growth;
-  if (values.eng_size) rnxMddSet('rnxroi-eng_size', values.eng_size);
-  if (values.des_size) rnxMddSet('rnxroi-des_size', values.des_size);
+  if (values.eng_size) UI._cscPick('rnxroi-eng_size', values.eng_size, values.eng_size);
+  if (values.des_size) UI._cscPick('rnxroi-des_size', values.des_size, values.des_size);
 }

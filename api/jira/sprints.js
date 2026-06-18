@@ -122,6 +122,8 @@ function computeStats(jiraSprint, issues) {
     name:           jiraSprint.name,
     start:          fmtDate(jiraSprint.startDate),
     end:            fmtDate(jiraSprint.endDate),
+    startIso:       jiraSprint.startDate || null,
+    endIso:         jiraSprint.endDate   || null,
     status:         jiraSprint.state === 'active'  ? 'in-progress' :
                     jiraSprint.state === 'closed'  ? 'completed'   : 'future',
     jiraState:      jiraSprint.state,

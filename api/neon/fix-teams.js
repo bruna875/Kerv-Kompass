@@ -13,7 +13,8 @@ const TEAM_RENAMES = [
 ];
 
 const DRIVER_RENAMES = [
-  { from: 'Enhancements', to: 'Retention / Upsell' },
+  { from: 'Enhancements',    to: 'Retention and Expansion' },
+  { from: 'Retention / Upsell', to: 'Retention and Expansion' },
 ];
 
 export default async function handler(req, res) {

@@ -17,6 +17,11 @@ export default async function handler(req, res) {
 
   const sql = neon(process.env.DATABASE_URL);
 
+  // Ensure eng_rob_pct column exists (no-op if already present)
+  try {
+    await sql`ALTER TABLE team_budget ADD COLUMN IF NOT EXISTS eng_rob_pct NUMERIC DEFAULT NULL`;
+  } catch (_) {}
+
   // ── GET ─────────────────────────────────────────────────────────────────────
   if (req.method === 'GET') {
     try {
@@ -26,14 +31,16 @@ export default async function handler(req, res) {
             SELECT team, quarter,
               design_days      AS "designDays",
               engineering_days AS "engineeringDays",
-              product_days     AS "productDays"
+              product_days     AS "productDays",
+              eng_rob_pct      AS "engRobPct"
             FROM team_budget WHERE quarter = ${quarter}
             ORDER BY team ASC`
         : await sql`
             SELECT team, quarter,
               design_days      AS "designDays",
               engineering_days AS "engineeringDays",
-              product_days     AS "productDays"
+              product_days     AS "productDays",
+              eng_rob_pct      AS "engRobPct"
             FROM team_budget
             ORDER BY team ASC, quarter ASC`;
 
@@ -44,7 +51,8 @@ export default async function handler(req, res) {
         map[r.team][r.quarter] = {
           design:      parseFloat(r.designDays)      || 0,
           engineering: parseFloat(r.engineeringDays) || 0,
-          product:     parseFloat(r.productDays)     || 0
+          product:     parseFloat(r.productDays)     || 0,
+          eng_rob_pct: r.engRobPct != null ? parseFloat(r.engRobPct) : null
         };
       });
       return res.status(200).json(map);
@@ -60,13 +68,15 @@ export default async function handler(req, res) {
       if (!b.team || !b.quarter) {
         return res.status(400).json({ error: 'team and quarter required' });
       }
+      const engRobPct = b.engRobPct != null ? b.engRobPct : null;
       await sql`
-        INSERT INTO team_budget (team, quarter, design_days, engineering_days, product_days)
-        VALUES (${b.team}, ${b.quarter}, ${b.designDays ?? 0}, ${b.engineeringDays ?? 0}, ${b.productDays ?? 0})
+        INSERT INTO team_budget (team, quarter, design_days, engineering_days, product_days, eng_rob_pct)
+        VALUES (${b.team}, ${b.quarter}, ${b.designDays ?? 0}, ${b.engineeringDays ?? 0}, ${b.productDays ?? 0}, ${engRobPct})
         ON CONFLICT (team, quarter) DO UPDATE SET
           design_days      = EXCLUDED.design_days,
           engineering_days = EXCLUDED.engineering_days,
-          product_days     = EXCLUDED.product_days
+          product_days     = EXCLUDED.product_days,
+          eng_rob_pct      = EXCLUDED.eng_rob_pct
       `;
       return res.status(200).json({ ok: true });
     } catch (err) {
