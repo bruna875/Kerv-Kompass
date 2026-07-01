@@ -1511,11 +1511,24 @@ document.querySelectorAll('.kb-card').forEach(function(el) {
   var SW  = 'display:inline-block;width:22px;height:22px;border-radius:5px;border:1px solid rgba(0,0,0,.06);vertical-align:middle;flex-shrink:0';
   var TD  = 'padding:7px 12px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle';
   var TH  = TD + ';font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;text-align:left';
-  var full  = UI.CHART_COLORS_FULL;
-  var light = UI.CHART_COLORS_LIGHT;
+  var full      = UI.CHART_COLORS_FULL;
+  var light     = UI.CHART_COLORS_LIGHT;
+  var fullRgb   = UI.CHART_COLORS_FULL_RGB;
+  var lightRgb  = UI.CHART_COLORS_LIGHT_RGB;
+  function hexCell(hex, rgb, last) {
+    return '<td style="' + TD + last + '">'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      +   '<span style="' + SW + ';background:' + hex + '"></span>'
+      +   '<span>'
+      +     '<code style="display:block;font-size:11px;color:var(--text)">' + hex + '</code>'
+      +     '<code style="display:block;font-size:10px;color:var(--faint);margin-top:1px">rgb(' + rgb + ')</code>'
+      +   '</span>'
+      + '</div>'
+      + '</td>';
+  }
   el.innerHTML = '<table style="width:100%;border-collapse:collapse">'
     + '<thead><tr>'
-    + '<th style="' + TH + ';width:160px">Color</th>'
+    + '<th style="' + TH + ';width:140px">Color</th>'
     + '<th style="' + TH + '">Full — <code style="font-weight:400">UI.CHART_COLORS_FULL[i]</code></th>'
     + '<th style="' + TH + '">Light — <code style="font-weight:400">UI.CHART_COLORS_LIGHT[i]</code></th>'
     + '</tr></thead>'
@@ -1523,14 +1536,8 @@ document.querySelectorAll('.kb-card').forEach(function(el) {
         var last = i === NAMES.length - 1 ? ';border-bottom:none' : '';
         return '<tr>'
           + '<td style="' + TD + last + ';font-weight:500;color:var(--text)">' + name + '</td>'
-          + '<td style="' + TD + last + '">'
-          +   '<span style="' + SW + ';background:' + full[i] + '"></span>'
-          +   '<code style="margin-left:8px;font-size:11px;color:var(--muted)">' + full[i] + '</code>'
-          + '</td>'
-          + '<td style="' + TD + last + '">'
-          +   '<span style="' + SW + ';background:' + light[i] + '"></span>'
-          +   '<code style="margin-left:8px;font-size:11px;color:var(--muted)">' + light[i] + '</code>'
-          + '</td>'
+          + hexCell(full[i],  fullRgb[i],  last)
+          + hexCell(light[i], lightRgb[i], last)
           + '</tr>';
       }).join('') + '</tbody>'
     + '</table>';

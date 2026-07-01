@@ -33,6 +33,49 @@ var UI = (function () {
     'letter-spacing:.5px','color:var(--muted)','display:block','margin-bottom:5px'
   ].join(';');
 
+  // ── Design tokens — color constants ─────────────────────────────────────
+  var TOKENS = {
+    // Brand
+    accent:             '#ED005E',
+    accentFg:           '#ffffff',
+    accentHover:        '#d4005a',
+    accentRgb:          '237,0,94',
+    accentLight:        '#FDF0F4',
+    accentMuted:        '#F8C0D4',
+    // Input
+    input:              'rgba(0,0,0,0.12)',
+    inputBg:            '#ffffff',
+    inputFg:            '#0D1E36',
+    inputPlaceholder:   '#A8A8A0',
+    inputFocus:         '#ED005E',
+    inputFocusRing:     'rgba(237,0,94,0.1)',
+    inputRadius:        '8px',
+    // Secondary — navy dark (Distribute / DSP buttons)
+    secondary:          '#0f172a',
+    secondaryHover:     '#1e293b',
+    secondaryFg:        '#ffffff',
+    // Text hierarchy
+    text:               '#0D1E36',
+    muted:              '#6B6B65',
+    faint:              '#A8A8A0',
+    // Backgrounds
+    surface:            '#ffffff',
+    bg:                 '#F5F4F0',
+    hover:              '#F2F2EF',
+    subtle:             '#FDF0F4',
+    // Sidebar
+    sidebar:            '#ffffff',
+    sidebarFg:          '#0D1E36',
+    sidebarPrimary:     '#ED005E',
+    sidebarPrimaryFg:   '#ffffff',
+    sidebarSecondary:   '#0f172a',
+    sidebarSecondaryFg: '#ffffff',
+    sidebarAccent:      '#F2F2EF',
+    sidebarAccentFg:    '#0D1E36',
+    sidebarBorder:      'rgba(0,0,0,0.08)',
+    sidebarRing:        '#ED005E',
+  };
+
   // Select chevron data-URI
   var ARW = "url(\"data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A8A8A0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")";
 
@@ -3062,63 +3105,119 @@ var UI = (function () {
   // Medium-saturation palette — 24 chart-ready colors (good readability on white,
   // no neon, no pastel). Hues distributed ~15° apart across the full wheel.
   var CHART_COLORS_FULL = [
-    '#F47843', // Warm Orange
-    '#F4A234', // Amber
-    '#F0C030', // Yellow
-    '#AACC38', // Yellow-Lime
-    '#8CC440', // Lime
-    '#48BC6C', // Green
-    '#2AAC88', // Emerald
-    '#30B4B0', // Seafoam
-    '#38BCBC', // Teal
-    '#50C0D4', // Cyan
-    '#5AACD8', // Sky
-    '#5890D4', // Blue
-    '#6878CC', // Cornflower
-    '#7868CC', // Indigo
-    '#9870CC', // Violet
-    '#B860C8', // Purple
-    '#CC4CA4', // Magenta
-    '#E04CA0', // Hot Pink
-    '#E44878', // Rose
-    '#E84848', // Red
-    '#F06042', // Coral
-    '#E88840', // Orange-Amber
-    '#98C840', // Yellow-Green
-    '#40C0A0'  // Mint
+    '#F47843', // Warm Orange   — rgb(244,120,67)
+    '#F4A234', // Amber         — rgb(244,162,52)
+    '#F0C030', // Yellow        — rgb(240,192,48)
+    '#AACC38', // Yellow-Lime   — rgb(170,204,56)
+    '#8CC440', // Lime          — rgb(140,196,64)
+    '#48BC6C', // Green         — rgb(72,188,108)
+    '#2AAC88', // Emerald       — rgb(42,172,136)
+    '#30B4B0', // Seafoam       — rgb(48,180,176)
+    '#38BCBC', // Teal          — rgb(56,188,188)
+    '#50C0D4', // Cyan          — rgb(80,192,212)
+    '#5AACD8', // Sky           — rgb(90,172,216)
+    '#5890D4', // Blue          — rgb(88,144,212)
+    '#6878CC', // Cornflower    — rgb(104,120,204)
+    '#7868CC', // Indigo        — rgb(120,104,204)
+    '#9870CC', // Violet        — rgb(152,112,204)
+    '#B860C8', // Purple        — rgb(184,96,200)
+    '#CC4CA4', // Magenta       — rgb(204,76,164)
+    '#E04CA0', // Hot Pink      — rgb(224,76,160)
+    '#E44878', // Rose          — rgb(228,72,120)
+    '#E84848', // Red           — rgb(232,72,72)
+    '#F06042', // Coral         — rgb(240,96,66)
+    '#E88840', // Orange-Amber  — rgb(232,136,64)
+    '#98C840', // Yellow-Green  — rgb(152,200,64)
+    '#40C0A0'  // Mint          — rgb(64,192,160)
+  ];
+
+  // RGB triplets matching CHART_COLORS_FULL — use as rgba(UI.CHART_COLORS_FULL_RGB[i], 0.8)
+  var CHART_COLORS_FULL_RGB = [
+    '244,120,67',  // Warm Orange
+    '244,162,52',  // Amber
+    '240,192,48',  // Yellow
+    '170,204,56',  // Yellow-Lime
+    '140,196,64',  // Lime
+    '72,188,108',  // Green
+    '42,172,136',  // Emerald
+    '48,180,176',  // Seafoam
+    '56,188,188',  // Teal
+    '80,192,212',  // Cyan
+    '90,172,216',  // Sky
+    '88,144,212',  // Blue
+    '104,120,204', // Cornflower
+    '120,104,204', // Indigo
+    '152,112,204', // Violet
+    '184,96,200',  // Purple
+    '204,76,164',  // Magenta
+    '224,76,160',  // Hot Pink
+    '228,72,120',  // Rose
+    '232,72,72',   // Red
+    '240,96,66',   // Coral
+    '232,136,64',  // Orange-Amber
+    '152,200,64',  // Yellow-Green
+    '64,192,160'   // Mint
   ];
 
   // Same hues — lighter tints (~88–92% lightness) for fills, area charts, badge backgrounds
   var CHART_COLORS_LIGHT = [
-    '#FDE4D4', // Warm Orange
-    '#FDEACC', // Amber
-    '#FDF4C0', // Yellow
-    '#EAF5C0', // Yellow-Lime
-    '#E0F0C0', // Lime
-    '#C8F0D4', // Green
-    '#C0EEE4', // Emerald
-    '#C0EEEC', // Seafoam
-    '#C0ECEC', // Teal
-    '#C0F2F8', // Cyan
-    '#C4E8F8', // Sky
-    '#C8DCF8', // Blue
-    '#CDD0F4', // Cornflower
-    '#D0CCF4', // Indigo
-    '#DDD0F4', // Violet
-    '#EAD0F4', // Purple
-    '#F4D0EC', // Magenta
-    '#F8D0EC', // Hot Pink
-    '#FAD0E0', // Rose
-    '#FAD0D0', // Red
-    '#FDD8CC', // Coral
-    '#FDE4BC', // Orange-Amber
-    '#E8F4C0', // Yellow-Green
-    '#C8F4E8'  // Mint
+    '#FDE4D4', // Warm Orange   — rgb(253,228,212)
+    '#FDEACC', // Amber         — rgb(253,234,204)
+    '#FDF4C0', // Yellow        — rgb(253,244,192)
+    '#EAF5C0', // Yellow-Lime   — rgb(234,245,192)
+    '#E0F0C0', // Lime          — rgb(224,240,192)
+    '#C8F0D4', // Green         — rgb(200,240,212)
+    '#C0EEE4', // Emerald       — rgb(192,238,228)
+    '#C0EEEC', // Seafoam       — rgb(192,238,236)
+    '#C0ECEC', // Teal          — rgb(192,236,236)
+    '#C0F2F8', // Cyan          — rgb(192,242,248)
+    '#C4E8F8', // Sky           — rgb(196,232,248)
+    '#C8DCF8', // Blue          — rgb(200,220,248)
+    '#CDD0F4', // Cornflower    — rgb(205,208,244)
+    '#D0CCF4', // Indigo        — rgb(208,204,244)
+    '#DDD0F4', // Violet        — rgb(221,208,244)
+    '#EAD0F4', // Purple        — rgb(234,208,244)
+    '#F4D0EC', // Magenta       — rgb(244,208,236)
+    '#F8D0EC', // Hot Pink      — rgb(248,208,236)
+    '#FAD0E0', // Rose          — rgb(250,208,224)
+    '#FAD0D0', // Red           — rgb(250,208,208)
+    '#FDD8CC', // Coral         — rgb(253,216,204)
+    '#FDE4BC', // Orange-Amber  — rgb(253,228,188)
+    '#E8F4C0', // Yellow-Green  — rgb(232,244,192)
+    '#C8F4E8'  // Mint          — rgb(200,244,232)
+  ];
+
+  // RGB triplets matching CHART_COLORS_LIGHT — use as rgba(UI.CHART_COLORS_LIGHT_RGB[i], 0.5)
+  var CHART_COLORS_LIGHT_RGB = [
+    '253,228,212', // Warm Orange
+    '253,234,204', // Amber
+    '253,244,192', // Yellow
+    '234,245,192', // Yellow-Lime
+    '224,240,192', // Lime
+    '200,240,212', // Green
+    '192,238,228', // Emerald
+    '192,238,236', // Seafoam
+    '192,236,236', // Teal
+    '192,242,248', // Cyan
+    '196,232,248', // Sky
+    '200,220,248', // Blue
+    '205,208,244', // Cornflower
+    '208,204,244', // Indigo
+    '221,208,244', // Violet
+    '234,208,244', // Purple
+    '244,208,236', // Magenta
+    '248,208,236', // Hot Pink
+    '250,208,224', // Rose
+    '250,208,208', // Red
+    '253,216,204', // Coral
+    '253,228,188', // Orange-Amber
+    '232,244,192', // Yellow-Green
+    '200,244,232'  // Mint
   ];
 
   return {
     // Tokens (for inline use)
-    IF: IF, LB: LB,
+    IF: IF, LB: LB, TOKENS: TOKENS,
     // Utils
     esc: esc,
     // Fields
@@ -3181,6 +3280,8 @@ var UI = (function () {
     // Chart palettes
     CHART_COLORS_FULL: CHART_COLORS_FULL,
     CHART_COLORS_LIGHT: CHART_COLORS_LIGHT,
+    CHART_COLORS_FULL_RGB: CHART_COLORS_FULL_RGB,
+    CHART_COLORS_LIGHT_RGB: CHART_COLORS_LIGHT_RGB,
     // Filter bar
     filterDd: filterDd, _fdToggle: _fdToggle, _fdPick: _fdPick,
     filtersBar: filtersBar,
