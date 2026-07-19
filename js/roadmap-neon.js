@@ -610,8 +610,14 @@ function rnxSetQAct(prefix, q) {
   var wrap = document.getElementById(prefix + '-qwrap');
   if (!wrap) return;
   var target = q === 'all' ? 'All' : q;
-  wrap.querySelectorAll('.chip-sm').forEach(function(btn) {
-    btn.classList.toggle('act', btn.textContent.trim() === target);
+  wrap.querySelectorAll('button').forEach(function(btn) {
+    var isAct = btn.textContent.trim() === target;
+    btn.style.background  = isAct ? 'var(--accent)' : 'transparent';
+    btn.style.color       = isAct ? '#fff'          : 'var(--muted)';
+    btn.style.borderColor = isAct ? 'var(--accent)' : 'var(--border-md)';
+    btn.style.fontWeight  = isAct ? '500'           : '400';
+    btn.onmouseenter = isAct ? null : function() { this.style.borderColor = 'var(--accent)'; this.style.color = 'var(--accent)'; };
+    btn.onmouseleave = isAct ? null : function() { this.style.borderColor = 'var(--border-md)'; this.style.color = 'var(--muted)'; };
   });
 }
 
