@@ -4,8 +4,8 @@
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-var _RNX_CSV_HEADERS    = ['quarter','title','driver','team','theme','productOwner','techLead','link'];
-var _RNX_CSV_SAMPLE_ROW = ['Q3 2025','Improve checkout conversion','Revenue Generating','Engineering','Growth','Alice Rossi','Marco Bianchi','https://notion.so/example'];
+var _RNX_CSV_HEADERS    = ['quarter','title','driver','team','theme','productOwner','techLead','engSize','link'];
+var _RNX_CSV_SAMPLE_ROW = ['Q3 2025','Improve checkout conversion','Revenue Generating','Engineering','Growth','Alice Rossi','Marco Bianchi','M','https://notion.so/example'];
 
 var _RNX_CSV_APP_FIELDS = [
   { key: 'quarter',      label: 'Quarter',       required: true,  hints: ['quarter','period','sprint','q'] },
@@ -15,6 +15,7 @@ var _RNX_CSV_APP_FIELDS = [
   { key: 'theme',        label: 'Theme',          required: false, hints: ['theme','workstream','area'] },
   { key: 'productowner', label: 'Product Owner',  required: false, hints: ['owner','po','product'] },
   { key: 'techlead',     label: 'Tech Lead',      required: false, hints: ['lead','tech','engineer','eng'] },
+  { key: 'engsize',      label: 'Eng. T-Shirt Size', required: false, hints: ['size','sizing','tshirt','t-shirt','effort','complexity'] },
   { key: 'link',         label: 'Link',           required: false, hints: ['link','url','jira','ticket','notion'] }
 ];
 
@@ -155,6 +156,47 @@ function rnxCsvFuzzyMatch(val, list, key) {
   return { value: val, ok: false };
 }
 
+var _RNX_TSHIRT_MAP = {
+  'xs': 'XS', 'extra small': 'XS', 'extrasmall': 'XS', 'extra-small': 'XS',
+  's':  'S',  'small': 'S',
+  'm':  'M',  'medium': 'M',
+  'l':  'L',  'large': 'L',
+  'xl': 'XL', 'extra large': 'XL', 'extralarge': 'XL', 'extra-large': 'XL',
+  'xxl': 'XXL', '2xl': 'XXL', 'extra extra large': 'XXL', 'extraextralarge': 'XXL', 'extra-extra-large': 'XXL', 'double extra large': 'XXL'
+};
+
+function rnxParseTshirtSize(raw) {
+  if (!raw) return { value: '', ok: true };
+  var lc = raw.trim().toLowerCase();
+  var canonical = _RNX_TSHIRT_MAP[lc];
+  if (canonical) return { value: canonical, ok: true };
+  return { value: raw.trim().toUpperCase(), ok: false };
+}
+
+function rnxCsvComputeDays(initiativeId, engSize) {
+  if (!engSize) return { engDays: 0, prdDays: 0 };
+  var allAsms = (typeof rnxRefData !== 'undefined' && rnxRefData.assumptions) ? rnxRefData.assumptions : [];
+  // Use initiative-specific assumptions first, fallback to global (no initiativeId)
+  var asms = allAsms.filter(function(a) {
+    return a.initiativeId === initiativeId || !a.initiativeId;
+  });
+  function getAsm(namePart) {
+    var lc = namePart.toLowerCase();
+    var hit = asms.filter(function(a) { return (a.name || '').toLowerCase().indexOf(lc) !== -1; })[0];
+    return hit ? (parseFloat(hit.value) || 0) : 0;
+  }
+  var sz      = engSize.toLowerCase();
+  var engDays = getAsm('engineering t-shirt sizing - ' + sz)
+             || getAsm('engineering t-shirt ' + sz)
+             || getAsm('eng t-shirt ' + sz)
+             || getAsm('engineering ' + sz)
+             || getAsm('t-shirt ' + sz);
+  var ratio   = getAsm('ratio engineer:pm') || getAsm('ratio engineer pm')
+             || getAsm('engineer:pm')        || getAsm('engineer pm ratio');
+  var prdDays = (ratio > 0 && engDays > 0) ? Math.floor(engDays / ratio) : 0;
+  return { engDays: engDays, prdDays: prdDays };
+}
+
 function rnxParseQuarter(raw) {
   if (!raw) return { q: '', year: new Date().getFullYear() };
   var s = raw.trim();
@@ -168,10 +210,20 @@ function rnxParseQuarter(raw) {
 
 // Rows already have canonical keys (set by the mapping step)
 function rnxMatchCsvRows(rows) {
-  var drivers = rnxRefData.drivers || [];
-  var teams   = rnxRefData.teams   || [];
-  var themes  = rnxRefData.themes  || [];
-  var members = rnxRefData.members || [];
+  var drivers    = rnxRefData.drivers || [];
+  var teams      = rnxRefData.teams   || [];
+  var themes     = rnxRefData.themes  || [];
+  var members    = rnxRefData.members || [];
+  var existing   = (typeof rnxAllInitiatives !== 'undefined' && rnxAllInitiatives) ? rnxAllInitiatives : [];
+
+  function matchExisting(title) {
+    if (!title) return null;
+    var lc = title.toLowerCase();
+    return existing.filter(function(i) { return (i.title || '').toLowerCase() === lc; })[0]
+      || existing.filter(function(i) { return (i.title || '').toLowerCase().indexOf(lc) === 0; })[0]
+      || existing.filter(function(i) { return lc.indexOf((i.title || '').toLowerCase()) === 0 && (i.title || '').length > 4; })[0]
+      || null;
+  }
 
   return rows.map(function(row) {
     var qp        = rnxParseQuarter(row.quarter || '');
@@ -180,23 +232,29 @@ function rnxMatchCsvRows(rows) {
     var quarterOk = !quarter || /^(Q[1-4]|Backlog)$/i.test(quarter);
     var title     = (row.title || '').trim();
 
-    var driverM = rnxCsvFuzzyMatch(row.driver,       drivers, 'name');
-    var teamM   = rnxCsvFuzzyMatch(row.team,         teams,   'name');
-    var themeM  = rnxCsvFuzzyMatch(row.theme,        themes,  'name');
-    var ownerM  = rnxCsvFuzzyMatch(row.productowner, members, 'name');
-    var leadM   = rnxCsvFuzzyMatch(row.techlead,     members, 'name');
+    var driverM  = rnxCsvFuzzyMatch(row.driver,       drivers, 'name');
+    var teamM    = rnxCsvFuzzyMatch(row.team,         teams,   'name');
+    var themeM   = rnxCsvFuzzyMatch(row.theme,        themes,  'name');
+    var ownerM   = rnxCsvFuzzyMatch(row.productowner, members, 'name');
+    var leadM    = rnxCsvFuzzyMatch(row.techlead,     members, 'name');
+    var engSizeM = rnxParseTshirtSize(row.engsize);
+
+    var hit = matchExisting(title);
 
     return {
-      quarter:      { value: quarter,       ok: quarterOk },
-      year:         year,
-      title:        { value: title,         ok: !!title   },
-      driver:       driverM,
-      team:         teamM,
-      theme:        themeM,
-      productOwner: ownerM,
-      techLead:     leadM,
-      link:         { value: row.link || '', ok: true      },
-      rowOk:        quarterOk && !!title && driverM.ok && teamM.ok
+      quarter:          { value: quarter, ok: quarterOk },
+      year:             year,
+      title:            { value: title,   ok: !!title   },
+      driver:           driverM,
+      team:             teamM,
+      theme:            themeM,
+      productOwner:     ownerM,
+      techLead:         leadM,
+      engSize:          engSizeM,
+      link:             { value: row.link || '', ok: true },
+      existingId:       hit ? hit.id   : null,
+      existingRiJson:   hit ? (hit.roiInputs || null) : null,
+      rowOk:            quarterOk && !!title && driverM.ok && teamM.ok
     };
   });
 }
@@ -312,8 +370,10 @@ function rnxShowCsvPreview(rows) {
   var overlay = document.getElementById('rnx-csv-modal-overlay');
   if (!overlay) return;
 
-  var okCount  = rows.filter(function(r) { return r.rowOk; }).length;
-  var errCount = rows.length - okCount;
+  var okCount     = rows.filter(function(r) { return r.rowOk; }).length;
+  var errCount    = rows.length - okCount;
+  var updateCount = rows.filter(function(r) { return r.existingId; }).length;
+  var newCount    = rows.length - updateCount;
 
   function cell(f) {
     var ok  = f.ok;
@@ -324,21 +384,27 @@ function rnxShowCsvPreview(rows) {
   }
 
   var thead = '<tr style="background:var(--bg)">'
-    + ['Quarter','Title','Driver','Team','Theme','Product Owner','Tech Lead','Link'].map(function(h) {
+    + ['','Quarter','Title','Driver','Team','Theme','Product Owner','Tech Lead','Eng. Size','Link'].map(function(h) {
         return '<th style="padding:5px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--faint);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border)">' + h + '</th>';
       }).join('')
     + '</tr>';
 
   var tbody = rows.map(function(r) {
-    return '<tr>'
+    var isUpdate = !!r.existingId;
+    var badge = isUpdate
+      ? '<td style="padding:4px 8px;border-bottom:1px solid var(--border)"><span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:rgba(59,130,246,.1);color:#3b82f6">Update</span></td>'
+      : '<td style="padding:4px 8px;border-bottom:1px solid var(--border)"><span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:rgba(22,163,74,.1);color:#16a34a">New</span></td>';
+    return '<tr>' + badge
       + cell(r.quarter) + cell(r.title) + cell(r.driver) + cell(r.team)
-      + cell(r.theme) + cell(r.productOwner) + cell(r.techLead) + cell(r.link)
+      + cell(r.theme) + cell(r.productOwner) + cell(r.techLead) + cell(r.engSize) + cell(r.link)
       + '</tr>';
   }).join('');
 
   var summary = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:12px">'
     + '<span style="color:#16a34a;font-weight:500">✓ ' + okCount + ' ready</span>'
-    + (errCount ? '<span style="color:#ea580c;font-weight:500">⚠ ' + errCount + ' with warnings</span>' : '')
+    + (errCount    ? '<span style="color:#ea580c;font-weight:500">⚠ ' + errCount + ' with warnings</span>' : '')
+    + (newCount    ? '<span style="color:#16a34a;font-weight:500">' + newCount + ' new</span>'             : '')
+    + (updateCount ? '<span style="color:#3b82f6;font-weight:500">' + updateCount + ' update</span>'       : '')
     + '<span style="color:var(--faint);margin-left:auto">Orange = no match found — will be imported as-is</span>'
     + '</div>';
 
@@ -346,9 +412,14 @@ function rnxShowCsvPreview(rows) {
     + '<table style="width:100%;border-collapse:collapse"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>'
     + '</div>';
 
+  var importLabel = (newCount && updateCount)
+    ? 'Import ' + newCount + ' new · Update ' + updateCount
+    : (updateCount ? 'Update ' + updateCount + ' initiative' + (updateCount !== 1 ? 's' : '')
+    : 'Import ' + rows.length + ' initiative' + (rows.length !== 1 ? 's' : ''));
+
   var footer = '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">'
     + '<button onclick="rnxCloseCsvModal()" style="padding:7px 16px;font-size:13px;font-family:inherit;border:1px solid var(--border-md);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer">Cancel</button>'
-    + '<button onclick="rnxImportCsvRows()" style="padding:7px 16px;font-size:13px;font-weight:500;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer">Import ' + rows.length + ' initiative' + (rows.length !== 1 ? 's' : '') + '</button>'
+    + '<button onclick="rnxImportCsvRows()" style="padding:7px 16px;font-size:13px;font-weight:500;font-family:inherit;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer">' + importLabel + '</button>'
     + '</div>';
 
   overlay.querySelector('div').innerHTML =
@@ -377,19 +448,57 @@ function rnxImportCsvRows() {
   var q = rnxCurrentQ();
 
   var promises = rows.map(function(r) {
+    var isUpdate = !!r.existingId;
+
+    // Merge roiInputs: preserve existing values, set eng_size + compute days
+    var ri = {};
+    if (isUpdate && r.existingRiJson) {
+      try { ri = JSON.parse(r.existingRiJson); } catch(e) {}
+    }
+    var engDays = 0, prdDays = 0;
+    if (r.engSize.value) {
+      ri.eng_size = r.engSize.value;
+      var computed = rnxCsvComputeDays(r.existingId || null, r.engSize.value);
+      engDays = computed.engDays;
+      prdDays = computed.prdDays;
+      if (engDays) ri.eng_days = engDays;
+      if (prdDays) ri.prd_days = prdDays;
+    }
+    var roiInputs = Object.keys(ri).length ? JSON.stringify(ri) : null;
+
     var body = {
-      quarter:        r.quarter.value      || q,
-      title:          r.title.value        || '',
-      driver:         r.driver.value       || '',
-      team:           r.team.value         || '',
-      theme:          r.theme.value        || '',
-      productOwner:   r.productOwner.value || '',
-      techLead:       r.techLead.value     || '',
-      link:           r.link.value         || '',
-      year:           r.year               || new Date().getFullYear(),
-      deliveryStatus: 'not-started',
-      sortOrder:      0
+      quarter:         r.quarter.value      || q,
+      title:           r.title.value        || '',
+      driver:          r.driver.value       || '',
+      team:            r.team.value         || '',
+      theme:           r.theme.value        || '',
+      productOwner:    r.productOwner.value || '',
+      techLead:        r.techLead.value     || '',
+      roiInputs:       roiInputs,
+      link:            r.link.value         || '',
+      year:            r.year               || new Date().getFullYear(),
+      engineeringDays: engDays || 0,
+      productDays:     prdDays || 0,
+      sortOrder:       0
     };
+
+    if (isUpdate) {
+      body.id = r.existingId;
+      // Preserve existing delivery status (not overwritten by CSV)
+      var existing = (typeof rnxAllInitiatives !== 'undefined' ? rnxAllInitiatives : [])
+        .filter(function(i) { return i.id === r.existingId; })[0];
+      if (existing) {
+        body.deliveryStatus  = existing.deliveryStatus || 'not-started';
+        body.designDays      = existing.designDays     || 0;
+        // computed days from eng_size take priority over existing DB values
+        body.engineeringDays = engDays || existing.engineeringDays || 0;
+        body.productDays     = prdDays || existing.productDays     || 0;
+        body.addedValue      = existing.addedValue     || null;
+      }
+    } else {
+      body.deliveryStatus = 'not-started';
+    }
+
     return fetch('/api/neon/initiatives', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

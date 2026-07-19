@@ -31,9 +31,9 @@ export default async function handler(req, res) {
       const rows = await sql`
         SELECT
           id, quarter, title, driver, team, theme,
-          product_owner   AS "productOwner",
-          tech_lead       AS "techLead",
-          added_value     AS "addedValue",
+          product_owner    AS "productOwner",
+          tech_lead        AS "techLead",
+          added_value      AS "addedValue",
           roi_inputs       AS "roiInputs",
           design_days      AS "designDays",
           engineering_days AS "engineeringDays",
