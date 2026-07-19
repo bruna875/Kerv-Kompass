@@ -113,8 +113,7 @@ function _auSeedDummy() {
       modulePermissions: {
         'overview': 'viewer',
         'roadmap-neon': 'editor',
-        'teamcapacity-neon': 'viewer',
-        'sdt-sprint-analysis': 'viewer'
+        'teamcapacity-neon': 'viewer'
       }
     })
   })

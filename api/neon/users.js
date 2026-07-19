@@ -114,7 +114,7 @@ export default async function handler(req, res) {
       } else if (emailLow === 'product@kerv.ai' && hash === sha256('roadmap')) {
         // Demo super-admin fallback
         const perms = {};
-        ['overview','roadmap-neon','settings-neon','teamcapacity-neon','sdt-sprint-analysis',
+        ['overview','roadmap-neon','settings-neon','teamcapacity-neon',
          'api-team','ads-team','kervone-team','shared-team','reporting-team','product-ideas','admin-users']
           .forEach(function(m) { perms[m] = 'editor'; });
         userData = { userId: 0, email: emailLow, firstName: 'Product', lastName: '', permissions: perms, superAdmin: true };
