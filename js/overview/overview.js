@@ -49,7 +49,7 @@ function renderOverview() {
   }
   return '<div id="ovx-root">'
     + '<div style="margin-bottom:4px">'
-    +   '<div style="font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.3px">Welcome to KERV Team Dashboard</div>'
+    +   '<div style="font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.3px">Welcome to KERV Kompass</div>'
     +   '<div id="ovx-subtitle" style="font-size:13px;color:var(--muted);margin-top:3px">' + (_OVX_SUBTITLES[_ovxActiveTab] || '') + '</div>'
     + '</div>'
     + '<div id="ovx-tab-bar" style="margin-top:16px;margin-bottom:0;overflow-x:auto;-webkit-overflow-scrolling:touch">'
