@@ -4,13 +4,7 @@ var _ovxActiveTab = 'product';
 
 var _OVX_TABS = [
   { id: 'okrs',           label: 'Company OKRs'     },
-  { id: 'product',        label: 'Product & Tech',  dividerBefore: true },
-  { id: 'finance',        label: 'Finance'          },
-  { id: 'sales',          label: 'Sales'            },
-  { id: 'strategy',       label: 'Strategy'         },
-  { id: 'operations',     label: 'Operations'       },
-  { id: 'people-culture', label: 'People & Culture' },
-  { id: 'marketing',      label: 'Marketing'        }
+  { id: 'product',        label: 'Product & Tech',  dividerBefore: true }
 ];
 
 function ovxLoad() {
