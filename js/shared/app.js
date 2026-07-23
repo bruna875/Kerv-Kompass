@@ -84,30 +84,6 @@ var NAV_CONFIG = [
       { id: 'teamcapacity-neon', label: kervModuleLabel('teamcapacity-neon'), icon: ico.capacity }
     ]
   },
-  {
-    section: 'Finance',
-    items: []
-  },
-  {
-    section: 'Sales',
-    items: []
-  },
-  {
-    section: 'Strategy',
-    items: []
-  },
-  {
-    section: 'Operations',
-    items: []
-  },
-  {
-    section: 'People & Culture',
-    items: []
-  },
-  {
-    section: 'Marketing',
-    items: []
-  },
 ];
 
 // ── Pages map ──
