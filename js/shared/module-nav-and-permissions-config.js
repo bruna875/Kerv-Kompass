@@ -1,4 +1,4 @@
-// roles-permissions-config.js — single source of truth for module ids/labels used by
+// module-nav-and-permissions-config.js — single source of truth for module ids/labels used by
 // permission checks (admin-users.js) and navigation (app.js). Add a module
 // here once; both consumers pick it up automatically.
 
