@@ -67,21 +67,21 @@ var NAV_CONFIG = [
     section: '',
     noHeader: true,
     items: [
-      { id: 'overview', label: 'Overview', icon: ico.overview }
+      { id: 'overview', label: kervModuleLabel('overview'), icon: ico.overview }
     ]
   },
   {
     section: 'Company OKRs',
     items: [
-      { id: 'company-okrs', label: 'Company OKRs', icon: ico.okrs }
+      { id: 'company-okrs', label: kervModuleLabel('company-okrs'), icon: ico.okrs }
     ],
     dividerAfter: true
   },
   {
     section: 'Product & Tech',
     items: [
-      { id: 'roadmap-neon',      label: 'Product Roadmap', icon: ico.roadmap  },
-      { id: 'teamcapacity-neon', label: 'Team Capacity',   icon: ico.capacity }
+      { id: 'roadmap-neon',      label: kervModuleLabel('roadmap-neon'),      icon: ico.roadmap  },
+      { id: 'teamcapacity-neon', label: kervModuleLabel('teamcapacity-neon'), icon: ico.capacity }
     ]
   },
   {

@@ -21,8 +21,9 @@ export default async function handler(req, res) {
   // ── Auth guard — public: login, validate (invite), set (invite) ─────────────
   const PUBLIC_ACTIONS = ['login', 'validate', 'set', 'reset-request', 'reset-validate', 'reset-set'];
   const reqAction = (req.body && req.body.action) || null;
+  let authUser = null;
   if (!(reqAction && PUBLIC_ACTIONS.includes(reqAction))) {
-    const authUser = requireAuth(req, res);
+    authUser = requireAuth(req, res);
     if (!authUser) return;
   }
 
@@ -112,12 +113,9 @@ export default async function handler(req, res) {
           permissions: u.module_permissions || {}
         };
       } else if (emailLow === 'product@kerv.ai' && hash === sha256('roadmap')) {
-        // Demo super-admin fallback
-        const perms = {};
-        ['overview','roadmap-neon','settings-neon','teamcapacity-neon',
-         'api-team','ads-team','kervone-team','shared-team','reporting-team','product-ideas','admin-users']
-          .forEach(function(m) { perms[m] = 'editor'; });
-        userData = { userId: 0, email: emailLow, firstName: 'Product', lastName: '', permissions: perms, superAdmin: true };
+        // Demo super-admin fallback — permissions is irrelevant here since
+        // superAdmin:true bypasses every permission check.
+        userData = { userId: 0, email: emailLow, firstName: 'Product', lastName: '', permissions: {}, superAdmin: true };
       }
 
       if (!userData) return res.status(401).json({ error: 'Invalid credentials' });
@@ -326,10 +324,10 @@ export default async function handler(req, res) {
     // ── me: return fresh permissions for the current JWT holder ──────────────
     if (action === 'me') {
       // superAdmin is not in the DB — just echo back what they already have
-      if (user.superAdmin) return res.status(200).json({ ok: true, superAdmin: true, permissions: user.permissions || {} });
+      if (authUser.superAdmin) return res.status(200).json({ ok: true, superAdmin: true, permissions: authUser.permissions || {} });
       const rows = await sql`
         SELECT id, first_name, last_name, email, module_permissions
-        FROM users WHERE id = ${user.userId}
+        FROM users WHERE id = ${authUser.userId}
       `;
       if (!rows.length) return res.status(404).json({ error: 'User not found' });
       const u = rows[0];

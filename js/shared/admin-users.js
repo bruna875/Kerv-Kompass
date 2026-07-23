@@ -10,25 +10,8 @@ var _AU_SVG_SEND   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none
 var _AU_SVG_USER   = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
 
 // ── Module registry ───────────────────────────────────────────────────────────
-var AU_MODULES = [
-  // Company OKRs
-  { id: 'company-okrs',        label: 'Company OKRs',               section: 'Company OKRs'   },
-  // Overview + tab sub-items
-  { id: 'overview',            label: 'Overview',                   section: 'Overview'       },
-  { id: 'overview-okrs',       label: 'Company OKRs',               parent: 'overview'        },
-  { id: 'overview-product',    label: 'Product & Tech',             parent: 'overview'        },
-  { id: 'overview-sales',      label: 'Revenue',                    parent: 'overview'        },
-  { id: 'overview-finance',    label: 'Finance',                    parent: 'overview'        },
-  { id: 'overview-operations', label: 'Operations',                 parent: 'overview'        },
-  { id: 'overview-hr',         label: 'HR',                         parent: 'overview'        },
-  // Product & Tech
-  { id: 'roadmap-neon',        label: 'Product Roadmap',            section: 'Product & Tech' },
-  { id: 'settings-neon',       label: 'Assumptions',                parent: 'roadmap-neon'    },
-  { id: 'teamcapacity-neon',   label: 'Team Capacity',              section: 'Product & Tech' },
-  { id: 'product-ideas',       label: 'Product Req / Ideas',        section: 'Product & Tech' },
-  // Administration
-  { id: 'admin-users',         label: 'Admin — User & Permissions', section: 'Administration' }
-];
+// Canonical list lives in modules-config.js (shared with app.js's NAV_CONFIG).
+var AU_MODULES = KERV_MODULES;
 
 // Fixed section order (mirrors sidebar + overview)
 var AU_SECTIONS_ORDER = [
